@@ -11,12 +11,13 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GameServerCreationDto {
-    @NotNull @Positive
+    @PositiveOrZero
     private Number gameId;
     @NotBlank private String serverName;
     @NotBlank private String template;
