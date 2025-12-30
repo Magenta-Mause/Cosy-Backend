@@ -7,6 +7,7 @@ import lombok.*;
 @Data
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class GameDto {
     @NotNull private int id;
     @NotBlank private String name;
