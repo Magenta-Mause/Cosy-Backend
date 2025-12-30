@@ -137,7 +137,7 @@ public class GlobalExceptionHandler {
                                 .data("Failed to communicate with Games API.")
                                 .error(ex.getMessage())
                                 .path(request.getRequestURI())
-                                .statusCode(HttpStatus.SERVICE_UNAVAILABLE.value())
+                                .statusCode(HttpStatus.BAD_GATEWAY.value())
                                 .build());
     }
 
