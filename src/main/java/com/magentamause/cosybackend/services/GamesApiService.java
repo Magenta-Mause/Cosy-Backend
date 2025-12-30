@@ -6,7 +6,6 @@ import com.magentamause.cosybackend.dtos.gamesapi.GamesApiGamesResponse;
 import com.magentamause.cosybackend.exceptions.GamesApiError;
 import java.util.Collections;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -15,23 +14,25 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
 @Service
-@RequiredArgsConstructor
 @EnableConfigurationProperties(GamesApiConfig.class)
 public class GamesApiService {
 
-    private final GamesApiConfig gamesApiConfig;
+    private final WebClient webClient;
 
-    public List<GameDto> queryGames(String query) {
-        WebClient client =
+    public GamesApiService(GamesApiConfig gamesApiConfig) {
+        this.webClient =
                 WebClient.builder()
                         .baseUrl(gamesApiConfig.getUrl())
                         .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                         .build();
+    }
 
+    public List<GameDto> queryGames(String query) {
         GamesApiGamesResponse response;
         try {
             response =
-                    client.get()
+                    webClient
+                            .get()
                             .uri(
                                     uriBuilder ->
                                             uriBuilder
