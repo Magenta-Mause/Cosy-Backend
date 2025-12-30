@@ -36,9 +36,14 @@ public class UserEntity {
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GameServerConfigurationEntity> gameServerConfigurationEntities;
 
+    @Getter
+    @RequiredArgsConstructor
     public enum Role {
-        OWNER,
-        QUOTA_USER
+        OWNER(true),
+        ADMIN(true),
+        QUOTA_USER(false);
+
+        private final boolean admin;
     }
 
     public UserEntityDto toDto() {

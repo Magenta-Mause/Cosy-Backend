@@ -18,7 +18,6 @@ public class UserEntityService {
     private final UserEntityRepository userEntityRepository;
 
     public List<UserEntity> getAllUsers() {
-
         return userEntityRepository.findAll();
     }
 

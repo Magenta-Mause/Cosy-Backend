@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.services;
 
+import com.magentamause.cosybackend.dtos.actiondtos.UserInviteCreationDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.UserInviteEntity;
 import com.magentamause.cosybackend.repositories.UserInviteRepository;
@@ -30,18 +31,18 @@ public class UserInviteService {
     }
 
     public void revokeInvite(String inviteUuid) {
-        // Check existence first to provide clear feedback
-        getInviteByUuid(inviteUuid); // throws 404 if not found
+        getInviteByUuidOrElseThrow(inviteUuid);
         userInviteRepository.deleteById(inviteUuid);
     }
 
-    public UserInviteEntity createInvite(String ownerCreationId, String username) {
-        if (!Objects.isNull(username)) {
-            if (userInviteRepository.existsByUsername(username)) {
+    public UserInviteEntity createInvite(
+            String ownerCreationId, UserInviteCreationDto userInviteCreationDto) {
+        if (!Objects.isNull(userInviteCreationDto.getUsername())) {
+            if (userInviteRepository.existsByUsername(userInviteCreationDto.getUsername())) {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "Invite with the given username already exists");
             }
-            if (userEntityService.existsByUsername(username)) {
+            if (userEntityService.existsByUsername(userInviteCreationDto.getUsername())) {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "A user with the given username already exists");
             }
@@ -51,13 +52,14 @@ public class UserInviteService {
                 UserInviteEntity.builder()
                         .invitedBy(userEntityService.getUserByUuid(ownerCreationId))
                         .secretKey(generateRandomKey())
-                        .username(username)
+                        .username(userInviteCreationDto.getUsername())
+                        .role(userInviteCreationDto.getRole())
                         .build();
 
         return userInviteRepository.save(invite);
     }
 
-    public UserInviteEntity getInviteBySecretKey(String secretToken) {
+    public UserInviteEntity getInviteBySecretKeyOrElseThrow(String secretToken) {
         return userInviteRepository
                 .findBySecretKey(secretToken)
                 .orElseThrow(
@@ -66,7 +68,7 @@ public class UserInviteService {
                                         HttpStatus.NOT_FOUND, "Invite not found"));
     }
 
-    public UserInviteEntity getInviteByUuid(String inviteUuid) {
+    public UserInviteEntity getInviteByUuidOrElseThrow(String inviteUuid) {
         return userInviteRepository
                 .findById(inviteUuid)
                 .orElseThrow(
@@ -75,27 +77,45 @@ public class UserInviteService {
                                         HttpStatus.NOT_FOUND, "Invite not found"));
     }
 
+    private UserInviteEntity getInviteBySecretKeyWithLockOrElseThrow(String username) {
+        return userInviteRepository
+                .findBySecretKeyLocked(username)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Invite not found"));
+    }
+
     @Transactional
     public UserEntity useInvite(String secretKey, String username, String password) {
-        UserInviteEntity invite =
-                userInviteRepository
-                        .findBySecretKeyLocked(secretKey)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND, "Invite not found"));
+        UserInviteEntity invite = getInviteBySecretKeyWithLockOrElseThrow(secretKey);
+
+        UserEntity.Role inviteRole =
+                switch (invite.getRole()) {
+                    case null -> UserEntity.Role.QUOTA_USER;
+                    case QUOTA_USER -> UserEntity.Role.QUOTA_USER;
+                    case ADMIN, OWNER -> UserEntity.Role.ADMIN;
+                };
+
         UserEntity.UserEntityBuilder userBuilder =
                 UserEntity.builder()
-                        .role(UserEntity.Role.QUOTA_USER)
+                        .role(inviteRole)
                         .password(passwordEncoder.encode(password))
                         .defaultPasswordReset(true);
+
         if (Objects.isNull(invite.getUsername())) {
             userBuilder.username(username);
         } else {
             userBuilder.username(invite.getUsername());
         }
-        UserEntity user = userEntityService.saveUserEntity(userBuilder.build());
-        userInviteRepository.delete(invite); // Delete the invite after use
+
+        UserEntity builtUser = userBuilder.build();
+        if (userEntityService.existsByUsername(builtUser.getUsername())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "A user with the given username already exists");
+        }
+        UserEntity user = userEntityService.saveUserEntity(builtUser);
+        userInviteRepository.delete(invite);
         log.info("Invite [{}] used for user {}", invite.getUuid(), user.getUsername());
         return user;
     }

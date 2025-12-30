@@ -36,6 +36,9 @@ public class UserInviteEntity {
     @JoinColumn(name = "invited_by_id")
     private UserEntity invitedBy;
 
+    @Enumerated(EnumType.STRING)
+    private UserEntity.Role role;
+
     public UserInviteDto convertToDto() {
         return UserInviteDto.builder()
                 .uuid(this.getUuid())
@@ -44,6 +47,7 @@ public class UserInviteEntity {
                 .secretKey(this.getSecretKey())
                 .createdAt(this.getCreatedAt())
                 .inviteByUsername(this.getInvitedBy().getUsername())
+                .role(this.getRole())
                 .build();
     }
 }

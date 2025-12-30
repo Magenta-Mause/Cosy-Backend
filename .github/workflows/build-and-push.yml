@@ -1,0 +1,70 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      short-sha: ${{ steps.short-sha.outputs.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get short SHA
+        id: short-sha
+        run: echo "sha=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  update-deployment:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.DEPLOYMENT_APP_ID }}
+          private-key: ${{ secrets.DEPLOYMENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: "cosy-internal-deployment"
+
+      - name: Trigger deployment update
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ steps.app-token.outputs.token }}" \
+            https://api.github.com/repos/${{ github.repository_owner }}/cosy-internal-deployment/dispatches \
+            -d '{"event_type":"update_image","client_payload":{"service":"backend","commit_sha":"sha-${{ needs.build-and-push-image.outputs.short-sha }}"}}'
+

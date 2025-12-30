@@ -34,5 +34,7 @@ cosy:
       - http://localhost:3000
       - http://localhost:5173
       - https://cosy.jannekeipert.de
+      - https://cosy-docker.pybay.de
   games-api:
     url: https://cosy-game-api.jannekeipert.de
+

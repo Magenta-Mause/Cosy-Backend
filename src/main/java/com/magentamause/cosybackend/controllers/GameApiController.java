@@ -1,6 +1,9 @@
 package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
+import com.magentamause.cosybackend.security.accessmanagement.Action;
+import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
+import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.services.GamesApiService;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;

@@ -4,7 +4,10 @@ import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
+import com.magentamause.cosybackend.security.accessmanagement.Action;
+import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
+import com.magentamause.cosybackend.security.accessmanagement.Resource;
+import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.GameServerConfigurationService;
 import com.magentamause.cosybackend.services.SecurityContextService;
 import jakarta.validation.Valid;
@@ -22,6 +25,7 @@ public class GameServerConfigurationController {
     private final SecurityContextService securityContextService;
 
     @GetMapping
+    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
     public ResponseEntity<List<GameServerDto>> getAllGameServers() {
         List<GameServerDto> dtos =
                 gameServerConfigurationService.getAllGameServers().stream()
@@ -31,44 +35,28 @@ public class GameServerConfigurationController {
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<GameServerDto> getGameServerById(@PathVariable String uuid) {
+    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
+    public ResponseEntity<GameServerDto> getGameServerById(@PathVariable @ResourceId String uuid) {
         GameServerConfigurationEntity entity =
                 gameServerConfigurationService.getGameServerById(uuid);
         return ResponseEntity.ok(entity.toDto());
     }
 
     @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> deleteGameServerById(@PathVariable String uuid) {
+    @RequireAccess(action = Action.DELETE, resource = Resource.GAME_SERVER)
+    public ResponseEntity<Void> deleteGameServerById(@PathVariable @ResourceId String uuid) {
         gameServerConfigurationService.deleteGameServerById(uuid);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping
+    @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
     public ResponseEntity<GameServerDto> createGameServer(
             @Valid @RequestBody GameServerCreationDto gameServerCreationDto) {
         UserEntity user = securityContextService.getUser();
 
-        GameServerConfigurationEntity createdGameServer =
-                GameServerConfigurationEntity.builder()
-                        .owner(user)
-                        .gameId(gameServerCreationDto.getGameId())
-                        .serverName(gameServerCreationDto.getServerName())
-                        .template(gameServerCreationDto.getTemplate())
-                        .dockerImageName(gameServerCreationDto.getDockerImageName())
-                        .dockerImageTag(gameServerCreationDto.getDockerImageTag())
-                        .dockerExecutionCommand(gameServerCreationDto.getExecutionCommand())
-                        .environmentVariables(gameServerCreationDto.getEnvironmentVariables())
-                        .volumeMounts(
-                                gameServerCreationDto.getVolumeMounts() != null
-                                        ? gameServerCreationDto.getVolumeMounts().stream()
-                                                .map(VolumeMountConfiguration::fromDto)
-                                                .toList()
-                                        : null)
-                        .portMappings(
-                                gameServerCreationDto.getPortMappings() != null
-                                        ? gameServerCreationDto.getPortMappings()
-                                        : List.of())
-                        .build();
+        GameServerConfigurationEntity createdGameServer = gameServerCreationDto.toEntity();
+        createdGameServer.setOwner(user);
 
         gameServerConfigurationService.saveGameServer(createdGameServer);
         return ResponseEntity.status(201).body(createdGameServer.toDto());
