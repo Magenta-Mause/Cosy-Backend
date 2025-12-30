@@ -135,7 +135,8 @@ public class GlobalExceptionHandler {
                 .body(
                         ApiResponse.builder()
                                 .success(false)
-                                .data("Failed to communicate with Games API.")
+                                .data(
+                                        "Downstream Games API request failed; see 'error' for details.")
                                 .error(ex.getMessage())
                                 .path(request.getRequestURI())
                                 .statusCode(HttpStatus.BAD_GATEWAY.value())
