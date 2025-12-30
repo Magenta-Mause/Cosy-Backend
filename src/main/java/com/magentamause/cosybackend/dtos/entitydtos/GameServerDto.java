@@ -30,7 +30,7 @@ public class GameServerDto {
 
     @NotNull @Valid private LocalDateTime timestampLastStarted;
 
-    @PositiveOrZero private Number gameId;
+    @PositiveOrZero private int gameId;
 
     @NotBlank private String dockerImageName;
 

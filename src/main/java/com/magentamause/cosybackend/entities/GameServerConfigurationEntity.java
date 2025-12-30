@@ -32,7 +32,7 @@ public class GameServerConfigurationEntity {
 
     private LocalDateTime timestampLastStarted;
 
-    private Number gameId;
+    private int gameId;
 
     @Column(nullable = false)
     private String dockerImageName;

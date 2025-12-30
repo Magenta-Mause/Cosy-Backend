@@ -8,7 +8,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 public class GameDto {
-    @NotNull private Number id;
+    @NotNull private int id;
     @NotBlank private String name;
 
     private String hero_url;

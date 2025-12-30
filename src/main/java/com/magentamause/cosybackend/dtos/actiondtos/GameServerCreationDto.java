@@ -14,7 +14,7 @@ import lombok.Data;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GameServerCreationDto {
-    @PositiveOrZero private Number gameId;
+    @PositiveOrZero private int gameId;
     @NotBlank private String serverName;
     @NotBlank private String template;
     @NotBlank private String dockerImageName;
