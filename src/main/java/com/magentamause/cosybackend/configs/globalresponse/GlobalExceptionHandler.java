@@ -12,6 +12,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
@@ -138,6 +139,20 @@ public class GlobalExceptionHandler {
                                 .error(ex.getMessage())
                                 .path(request.getRequestURI())
                                 .statusCode(HttpStatus.BAD_GATEWAY.value())
+                                .build());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<?>> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        String parameterName = ex.getParameterName();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(
+                        ApiResponse.builder()
+                                .success(false)
+                                .error("Missing required request parameter: " + parameterName)
+                                .path(request.getRequestURI())
+                                .statusCode(HttpStatus.BAD_REQUEST.value())
                                 .build());
     }
 

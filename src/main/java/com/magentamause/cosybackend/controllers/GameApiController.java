@@ -3,6 +3,8 @@ package com.magentamause.cosybackend.controllers;
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
 import com.magentamause.cosybackend.services.GamesApiService;
 import java.util.List;
+
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +22,7 @@ public class GameApiController {
     private final GamesApiService gamesApiService;
 
     @GetMapping
-    public ResponseEntity<List<GameDto>> getGameInfo(@RequestParam(required = false) String query) {
-        if (query == null || query.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "query must not be blank");
-        }
+    public ResponseEntity<List<GameDto>> getGameInfo(@RequestParam @NotBlank String query) {
         List<GameDto> games = gamesApiService.queryGames(query);
         return ResponseEntity.ok(games);
     }
