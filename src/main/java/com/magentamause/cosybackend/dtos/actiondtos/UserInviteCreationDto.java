@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.annotations.ValidUsername;
 import com.magentamause.cosybackend.entities.UserEntity;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
@@ -11,6 +12,6 @@ import lombok.Data;
 public class UserInviteCreationDto {
     @ValidUsername private String username;
     private UserEntity.Role role;
-    private Long maxMemory;
-    private Double maxCpuCores;
+    @Positive private Long maxMemory;
+    @Positive private Double maxCpuCores;
 }
