@@ -89,8 +89,7 @@ public class UserInviteService {
     }
 
     @Transactional
-    public UserEntity useInvite(
-            String secretKey, String username, String password, Long memory, Double cores) {
+    public UserEntity useInvite(String secretKey, String username, String password) {
         UserInviteEntity invite = getInviteBySecretKeyWithLockOrElseThrow(secretKey);
 
         UserEntity.Role inviteRole =
@@ -104,8 +103,8 @@ public class UserInviteService {
                 UserEntity.builder()
                         .role(inviteRole)
                         .password(passwordEncoder.encode(password))
-                        .maxMemory(memory)
-                        .maxCpuCores(cores)
+                        .maxMemory(invite.getMaxMemory())
+                        .maxCpuCores(invite.getMaxCpuCores())
                         .defaultPasswordReset(true);
 
         if (Objects.isNull(invite.getUsername())) {
