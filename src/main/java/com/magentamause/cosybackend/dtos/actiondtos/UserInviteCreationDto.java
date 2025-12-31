@@ -11,4 +11,6 @@ import lombok.Data;
 public class UserInviteCreationDto {
     @ValidUsername private String username;
     private UserEntity.Role role;
+    private Long maxMemory;
+    private Double maxCpuCores;
 }

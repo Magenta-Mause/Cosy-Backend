@@ -36,6 +36,12 @@ public class UserEntity {
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GameServerConfigurationEntity> gameServerConfigurationEntities;
 
+    @Column(nullable = true)
+    private Long maxMemory;
+
+    @Column(nullable = true)
+    private Double maxCpuCores;
+
     @Getter
     @RequiredArgsConstructor
     public enum Role {
@@ -51,6 +57,8 @@ public class UserEntity {
                 .uuid(this.uuid)
                 .username(this.username)
                 .role(this.role)
+                .maxMemory(this.maxMemory)
+                .maxCpuCores(this.maxCpuCores)
                 .build();
     }
 }

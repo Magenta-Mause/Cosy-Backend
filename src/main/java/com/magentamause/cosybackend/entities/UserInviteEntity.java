@@ -39,6 +39,12 @@ public class UserInviteEntity {
     @Enumerated(EnumType.STRING)
     private UserEntity.Role role;
 
+    @Column(nullable = true)
+    private Long maxMemory;
+
+    @Column(nullable = true)
+    private Double maxCpuCores;
+
     public UserInviteDto convertToDto() {
         return UserInviteDto.builder()
                 .uuid(this.getUuid())
@@ -48,6 +54,8 @@ public class UserInviteEntity {
                 .createdAt(this.getCreatedAt())
                 .inviteByUsername(this.getInvitedBy().getUsername())
                 .role(this.getRole())
+                .maxMemory(this.maxMemory)
+                .maxCpuCores(this.maxCpuCores)
                 .build();
     }
 }

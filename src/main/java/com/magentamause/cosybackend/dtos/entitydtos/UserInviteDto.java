@@ -22,4 +22,6 @@ public class UserInviteDto {
     private String secretKey;
     private Instant createdAt;
     private UserEntity.Role role;
+    private Long maxMemory;
+    private Double maxCpuCores;
 }
