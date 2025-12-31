@@ -48,6 +48,8 @@ public class DummyDataService {
                         .password(this.passwordEncoder.encode("admin"))
                         .defaultPasswordReset(false)
                         .role(UserEntity.Role.OWNER)
+                        .maxMemory(null)
+                        .maxCpuCores(null)
                         .build();
 
         this.dummyGameServers =
