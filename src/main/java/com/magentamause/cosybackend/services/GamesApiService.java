@@ -75,14 +75,15 @@ public class GamesApiService {
             Stream<GameDto> apiGamesStream = queryGamesApi(query).stream();
             Map<Integer, Boolean> seen = new ConcurrentHashMap<>();
             return Stream.concat(cachedGamesStream, apiGamesStream)
-                    .filter(g -> {
-                        if (seen.putIfAbsent(g.getId(), Boolean.TRUE) == null) {
-                            gameRepository.saveIfNotPresent(GameEntity.fromDto(g));
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    })
+                    .filter(
+                            g -> {
+                                if (seen.putIfAbsent(g.getId(), Boolean.TRUE) == null) {
+                                    gameRepository.saveIfNotPresent(GameEntity.fromDto(g));
+                                    return true;
+                                } else {
+                                    return false;
+                                }
+                            })
                     .toList();
 
         } catch (GamesApiError e) {
@@ -92,6 +93,5 @@ public class GamesApiService {
             }
             return cachedGames;
         }
-
     }
 }
