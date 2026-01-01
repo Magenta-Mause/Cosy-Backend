@@ -13,5 +13,5 @@ public class UserEntityDto {
     private String username;
     private UserEntity.Role role;
     private Long maxMemory;
-    private Double maxCpuCores;
+    private Long maxCpu;
 }

@@ -49,7 +49,7 @@ public class DummyDataService {
                         .defaultPasswordReset(false)
                         .role(UserEntity.Role.OWNER)
                         .maxMemory(null)
-                        .maxCpuCores(null)
+                        .maxCpu(null)
                         .build();
 
         this.dummyGameServers =

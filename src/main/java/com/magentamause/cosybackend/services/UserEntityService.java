@@ -63,7 +63,7 @@ public class UserEntityService {
                 .role(user.getRole())
                 .uuid(user.getUuid())
                 .maxMemory(user.getMaxMemory())
-                .maxCpuCores(user.getMaxCpuCores())
+                .maxCpu(user.getMaxCpu())
                 .build();
     }
 

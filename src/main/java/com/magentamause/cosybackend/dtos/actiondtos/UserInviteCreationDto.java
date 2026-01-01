@@ -13,5 +13,5 @@ public class UserInviteCreationDto {
     @ValidUsername private String username;
     private UserEntity.Role role;
     @Positive private Long maxMemory;
-    @Positive private Double maxCpuCores;
+    @Positive private Long maxCpu;
 }

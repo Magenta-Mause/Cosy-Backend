@@ -43,7 +43,7 @@ public class UserInviteEntity {
     private Long maxMemory;
 
     @Column(nullable = true)
-    private Double maxCpuCores;
+    private Long maxCpu;
 
     public UserInviteDto convertToDto() {
         return UserInviteDto.builder()
@@ -55,7 +55,7 @@ public class UserInviteEntity {
                 .inviteByUsername(this.getInvitedBy().getUsername())
                 .role(this.getRole())
                 .maxMemory(this.maxMemory)
-                .maxCpuCores(this.maxCpuCores)
+                .maxCpu(this.maxCpu)
                 .build();
     }
 }

@@ -40,7 +40,7 @@ public class UserEntity {
     private Long maxMemory;
 
     @Column(nullable = true)
-    private Double maxCpuCores;
+    private Long maxCpu;
 
     @Getter
     @RequiredArgsConstructor
@@ -58,7 +58,7 @@ public class UserEntity {
                 .username(this.username)
                 .role(this.role)
                 .maxMemory(this.maxMemory)
-                .maxCpuCores(this.maxCpuCores)
+                .maxCpu(this.maxCpu)
                 .build();
     }
 }
