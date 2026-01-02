@@ -28,7 +28,7 @@ public class GamesApiService {
     public GamesApiService(GamesApiConfig gamesApiConfig, GameRepository gameRepository) {
         this.webClient =
                 WebClient.builder()
-                        .baseUrl(gamesApiConfig.getUrl())
+                        .baseUrl(gamesApiConfig.url())
                         .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                         .build();
         this.gameRepository = gameRepository;
