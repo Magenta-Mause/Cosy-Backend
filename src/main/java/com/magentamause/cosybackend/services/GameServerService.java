@@ -8,6 +8,8 @@ import com.magentamause.cosybackend.engine.kubernetes.KubernetesEngineManager;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import java.util.List;
+
+import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -49,6 +51,7 @@ public class GameServerService {
         log.info("GameServerService initialized with engine '{}'", engineType);
     }
 
+    @Transactional
     public List<Integer> startServer(String serviceName) {
         GameServerConfigurationEntity config =
                 gameServerRepository.findById(serviceName).orElseThrow();
