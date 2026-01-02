@@ -97,7 +97,7 @@ Once the application is running, you can explore the REST API via Swagger UI:
 
 ## **🗄️ Database Management**
 
-### **Manual SQL Queries**
+### **Access Database Console**
 
 To access the PostgreSQL database running in Docker:
 
