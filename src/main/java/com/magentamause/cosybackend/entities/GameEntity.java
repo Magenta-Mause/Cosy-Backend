@@ -28,8 +28,8 @@ public class GameEntity {
         return GameEntity.builder()
                 .id(gameDto.getId())
                 .name(gameDto.getName())
-                .heroUrl(gameDto.getHero_url())
-                .logoUrl(gameDto.getLogo_url())
+                .heroUrl(gameDto.getHeroUrl())
+                .logoUrl(gameDto.getLogoUrl())
                 .build();
     }
 }

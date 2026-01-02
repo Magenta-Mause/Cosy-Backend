@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.dtos.entitydtos;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.magentamause.cosybackend.entities.GameEntity;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,15 +14,18 @@ public class GameDto {
     @NotNull private int id;
     @NotBlank private String name;
 
-    private String hero_url;
-    private String logo_url;
+    @JsonProperty("hero_url")
+    private String heroUrl;
+
+    @JsonProperty("logo_url")
+    private String logoUrl;
 
     public static GameDto fromEntity(GameEntity gameEntity) {
         return GameDto.builder()
                 .id(gameEntity.getId())
                 .name(gameEntity.getName())
-                .hero_url(gameEntity.getHeroUrl())
-                .logo_url(gameEntity.getLogoUrl())
+                .heroUrl(gameEntity.getHeroUrl())
+                .logoUrl(gameEntity.getLogoUrl())
                 .build();
     }
 }
