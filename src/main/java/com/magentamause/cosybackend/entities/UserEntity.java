@@ -36,11 +36,9 @@ public class UserEntity {
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GameServerConfigurationEntity> gameServerConfigurationEntities;
 
-    @Column
-    private Long maxMemory;
+    @Column private Long maxMemory;
 
-    @Column
-    private Long maxCpu;
+    @Column private Long maxCpu;
 
     @Getter
     @RequiredArgsConstructor
