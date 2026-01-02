@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface GameRepository extends JpaRepository<GameEntity, String> {
+public interface GameRepository extends JpaRepository<GameEntity, Integer> {
 
     @Query("SELECT g FROM GameEntity g WHERE LOWER(g.name) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<GameEntity> findByNameContainingIgnoreCase(@Param("query") String query);
