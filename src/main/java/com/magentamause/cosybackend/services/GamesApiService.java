@@ -8,9 +8,8 @@ import com.magentamause.cosybackend.exceptions.GamesApiError;
 import com.magentamause.cosybackend.repositories.GameRepository;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,6 +19,7 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 
 @Service
 @EnableConfigurationProperties(GamesApiConfig.class)
+@Slf4j
 public class GamesApiService {
 
     private final WebClient webClient;
@@ -71,27 +71,23 @@ public class GamesApiService {
                 gameRepository.findByNameContainingIgnoreCase(query).stream()
                         .map(GameDto::fromEntity);
 
+        List<GameDto> apiGames;
         try {
-            Stream<GameDto> apiGamesStream = queryGamesApi(query).stream();
-            Map<Integer, Boolean> seen = new ConcurrentHashMap<>();
-            return Stream.concat(cachedGamesStream, apiGamesStream)
-                    .filter(
-                            g -> {
-                                if (seen.putIfAbsent(g.getId(), Boolean.TRUE) == null) {
-                                    gameRepository.saveIfNotPresent(GameEntity.fromDto(g));
-                                    return true;
-                                } else {
-                                    return false;
-                                }
-                            })
-                    .toList();
-
+            apiGames = queryGamesApi(query);
         } catch (GamesApiError e) {
+            log.warn("Games API query failed, falling back to cached results");
             List<GameDto> cachedGames = cachedGamesStream.toList();
             if (cachedGames.isEmpty()) {
                 throw e;
             }
             return cachedGames;
         }
+
+        apiGames.forEach(
+                g -> {
+                    gameRepository.saveIfNotPresent(GameEntity.fromDto(g));
+                });
+
+        return apiGames;
     }
 }
