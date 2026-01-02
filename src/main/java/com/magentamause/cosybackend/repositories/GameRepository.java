@@ -7,14 +7,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface GameRepository extends JpaRepository<GameEntity, Integer> {
+public interface GameRepository extends JpaRepository<GameEntity, String> {
 
     @Query("SELECT g FROM GameEntity g WHERE LOWER(g.name) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<GameEntity> findByNameContainingIgnoreCase(@Param("query") String query);
 
-    Optional<GameEntity> findById(int id);
+    Optional<GameEntity> findByExternalGameId(int externalGameId);
 
     default GameEntity saveIfNotPresent(GameEntity entity) {
-        return findById(entity.getId()).orElseGet(() -> save(entity));
+        return findByExternalGameId(entity.getExternalGameId()).orElseGet(() -> save(entity));
     }
 }

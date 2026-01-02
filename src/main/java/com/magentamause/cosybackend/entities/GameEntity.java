@@ -1,9 +1,7 @@
 package com.magentamause.cosybackend.entities;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
@@ -14,8 +12,11 @@ import lombok.*;
 @NoArgsConstructor
 @ToString
 public class GameEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String uuid;
 
-    @Id private int id;
+    private int externalGameId;
 
     @Column(nullable = false)
     private String name;
@@ -26,7 +27,6 @@ public class GameEntity {
 
     public static GameEntity fromDto(GameDto gameDto) {
         return GameEntity.builder()
-                .id(gameDto.getId())
                 .name(gameDto.getName())
                 .heroUrl(gameDto.getHeroUrl())
                 .logoUrl(gameDto.getLogoUrl())

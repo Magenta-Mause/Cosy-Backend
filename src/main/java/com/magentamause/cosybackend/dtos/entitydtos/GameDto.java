@@ -11,7 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GameDto {
-    @NotNull private int id;
+    @NotNull private String gameUuid;
     @NotBlank private String name;
 
     @JsonProperty("hero_url")
@@ -22,7 +22,7 @@ public class GameDto {
 
     public static GameDto fromEntity(GameEntity gameEntity) {
         return GameDto.builder()
-                .id(gameEntity.getId())
+                .gameUuid(gameEntity.getUuid())
                 .name(gameEntity.getName())
                 .heroUrl(gameEntity.getHeroUrl())
                 .logoUrl(gameEntity.getLogoUrl())

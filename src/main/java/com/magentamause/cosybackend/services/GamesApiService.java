@@ -63,7 +63,9 @@ public class GamesApiService {
             return Collections.emptyList();
         }
 
-        return response.getData().getGames();
+        return response.getData().getGames().stream()
+                .map(GamesApiGamesResponse.DataPayload.GamesPayload::toDto)
+                .toList();
     }
 
     public List<GameDto> queryGames(String query) {
@@ -83,11 +85,11 @@ public class GamesApiService {
             return cachedGames;
         }
 
-        apiGames.forEach(
-                g -> {
-                    gameRepository.saveIfNotPresent(GameEntity.fromDto(g));
-                });
-
-        return apiGames;
+        return apiGames.stream()
+                .map(
+                        g ->
+                                GameDto.fromEntity(
+                                        gameRepository.saveIfNotPresent(GameEntity.fromDto(g))))
+                .toList();
     }
 }
