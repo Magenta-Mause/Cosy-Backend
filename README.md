@@ -94,3 +94,28 @@ Run unit and integration tests:
 Once the application is running, you can explore the REST API via Swagger UI:
 
 * http://localhost:8080/api/swagger-ui/index.html
+
+## **🗄️ Database Management**
+
+### **Manual SQL Queries**
+
+To access the PostgreSQL database running in Docker:
+
+```shell
+docker exec -it cosy-postgres psql -U cosy -d cosy
+```
+
+**Common Commands:**
+* `\d` - List all tables, views, and sequences
+* `SELECT * FROM <table_name>;` - Query data
+* `\q` - Exit psql
+
+### **Reset Database**
+
+To avoid DB corruption or reset to a clean state (re-initialize dummy data), prune the volumes:
+
+```shell
+cd infrastructure
+docker compose down -v
+docker compose up -d
+```
