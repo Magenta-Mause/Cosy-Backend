@@ -1,11 +1,10 @@
 package com.magentamause.cosybackend.dtos.entitydtos;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -13,7 +12,11 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class StartEventDto {
 
-    public enum Type {HEARTBEAT, DONE, ERROR}
+    public enum Type {
+        HEARTBEAT,
+        DONE,
+        ERROR
+    }
 
     private Type type;
     private List<Integer> ports;
