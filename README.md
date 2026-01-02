@@ -112,7 +112,7 @@ docker exec -it cosy-postgres psql -U cosy -d cosy
 
 ### **Reset Database**
 
-To avoid DB corruption or reset to a clean state (re-initialize dummy data), prune the volumes:
+To avoid DB corruption or reset to a clean state (re-initialize dummy data), remove the volumes and restart the infrastructure:
 
 ```shell
 cd infrastructure
