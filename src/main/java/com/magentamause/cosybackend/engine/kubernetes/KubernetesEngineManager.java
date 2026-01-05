@@ -6,12 +6,9 @@ import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
-import io.kubernetes.client.util.Config;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,20 +17,9 @@ public class KubernetesEngineManager implements EngineManager {
     private final Kubernetes config;
     private final CoreV1Api api;
 
-    public KubernetesEngineManager(Kubernetes config) {
+    public KubernetesEngineManager(CoreV1Api api, Kubernetes config) {
+        this.api = api;
         this.config = config;
-
-        try {
-            ApiClient client =
-                    config.inCluster()
-                            ? Config.fromCluster()
-                            : Config.fromConfig(config.kubeconfig());
-            client.setReadTimeout(config.timeoutSeconds() * 1000);
-            Configuration.setDefaultApiClient(client);
-            this.api = new CoreV1Api(client);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to initialize Kubernetes client", e);
-        }
     }
 
     @Override

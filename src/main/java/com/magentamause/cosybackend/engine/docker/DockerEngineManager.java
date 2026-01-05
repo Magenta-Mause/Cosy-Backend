@@ -3,17 +3,11 @@ package com.magentamause.cosybackend.engine.docker;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.*;
-import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.core.DockerClientImpl;
-import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
-import com.github.dockerjava.transport.DockerHttpClient;
 import com.magentamause.cosybackend.engine.EngineManager;
 import com.magentamause.cosybackend.engine.config.EngineProperties.Docker;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -24,27 +18,9 @@ public class DockerEngineManager implements EngineManager {
     private final Docker config;
     private final DockerClient client;
 
-    public DockerEngineManager(Docker config) {
+    public DockerEngineManager(DockerClient client, Docker config) {
+        this.client = client;
         this.config = config;
-
-        DockerClientConfig dockerConfig =
-                DefaultDockerClientConfig.createDefaultConfigBuilder()
-                        .withDockerHost(config.socketPath())
-                        .withDockerTlsVerify(config.tls())
-                        .withDockerCertPath(config.certPath())
-                        .withApiVersion(config.apiVersion())
-                        .build();
-
-        DockerHttpClient httpClient =
-                new ApacheDockerHttpClient.Builder()
-                        .dockerHost(dockerConfig.getDockerHost())
-                        .sslConfig(dockerConfig.getSSLConfig())
-                        .maxConnections(100) // could be made configurable
-                        .connectionTimeout(Duration.ofSeconds(30))
-                        .responseTimeout(Duration.ofSeconds(45))
-                        .build();
-
-        this.client = DockerClientImpl.getInstance(dockerConfig, httpClient);
     }
 
     @Override
@@ -115,11 +91,15 @@ public class DockerEngineManager implements EngineManager {
 
     private List<ExposedPort> mapExposedPorts(List<PortMapping> ports) {
         return Optional.ofNullable(ports).orElse(List.of()).stream()
-                .map(p -> switch (p.getProtocol()) {
-                    case TCP -> ExposedPort.tcp(p.getContainerPort());
-                    case UDP -> ExposedPort.udp(p.getContainerPort());
-                    case null, default -> throw new IllegalArgumentException(String.format("Unknown port type: %s", p.getProtocol()));
-                })
+                .map(
+                        p ->
+                                switch (p.getProtocol()) {
+                                    case TCP -> ExposedPort.tcp(p.getContainerPort());
+                                    case UDP -> ExposedPort.udp(p.getContainerPort());
+                                    default -> throw new IllegalArgumentException(
+                                            String.format(
+                                                    "Unknown port type: %s", p.getProtocol()));
+                                })
                 .distinct()
                 .collect(Collectors.toList());
     }
