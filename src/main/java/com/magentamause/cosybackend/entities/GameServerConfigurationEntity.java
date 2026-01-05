@@ -3,12 +3,14 @@ package com.magentamause.cosybackend.entities;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import lombok.*;
 
 @Getter
@@ -73,10 +75,12 @@ public class GameServerConfigurationEntity {
     }
 
     public GameServerDto toDto() {
+        Optional<UserEntity> owner = Optional.ofNullable(this.getOwner());
+        UserEntityDto ownerDto = owner.map(UserEntity::toDto).orElse(null);
+
         return GameServerDto.builder()
                 .uuid(this.getUuid())
                 .serverName(this.getServerName())
-                .owner(this.getOwner().toDto())
                 .status(this.getStatus())
                 .timestampLastStarted(this.getTimestampLastStarted())
                 .gameUuid(this.getGameUuid())
@@ -85,6 +89,7 @@ public class GameServerConfigurationEntity {
                 .template(this.getTemplate())
                 .executionCommand(this.getDockerExecutionCommand())
                 .portMappings(this.getPortMappings())
+                .owner(ownerDto)
                 .environmentVariables(this.getEnvironmentVariables())
                 .volumeMounts(this.getVolumeMounts())
                 .build();
