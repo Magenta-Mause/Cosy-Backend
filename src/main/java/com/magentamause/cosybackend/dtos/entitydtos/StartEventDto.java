@@ -19,7 +19,7 @@ public class StartEventDto {
     }
 
     private Type type;
-    private List<Integer> ports;
+    private GameServerInstanceDto gameServerInstance;
     private String message; // for error info
 
     public static StartEventDto heartbeat() {
@@ -27,7 +27,8 @@ public class StartEventDto {
     }
 
     public static StartEventDto done(List<Integer> ports) {
-        return new StartEventDto(Type.DONE, ports, null);
+        GameServerInstanceDto instance = new GameServerInstanceDto(ports);
+        return new StartEventDto(Type.DONE, instance, null);
     }
 
     public static StartEventDto error(String message) {

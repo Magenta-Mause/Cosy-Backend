@@ -27,8 +27,10 @@ public class DockerEngineManager implements EngineManager {
     @Override
     public List<Integer> start(GameServerConfigurationEntity serverConfig) {
         Optional<Container> existing = findContainer(serverConfig);
+
         if (existing.isPresent()) {
-            client.startContainerCmd(existing.get().getId()).exec();
+            if (!existing.get().getState().equals("running"))
+                client.startContainerCmd(existing.get().getId()).exec();
             return getInstancePorts(serverConfig);
         }
 

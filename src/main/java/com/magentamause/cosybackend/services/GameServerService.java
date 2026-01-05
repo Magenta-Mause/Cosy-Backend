@@ -8,6 +8,8 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class GameServerService {
     private final GameServerRepository gameServerRepository;
     private final EngineManager engineManager;
     private final EngineType engineType;
+    private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
 
     public GameServerService(
             EngineManager engineManager,
@@ -35,10 +38,25 @@ public class GameServerService {
 
     @Transactional
     public List<Integer> startServer(String serviceName) {
-        GameServerConfigurationEntity config =
-                gameServerRepository.findById(serviceName).orElseThrow();
+        if (!startingServers.add(serviceName)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Server '" + serviceName + "' is already starting");
+        }
 
-        return engineManager.start(config);
+        try {
+            GameServerConfigurationEntity config =
+                    gameServerRepository
+                            .findById(serviceName)
+                            .orElseThrow(
+                                    () ->
+                                            new ResponseStatusException(
+                                                    HttpStatus.NOT_FOUND,
+                                                    "Server '" + serviceName + "' not found"));
+
+            return engineManager.start(config);
+        } finally {
+            startingServers.remove(serviceName);
+        }
     }
 
     public void stopServer(String serviceName) {
