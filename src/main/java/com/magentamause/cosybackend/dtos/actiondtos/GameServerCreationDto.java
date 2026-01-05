@@ -16,7 +16,7 @@ import lombok.Data;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GameServerCreationDto {
-    @PositiveOrZero private int gameId;
+    @NotBlank private String gameUuid;
     @NotBlank private String serverName;
     @NotBlank private String template;
     @NotBlank private String dockerImageName;
@@ -44,7 +44,7 @@ public class GameServerCreationDto {
 
     public GameServerConfigurationEntity toEntity() {
         return GameServerConfigurationEntity.builder()
-                .gameId(this.getGameId())
+                .gameUuid(this.getGameUuid())
                 .serverName(this.getServerName())
                 .template(this.getTemplate())
                 .dockerImageName(this.getDockerImageName())
