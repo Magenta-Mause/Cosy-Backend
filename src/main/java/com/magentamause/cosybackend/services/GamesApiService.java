@@ -8,7 +8,6 @@ import com.magentamause.cosybackend.exceptions.GamesApiError;
 import com.magentamause.cosybackend.repositories.GameRepository;
 import java.util.Collections;
 import java.util.List;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.HttpHeaders;
@@ -77,7 +76,8 @@ public class GamesApiService {
             log.warn("Games API query failed, falling back to cached results");
             List<GameDto> localGamesStream =
                     gameRepository.findByNameContainingIgnoreCase(query).stream()
-                            .map(GameDto::fromEntity).toList();
+                            .map(GameDto::fromEntity)
+                            .toList();
             if (localGamesStream.isEmpty()) {
                 throw e;
             }
