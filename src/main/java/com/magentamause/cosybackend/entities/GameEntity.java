@@ -30,6 +30,7 @@ public class GameEntity {
                 .name(gameDto.getName())
                 .heroUrl(gameDto.getHeroUrl())
                 .logoUrl(gameDto.getLogoUrl())
+                .externalGameId(gameDto.getExternalGameId())
                 .build();
     }
 }

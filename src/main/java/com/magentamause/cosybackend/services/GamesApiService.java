@@ -69,15 +69,15 @@ public class GamesApiService {
     }
 
     public List<GameDto> query(String query) {
-        List<GameDto> localGamesStream =
-                gameRepository.findByNameContainingIgnoreCase(query).stream()
-                        .map(GameDto::fromEntity).toList();
-
         List<GameDto> apiGames;
+
         try {
             apiGames = queryGamesApi(query);
         } catch (GamesApiError e) {
             log.warn("Games API query failed, falling back to cached results");
+            List<GameDto> localGamesStream =
+                    gameRepository.findByNameContainingIgnoreCase(query).stream()
+                            .map(GameDto::fromEntity).toList();
             if (localGamesStream.isEmpty()) {
                 throw e;
             }

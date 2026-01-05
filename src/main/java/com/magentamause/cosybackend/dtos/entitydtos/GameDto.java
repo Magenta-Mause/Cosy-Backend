@@ -18,6 +18,8 @@ public class GameDto {
     @NotNull private String gameUuid;
     @NotBlank private String name;
 
+    private int externalGameId;
+
     private String heroUrl;
 
     private String logoUrl;
@@ -28,6 +30,7 @@ public class GameDto {
                 .name(gameEntity.getName())
                 .heroUrl(gameEntity.getHeroUrl())
                 .logoUrl(gameEntity.getLogoUrl())
+                .externalGameId(gameEntity.getExternalGameId())
                 .build();
     }
 }

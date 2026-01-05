@@ -36,8 +36,10 @@ public class GamesApiGamesResponse {
 
             @NotBlank private String name;
 
+            @JsonProperty("hero_url")
             private String heroUrl;
 
+            @JsonProperty("logo_url")
             private String logoUrl;
 
             public static GameDto toDto(GamesPayload payload) {
@@ -45,6 +47,7 @@ public class GamesApiGamesResponse {
                         .name(payload.getName())
                         .heroUrl(payload.getHeroUrl())
                         .logoUrl(payload.getLogoUrl())
+                        .externalGameId(payload.getExternalGameId())
                         .build();
             }
         }
