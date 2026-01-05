@@ -115,7 +115,11 @@ public class DockerEngineManager implements EngineManager {
 
     private List<ExposedPort> mapExposedPorts(List<PortMapping> ports) {
         return Optional.ofNullable(ports).orElse(List.of()).stream()
-                .map(p -> ExposedPort.tcp(p.getContainerPort()))
+                .map(p -> switch (p.getProtocol()) {
+                    case TCP -> ExposedPort.tcp(p.getContainerPort());
+                    case UDP -> ExposedPort.udp(p.getContainerPort());
+                    case null, default -> throw new IllegalArgumentException(String.format("Unknown port type: %s", p.getProtocol()));
+                })
                 .distinct()
                 .collect(Collectors.toList());
     }
