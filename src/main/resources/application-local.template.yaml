@@ -1,0 +1,6 @@
+cosy:
+  engine:
+    kubernetes:
+      kubeconfig: "C:/Users/fiete/.kube/config"
+    docker:
+      socket-path: "npipe:////./pipe/docker_engine" # example windows path
