@@ -8,6 +8,7 @@ import com.magentamause.cosybackend.engine.config.EngineProperties.Docker;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
+import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -51,7 +52,18 @@ public class DockerEngineManager implements EngineManager {
 
     @Override
     public void stop(GameServerConfigurationEntity serverConfig) {
-        findContainer(serverConfig).ifPresent(c -> client.stopContainerCmd(c.getId()).exec());
+        Container container =
+                findContainer(serverConfig)
+                        .orElseThrow(
+                                () ->
+                                        new ServerAlreadyStoppedException(
+                                                serverConfig.getServerName()));
+
+        if (!"running".equalsIgnoreCase(container.getState())) {
+            throw new ServerAlreadyStoppedException(serverConfig.getServerName());
+        }
+
+        client.stopContainerCmd(container.getId()).exec();
     }
 
     @Override

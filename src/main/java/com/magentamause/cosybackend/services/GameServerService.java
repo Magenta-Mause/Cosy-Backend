@@ -4,11 +4,14 @@ import com.magentamause.cosybackend.engine.EngineManager;
 import com.magentamause.cosybackend.engine.EngineType;
 import com.magentamause.cosybackend.engine.config.EngineProperties;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -39,7 +42,20 @@ public class GameServerService {
     }
 
     public void stopServer(String serviceName) {
-        engineManager.stop(gameServerRepository.findById(serviceName).orElseThrow());
+        GameServerConfigurationEntity config =
+                gameServerRepository
+                        .findById(serviceName)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Server '" + serviceName + "' not found"));
+
+        try {
+            engineManager.stop(config);
+        } catch (ServerAlreadyStoppedException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
+        }
     }
 
     public String getStatus(String serviceName) {
