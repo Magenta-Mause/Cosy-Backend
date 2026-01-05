@@ -1,6 +1,8 @@
 package com.magentamause.cosybackend.dtos.gamesapi;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
@@ -27,16 +29,15 @@ public class GamesApiGamesResponse {
         @Data
         @NoArgsConstructor
         @AllArgsConstructor
+        @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
         public static class GamesPayload {
             @JsonProperty("id")
             private int externalGameId;
 
             @NotBlank private String name;
 
-            @JsonProperty("hero_url")
             private String heroUrl;
 
-            @JsonProperty("logo_url")
             private String logoUrl;
 
             public static GameDto toDto(GamesPayload payload) {
