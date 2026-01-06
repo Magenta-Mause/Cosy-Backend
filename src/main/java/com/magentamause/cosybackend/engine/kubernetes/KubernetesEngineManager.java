@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.engine.kubernetes;
 
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.engine.EngineManager;
 import com.magentamause.cosybackend.engine.config.EngineProperties.Kubernetes;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
@@ -10,6 +11,7 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,7 +41,8 @@ public class KubernetesEngineManager implements EngineManager {
                         createPod(pod);
                         try {
                             waitForPodRunning(podName(server));
-                        } catch (ApiException e) {
+                        }
+                        catch (ApiException e) {
                             throw new RuntimeException(e);
                         }
                         return pod;
@@ -57,7 +60,8 @@ public class KubernetesEngineManager implements EngineManager {
                             .execute();
 
             return getNodePorts(service);
-        } catch (ApiException e) {
+        }
+        catch (ApiException e) {
             throw new IllegalStateException("Failed to create pod or service", e);
         }
     }
@@ -76,14 +80,17 @@ public class KubernetesEngineManager implements EngineManager {
     }
 
     @Override
-    public String status(GameServerConfigurationEntity server) {
-        return findPod(server)
-                .map(
-                        p ->
-                                Optional.ofNullable(p.getStatus())
-                                        .map(V1PodStatus::getPhase)
-                                        .orElse("UNKNOWN"))
-                .orElse("NOT_FOUND");
+    public GameServerStatusDto status(GameServerConfigurationEntity server) {
+        Optional<V1Pod> pod = findPod(server);
+        if (pod.isEmpty()) {
+            return GameServerStatusDto.builder().status(GameServerStatusDto.GameServerStatus.NotFound).build();
+        }
+
+        String phase = Optional.ofNullable(pod.get().getStatus())
+                .map(V1PodStatus::getPhase)
+                .orElse("UNKNOWN");
+
+        return GameServerStatusDto.builder().status(GameServerStatusDto.GameServerStatus.Found).phase(phase).build();
     }
 
     private Optional<V1Pod> findPod(GameServerConfigurationEntity server) {
@@ -93,7 +100,8 @@ public class KubernetesEngineManager implements EngineManager {
                             .labelSelector(String.format("cosy-server=%s", server.getUuid()))
                             .execute();
             return pods.getItems().stream().findFirst();
-        } catch (ApiException e) {
+        }
+        catch (ApiException e) {
             throw new IllegalStateException("Failed to list pods", e);
         }
     }
@@ -105,7 +113,8 @@ public class KubernetesEngineManager implements EngineManager {
                             .labelSelector(String.format("cosy-server=%s", server.getUuid()))
                             .execute();
             return services.getItems().stream().findFirst();
-        } catch (ApiException e) {
+        }
+        catch (ApiException e) {
             throw new IllegalStateException("Failed to list services", e);
         }
     }
@@ -113,7 +122,8 @@ public class KubernetesEngineManager implements EngineManager {
     private void createPod(V1Pod pod) {
         try {
             api.createNamespacedPod(config.namespace(), pod).execute();
-        } catch (ApiException e) {
+        }
+        catch (ApiException e) {
             throw new IllegalStateException("Failed to create pod", e);
         }
     }
@@ -126,7 +136,8 @@ public class KubernetesEngineManager implements EngineManager {
 
         try {
             api.deleteNamespacedPod(metadata.getName(), config.namespace()).execute();
-        } catch (ApiException e) {
+        }
+        catch (ApiException e) {
             throw new IllegalStateException("Failed to delete pod", e);
         }
     }
@@ -139,7 +150,8 @@ public class KubernetesEngineManager implements EngineManager {
 
         try {
             api.deleteNamespacedService(metadata.getName(), config.namespace()).execute();
-        } catch (ApiException e) {
+        }
+        catch (ApiException e) {
             throw new IllegalStateException("Failed to delete service", e);
         }
     }
@@ -206,7 +218,8 @@ public class KubernetesEngineManager implements EngineManager {
 
         try {
             api.createNamespacedService(config.namespace(), service).execute();
-        } catch (ApiException e) {
+        }
+        catch (ApiException e) {
             throw new IllegalStateException("Failed to create service", e);
         }
     }
@@ -235,17 +248,17 @@ public class KubernetesEngineManager implements EngineManager {
         return envs == null
                 ? List.of()
                 : envs.stream()
-                        .map(e -> new V1EnvVar().name(e.getKey()).value(e.getValue()))
-                        .collect(Collectors.toList());
+                .map(e -> new V1EnvVar().name(e.getKey()).value(e.getValue()))
+                .collect(Collectors.toList());
     }
 
     private List<V1ContainerPort> mapPorts(List<PortMapping> ports) {
         return ports == null
                 ? List.of()
                 : ports.stream()
-                        .map(p -> new V1ContainerPort().containerPort(p.getContainerPort()))
-                        .distinct()
-                        .collect(Collectors.toList());
+                .map(p -> new V1ContainerPort().containerPort(p.getContainerPort()))
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     private void waitForPodRunning(String podName) throws ApiException {
@@ -260,7 +273,8 @@ public class KubernetesEngineManager implements EngineManager {
 
             try {
                 Thread.sleep(delayMillis);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException("Interrupted while waiting for pod to start", e);
             }

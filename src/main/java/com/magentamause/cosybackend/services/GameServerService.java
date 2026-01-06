@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.services;
 
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.engine.EngineManager;
 import com.magentamause.cosybackend.engine.EngineType;
 import com.magentamause.cosybackend.engine.config.EngineProperties;
@@ -79,7 +80,7 @@ public class GameServerService {
         }
     }
 
-    public String getStatus(String serviceName) {
+    public GameServerStatusDto getStatus(String serviceName) {
         return engineManager.status(gameServerRepository.findById(serviceName).orElseThrow(() ->
                 new ResponseStatusException(
                         HttpStatus.NOT_FOUND,

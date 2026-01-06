@@ -3,6 +3,7 @@ package com.magentamause.cosybackend.engine.docker;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.*;
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.engine.EngineManager;
 import com.magentamause.cosybackend.engine.config.EngineProperties.Docker;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
@@ -71,8 +72,15 @@ public class DockerEngineManager implements EngineManager {
     }
 
     @Override
-    public String status(GameServerConfigurationEntity serverConfig) {
-        return findContainer(serverConfig).map(Container::getState).orElse("NOT_FOUND");
+    public GameServerStatusDto status(GameServerConfigurationEntity serverConfig) {
+        Optional<Container> container = findContainer(serverConfig);
+        if (container.isEmpty()) {
+            return GameServerStatusDto.builder().status(GameServerStatusDto.GameServerStatus.NotFound).build();
+        }
+
+        String phase = container.get().getStatus();
+
+        return GameServerStatusDto.builder().status(GameServerStatusDto.GameServerStatus.Found).phase(phase).build();
     }
 
     private Optional<Container> findContainer(GameServerConfigurationEntity serverConfig) {

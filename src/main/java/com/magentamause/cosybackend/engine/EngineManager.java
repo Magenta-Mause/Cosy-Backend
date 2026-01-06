@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.engine;
 
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import java.util.List;
 
@@ -8,5 +9,5 @@ public interface EngineManager {
 
     void stop(GameServerConfigurationEntity serviceConfig);
 
-    String status(GameServerConfigurationEntity serviceConfig);
+    GameServerStatusDto status(GameServerConfigurationEntity serviceConfig);
 }

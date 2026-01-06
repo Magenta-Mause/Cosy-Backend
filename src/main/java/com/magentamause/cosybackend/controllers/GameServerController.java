@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.controllers;
 
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.services.GameServerService;
 import java.time.Duration;
@@ -19,7 +20,7 @@ public class GameServerController {
     private final GameServerService gameServerService;
 
     @GetMapping("/{serviceName}/status")
-    public ResponseEntity<String> getServiceInfo(@PathVariable String serviceName) {
+    public ResponseEntity<GameServerStatusDto> getServiceInfo(@PathVariable String serviceName) {
         return ResponseEntity.ok(gameServerService.getStatus(serviceName));
     }
 
