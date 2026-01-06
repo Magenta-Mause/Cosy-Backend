@@ -37,8 +37,7 @@ public class GameServerConfigurationController {
     @GetMapping("/{uuid}")
     @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
     public ResponseEntity<GameServerDto> getGameServerById(@PathVariable @ResourceId String uuid) {
-        GameServerEntity entity =
-                gameServerConfigurationService.getGameServerById(uuid);
+        GameServerEntity entity = gameServerConfigurationService.getGameServerById(uuid);
         return ResponseEntity.ok(entity.toDto());
     }
 

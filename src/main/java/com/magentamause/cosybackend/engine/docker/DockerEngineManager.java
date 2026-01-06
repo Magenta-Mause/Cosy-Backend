@@ -10,14 +10,13 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
-import lombok.AllArgsConstructor;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public class DockerEngineManager implements EngineManager, Closeable {
@@ -89,12 +88,17 @@ public class DockerEngineManager implements EngineManager, Closeable {
     public GameServerStatusDto status(GameServerEntity serverConfig) {
         Optional<Container> container = findContainer(serverConfig);
         if (container.isEmpty()) {
-            return GameServerStatusDto.builder().status(GameServerStatusDto.GameServerStatus.NotFound).build();
+            return GameServerStatusDto.builder()
+                    .status(GameServerStatusDto.GameServerStatus.NotFound)
+                    .build();
         }
 
         String phase = container.get().getStatus();
 
-        return GameServerStatusDto.builder().status(GameServerStatusDto.GameServerStatus.Found).phase(phase).build();
+        return GameServerStatusDto.builder()
+                .status(GameServerStatusDto.GameServerStatus.Found)
+                .phase(phase)
+                .build();
     }
 
     private Optional<Container> findContainer(GameServerEntity serverConfig) {
@@ -186,8 +190,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         if (!exists) {
             try {
                 client.pullImageCmd(image).start().awaitCompletion();
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(
                         String.format("Interrupted while pulling Docker image %s", image), e);
@@ -206,8 +209,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         if (client != null) {
             try {
                 client.close();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 throw new IOException("Failed to close DockerClient", e);
             }
         }

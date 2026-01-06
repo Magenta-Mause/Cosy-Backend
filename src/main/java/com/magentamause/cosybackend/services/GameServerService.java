@@ -8,14 +8,13 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import jakarta.transaction.Transactional;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -56,8 +55,7 @@ public class GameServerService {
                                                     "Server '" + serviceName + "' not found"));
 
             return engineManager.start(config);
-        }
-        finally {
+        } finally {
             startingServers.remove(serviceName);
         }
     }
@@ -74,16 +72,19 @@ public class GameServerService {
 
         try {
             engineManager.stop(config);
-        }
-        catch (ServerAlreadyStoppedException e) {
+        } catch (ServerAlreadyStoppedException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
         }
     }
 
     public GameServerStatusDto getStatus(String serviceName) {
-        return engineManager.status(gameServerRepository.findById(serviceName).orElseThrow(() ->
-                new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Server '" + serviceName + "' not found")));
+        return engineManager.status(
+                gameServerRepository
+                        .findById(serviceName)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Server '" + serviceName + "' not found")));
     }
 }

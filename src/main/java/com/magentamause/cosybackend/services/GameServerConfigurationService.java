@@ -48,8 +48,7 @@ public class GameServerConfigurationService {
         gameServerRepository.deleteById(uuid);
     }
 
-    public GameServerEntity updateGameServerConfiguration(
-            String uuid, GameServerEntity entity) {
+    public GameServerEntity updateGameServerConfiguration(String uuid, GameServerEntity entity) {
         gameServerRepository
                 .findById(uuid)
                 .orElseThrow(
