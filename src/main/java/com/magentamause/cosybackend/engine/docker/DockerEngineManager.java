@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -29,8 +30,9 @@ public class DockerEngineManager implements EngineManager {
         Optional<Container> existing = findContainer(serverConfig);
 
         if (existing.isPresent()) {
-            if (!existing.get().getState().equals("running"))
+            if (!existing.get().getState().equals("running")) {
                 client.startContainerCmd(existing.get().getId()).exec();
+            }
             return getInstancePorts(serverConfig);
         }
 
@@ -105,15 +107,7 @@ public class DockerEngineManager implements EngineManager {
 
     private List<ExposedPort> mapExposedPorts(List<PortMapping> ports) {
         return Optional.ofNullable(ports).orElse(List.of()).stream()
-                .map(
-                        p ->
-                                switch (p.getProtocol()) {
-                                    case TCP -> ExposedPort.tcp(p.getContainerPort());
-                                    case UDP -> ExposedPort.udp(p.getContainerPort());
-                                    default -> throw new IllegalArgumentException(
-                                            String.format(
-                                                    "Unknown port type: %s", p.getProtocol()));
-                                })
+                .map(DockerEngineManager::portMappingToExposedPort)
                 .distinct()
                 .collect(Collectors.toList());
     }
@@ -126,10 +120,10 @@ public class DockerEngineManager implements EngineManager {
             serverConfig
                     .getPortMappings()
                     .forEach(
-                            pm -> {
-                                ExposedPort exposed = ExposedPort.tcp(pm.getContainerPort());
+                            p -> {
+                                ExposedPort exposed = portMappingToExposedPort(p);
                                 portBindings.bind(
-                                        exposed, Ports.Binding.bindPort(pm.getInstancePort()));
+                                        exposed, Ports.Binding.bindPort(p.getInstancePort()));
                             });
             hostConfig.withPortBindings(portBindings);
         }
@@ -150,6 +144,14 @@ public class DockerEngineManager implements EngineManager {
         return hostConfig;
     }
 
+    private static ExposedPort portMappingToExposedPort(PortMapping pm) {
+        return switch (pm.getProtocol()) {
+            case TCP -> ExposedPort.tcp(pm.getContainerPort());
+            case UDP -> ExposedPort.udp(pm.getContainerPort());
+            default -> throw new IllegalArgumentException("Unknown port type: " + pm.getProtocol());
+        };
+    }
+
     private void ensureImagePresent(String image) {
         boolean exists =
                 client.listImagesCmd().withImageNameFilter(image).exec().stream()
@@ -162,7 +164,8 @@ public class DockerEngineManager implements EngineManager {
         if (!exists) {
             try {
                 client.pullImageCmd(image).start().awaitCompletion();
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(
                         String.format("Interrupted while pulling Docker image %s", image), e);
