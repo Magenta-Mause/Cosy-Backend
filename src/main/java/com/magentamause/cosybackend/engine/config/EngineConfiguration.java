@@ -11,7 +11,11 @@ import com.magentamause.cosybackend.engine.kubernetes.KubernetesEngineManager;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.util.Config;
+
+import java.io.FileReader;
 import java.time.Duration;
+
+import io.kubernetes.client.util.KubeConfig;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -72,8 +76,22 @@ public class EngineConfiguration {
                     "Kubernetes engine selected but kubernetes config missing");
         }
 
-        ApiClient client =
-                cfg.inCluster() ? Config.fromCluster() : Config.fromConfig(cfg.kubeconfig());
+        ApiClient client;
+
+        if (cfg.inCluster()) {
+            client = Config.fromCluster();
+        } else {
+            try (FileReader reader = new FileReader(cfg.kubeconfig())) {
+                KubeConfig kubeConfig = KubeConfig.loadKubeConfig(reader);
+
+                // Apply configured context, if present
+                if (cfg.context() != null && !cfg.context().isBlank()) {
+                    kubeConfig.setContext(cfg.context());
+                }
+
+                client = Config.fromConfig(kubeConfig);
+            }
+        }
 
         client.setReadTimeout(cfg.timeoutSeconds() * 1000);
         return client;
