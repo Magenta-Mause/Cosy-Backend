@@ -1,9 +1,9 @@
 package com.magentamause.cosybackend.services;
 
-import static com.magentamause.cosybackend.entities.GameServerConfigurationEntity.GameServerStatus.STOPPED;
+import static com.magentamause.cosybackend.entities.GameServerEntity.GameServerStatus.STOPPED;
 
 import com.magentamause.cosybackend.entities.DummyInstantiatedProperties;
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.repositories.DummyInstantiatedPropertiesRepository;
@@ -27,7 +27,7 @@ public class DummyDataService {
     private final GameServerConfigurationService gameServerConfigurationService;
     private final DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository;
     private final UserEntityService userEntityService;
-    private List<GameServerConfigurationEntity> dummyGameServers;
+    private List<GameServerEntity> dummyGameServers;
     private UserEntity adminUser;
 
     @Autowired
@@ -51,7 +51,7 @@ public class DummyDataService {
 
         this.dummyGameServers =
                 List.of(
-                        GameServerConfigurationEntity.builder()
+                        GameServerEntity.builder()
                                 .uuid(UUID.randomUUID().toString())
                                 .serverName("TOSIOS")
                                 .owner(adminUser)

@@ -3,7 +3,7 @@ package com.magentamause.cosybackend.engine.kubernetes;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.engine.EngineManager;
 import com.magentamause.cosybackend.engine.config.EngineProperties.Kubernetes;
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.CreateGameInstanceException;
@@ -24,7 +24,7 @@ public class KubernetesEngineManager implements EngineManager {
     private final CoreV1Api api;
 
     @Override
-    public List<Integer> start(GameServerConfigurationEntity server) {
+    public List<Integer> start(GameServerEntity server) {
         V1Pod pod = getOrCreatePod(server);
         V1Service service = getOrCreateService(server);
         return getNodePorts(service);
@@ -32,7 +32,7 @@ public class KubernetesEngineManager implements EngineManager {
 
 
     @Override
-    public void stop(GameServerConfigurationEntity server) {
+    public void stop(GameServerEntity server) {
         boolean podExists = findPod(server).isPresent();
         boolean serviceExists = findService(server).isPresent();
 
@@ -45,7 +45,7 @@ public class KubernetesEngineManager implements EngineManager {
     }
 
     @Override
-    public GameServerStatusDto status(GameServerConfigurationEntity server) {
+    public GameServerStatusDto status(GameServerEntity server) {
         Optional<V1Pod> pod = findPod(server);
         if (pod.isEmpty()) {
             return GameServerStatusDto.builder().status(GameServerStatusDto.GameServerStatus.NotFound).build();
@@ -58,7 +58,7 @@ public class KubernetesEngineManager implements EngineManager {
         return GameServerStatusDto.builder().status(GameServerStatusDto.GameServerStatus.Found).phase(phase).build();
     }
 
-    private Optional<V1Pod> findPod(GameServerConfigurationEntity server) {
+    private Optional<V1Pod> findPod(GameServerEntity server) {
         try {
             V1PodList pods =
                     api.listNamespacedPod(config.namespace())
@@ -71,7 +71,7 @@ public class KubernetesEngineManager implements EngineManager {
         }
     }
 
-    private Optional<V1Service> findService(GameServerConfigurationEntity server) {
+    private Optional<V1Service> findService(GameServerEntity server) {
         try {
             V1ServiceList services =
                     api.listNamespacedService(config.namespace())
@@ -131,7 +131,7 @@ public class KubernetesEngineManager implements EngineManager {
                 .collect(Collectors.toList());
     }
 
-    private V1Pod buildPod(GameServerConfigurationEntity server) {
+    private V1Pod buildPod(GameServerEntity server) {
         return new V1Pod()
                 .metadata(new V1ObjectMeta().name(podName(server)).labels(buildLabels(server)))
                 .spec(
@@ -142,7 +142,7 @@ public class KubernetesEngineManager implements EngineManager {
                                 .runtimeClassName(null));
     }
 
-    private V1Container buildContainer(GameServerConfigurationEntity server) {
+    private V1Container buildContainer(GameServerEntity server) {
         return new V1Container()
                 .name("game-server")
                 .image(buildImage(server))
@@ -152,7 +152,7 @@ public class KubernetesEngineManager implements EngineManager {
                 .ports(mapPorts(server.getPortMappings()));
     }
 
-    private void createService(GameServerConfigurationEntity server) {
+    private void createService(GameServerEntity server) {
         if (server.getPortMappings() == null || server.getPortMappings().isEmpty()) {
             return;
         }
@@ -189,7 +189,7 @@ public class KubernetesEngineManager implements EngineManager {
         }
     }
 
-    private V1Pod getOrCreatePod(GameServerConfigurationEntity server) {
+    private V1Pod getOrCreatePod(GameServerEntity server) {
         return findPod(server).orElseGet(() -> {
             V1Pod pod = buildPod(server);
             createPod(pod);
@@ -202,7 +202,7 @@ public class KubernetesEngineManager implements EngineManager {
         });
     }
 
-    private V1Service getOrCreateService(GameServerConfigurationEntity server) {
+    private V1Service getOrCreateService(GameServerEntity server) {
         return findService(server).orElseGet(() -> {
             createService(server);
             return findService(server)
@@ -210,18 +210,18 @@ public class KubernetesEngineManager implements EngineManager {
         });
     }
 
-    private String podName(GameServerConfigurationEntity server) {
+    private String podName(GameServerEntity server) {
         return String.format("cosy-%s", server.getUuid());
     }
 
-    private String buildImage(GameServerConfigurationEntity server) {
+    private String buildImage(GameServerEntity server) {
         String tag = server.getDockerImageTag();
         return tag == null || tag.isBlank()
                 ? server.getDockerImageName()
                 : String.format("%s:%s", server.getDockerImageName(), tag);
     }
 
-    private Map<String, String> buildLabels(GameServerConfigurationEntity server) {
+    private Map<String, String> buildLabels(GameServerEntity server) {
         Map<String, String> labels = new HashMap<>();
         labels.put("cosy-server", server.getUuid());
         if (config.labels() != null) {

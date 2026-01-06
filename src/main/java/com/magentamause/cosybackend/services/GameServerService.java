@@ -4,7 +4,7 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.engine.EngineManager;
 import com.magentamause.cosybackend.engine.EngineType;
 import com.magentamause.cosybackend.engine.config.EngineProperties;
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import jakarta.transaction.Transactional;
@@ -46,7 +46,7 @@ public class GameServerService {
         }
 
         try {
-            GameServerConfigurationEntity config =
+            GameServerEntity config =
                     gameServerRepository
                             .findById(serviceName)
                             .orElseThrow(
@@ -63,7 +63,7 @@ public class GameServerService {
     }
 
     public void stopServer(String serviceName) {
-        GameServerConfigurationEntity config =
+        GameServerEntity config =
                 gameServerRepository
                         .findById(serviceName)
                         .orElseThrow(

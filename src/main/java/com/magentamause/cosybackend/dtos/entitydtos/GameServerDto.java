@@ -3,7 +3,7 @@ package com.magentamause.cosybackend.dtos.entitydtos;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
@@ -25,7 +25,7 @@ public class GameServerDto {
 
     @NotBlank @Valid private UserEntityDto owner;
 
-    @NotNull @Valid private GameServerConfigurationEntity.GameServerStatus status;
+    @NotNull @Valid private GameServerEntity.GameServerStatus status;
 
     @NotNull @Valid private LocalDateTime timestampLastStarted;
 

@@ -6,7 +6,7 @@ import com.github.dockerjava.api.model.*;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.engine.EngineManager;
 import com.magentamause.cosybackend.engine.config.EngineProperties.Docker;
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
@@ -26,7 +26,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     private final DockerClient client;
 
     @Override
-    public List<Integer> start(GameServerConfigurationEntity serverConfig) {
+    public List<Integer> start(GameServerEntity serverConfig) {
         Optional<Container> existing = findContainer(serverConfig);
 
         if (existing.isPresent()) {
@@ -70,7 +70,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     @Override
-    public void stop(GameServerConfigurationEntity serverConfig) {
+    public void stop(GameServerEntity serverConfig) {
         Container container =
                 findContainer(serverConfig)
                         .orElseThrow(
@@ -86,7 +86,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     @Override
-    public GameServerStatusDto status(GameServerConfigurationEntity serverConfig) {
+    public GameServerStatusDto status(GameServerEntity serverConfig) {
         Optional<Container> container = findContainer(serverConfig);
         if (container.isEmpty()) {
             return GameServerStatusDto.builder().status(GameServerStatusDto.GameServerStatus.NotFound).build();
@@ -97,7 +97,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         return GameServerStatusDto.builder().status(GameServerStatusDto.GameServerStatus.Found).phase(phase).build();
     }
 
-    private Optional<Container> findContainer(GameServerConfigurationEntity serverConfig) {
+    private Optional<Container> findContainer(GameServerEntity serverConfig) {
         String nameToMatch = String.format("/%s", containerName(serverConfig));
 
         return client.listContainersCmd().withShowAll(true).exec().stream()
@@ -110,14 +110,14 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 .findFirst();
     }
 
-    private String buildImageName(GameServerConfigurationEntity serverConfig) {
+    private String buildImageName(GameServerEntity serverConfig) {
         String tag = serverConfig.getDockerImageTag();
         return (tag == null || tag.isBlank())
                 ? serverConfig.getDockerImageName()
                 : String.format("%s:%s", serverConfig.getDockerImageName(), tag);
     }
 
-    private String containerName(GameServerConfigurationEntity serverConfig) {
+    private String containerName(GameServerEntity serverConfig) {
         return String.format("cosy-%s", serverConfig.getUuid());
     }
 
@@ -134,7 +134,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 .collect(Collectors.toList());
     }
 
-    private HostConfig buildHostConfig(GameServerConfigurationEntity serverConfig) {
+    private HostConfig buildHostConfig(GameServerEntity serverConfig) {
         HostConfig hostConfig = HostConfig.newHostConfig();
 
         if (serverConfig.getPortMappings() != null && !serverConfig.getPortMappings().isEmpty()) {
@@ -195,7 +195,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         }
     }
 
-    private List<Integer> getInstancePorts(GameServerConfigurationEntity serverConfig) {
+    private List<Integer> getInstancePorts(GameServerEntity serverConfig) {
         return Optional.ofNullable(serverConfig.getPortMappings()).orElse(List.of()).stream()
                 .map(PortMapping::getInstancePort)
                 .collect(Collectors.toList());

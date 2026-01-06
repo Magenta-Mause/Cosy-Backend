@@ -3,7 +3,7 @@ package com.magentamause.cosybackend.dtos.actiondtos;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.annotations.uniqueElements.UniqueElementsBy;
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
@@ -41,8 +41,8 @@ public class GameServerCreationDto {
     @Valid
     private List<VolumeMountConfigurationCreationDto> volumeMounts;
 
-    public GameServerConfigurationEntity toEntity() {
-        return GameServerConfigurationEntity.builder()
+    public GameServerEntity toEntity() {
+        return GameServerEntity.builder()
                 .gameUuid(this.getGameUuid())
                 .serverName(this.getServerName())
                 .template(this.getTemplate())

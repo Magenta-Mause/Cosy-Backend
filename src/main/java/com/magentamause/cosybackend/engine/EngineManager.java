@@ -1,13 +1,13 @@
 package com.magentamause.cosybackend.engine;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import java.util.List;
 
 public interface EngineManager {
-    List<Integer> start(GameServerConfigurationEntity serviceConfig);
+    List<Integer> start(GameServerEntity serviceConfig);
 
-    void stop(GameServerConfigurationEntity serviceConfig);
+    void stop(GameServerEntity serviceConfig);
 
-    GameServerStatusDto status(GameServerConfigurationEntity serviceConfig);
+    GameServerStatusDto status(GameServerEntity serviceConfig);
 }

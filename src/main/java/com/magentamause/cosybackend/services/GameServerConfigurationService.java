@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.services;
 
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -16,11 +16,11 @@ public class GameServerConfigurationService {
 
     private final GameServerRepository gameServerRepository;
 
-    public List<GameServerConfigurationEntity> getAllGameServers() {
+    public List<GameServerEntity> getAllGameServers() {
         return gameServerRepository.findAll();
     }
 
-    public GameServerConfigurationEntity getGameServerById(String uuid) {
+    public GameServerEntity getGameServerById(String uuid) {
         return gameServerRepository
                 .findById(uuid)
                 .orElseThrow(
@@ -30,9 +30,9 @@ public class GameServerConfigurationService {
                                         "Game server with uuid " + uuid + " not found"));
     }
 
-    public GameServerConfigurationEntity saveGameServer(GameServerConfigurationEntity entity) {
+    public GameServerEntity saveGameServer(GameServerEntity entity) {
         entity.setUuid(null);
-        entity.setStatus(GameServerConfigurationEntity.GameServerStatus.STOPPED);
+        entity.setStatus(GameServerEntity.GameServerStatus.STOPPED);
         log.info("Saving game server {}", entity);
         return gameServerRepository.save(entity);
     }
@@ -48,8 +48,8 @@ public class GameServerConfigurationService {
         gameServerRepository.deleteById(uuid);
     }
 
-    public GameServerConfigurationEntity updateGameServerConfiguration(
-            String uuid, GameServerConfigurationEntity entity) {
+    public GameServerEntity updateGameServerConfiguration(
+            String uuid, GameServerEntity entity) {
         gameServerRepository
                 .findById(uuid)
                 .orElseThrow(

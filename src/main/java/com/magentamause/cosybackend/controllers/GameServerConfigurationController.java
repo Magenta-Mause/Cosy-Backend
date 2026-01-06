@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
@@ -29,7 +29,7 @@ public class GameServerConfigurationController {
     public ResponseEntity<List<GameServerDto>> getAllGameServers() {
         List<GameServerDto> dtos =
                 gameServerConfigurationService.getAllGameServers().stream()
-                        .map(GameServerConfigurationEntity::toDto)
+                        .map(GameServerEntity::toDto)
                         .toList();
         return ResponseEntity.ok(dtos);
     }
@@ -37,7 +37,7 @@ public class GameServerConfigurationController {
     @GetMapping("/{uuid}")
     @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
     public ResponseEntity<GameServerDto> getGameServerById(@PathVariable @ResourceId String uuid) {
-        GameServerConfigurationEntity entity =
+        GameServerEntity entity =
                 gameServerConfigurationService.getGameServerById(uuid);
         return ResponseEntity.ok(entity.toDto());
     }
@@ -55,7 +55,7 @@ public class GameServerConfigurationController {
             @Valid @RequestBody GameServerCreationDto gameServerCreationDto) {
         UserEntity user = securityContextService.getUser();
 
-        GameServerConfigurationEntity createdGameServer = gameServerCreationDto.toEntity();
+        GameServerEntity createdGameServer = gameServerCreationDto.toEntity();
         createdGameServer.setOwner(user);
 
         gameServerConfigurationService.saveGameServer(createdGameServer);
