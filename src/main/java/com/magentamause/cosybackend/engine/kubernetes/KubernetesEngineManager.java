@@ -12,19 +12,16 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
+import lombok.AllArgsConstructor;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@AllArgsConstructor
 public class KubernetesEngineManager implements EngineManager {
 
     private final Kubernetes config;
     private final CoreV1Api api;
-
-    public KubernetesEngineManager(CoreV1Api api, Kubernetes config) {
-        this.api = api;
-        this.config = config;
-    }
 
     @Override
     public List<Integer> start(GameServerConfigurationEntity server) {

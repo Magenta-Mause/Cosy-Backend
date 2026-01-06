@@ -10,21 +10,20 @@ import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
+import lombok.AllArgsConstructor;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class DockerEngineManager implements EngineManager {
+@AllArgsConstructor
+public class DockerEngineManager implements EngineManager, Closeable {
 
     private final Docker config;
     private final DockerClient client;
-
-    public DockerEngineManager(DockerClient client, Docker config) {
-        this.client = client;
-        this.config = config;
-    }
 
     @Override
     public List<Integer> start(GameServerConfigurationEntity serverConfig) {
@@ -43,13 +42,19 @@ public class DockerEngineManager implements EngineManager {
         ensureImagePresent(image);
 
         List<String> cmd = serverConfig.getDockerExecutionCommand();
-        if (cmd == null) cmd = List.of();
+        if (cmd == null) {
+            cmd = List.of();
+        }
 
         List<String> env = mapEnvironment(serverConfig.getEnvironmentVariables());
-        if (env == null) env = List.of();
+        if (env == null) {
+            env = List.of();
+        }
 
         List<ExposedPort> exposedPorts = mapExposedPorts(serverConfig.getPortMappings());
-        if (exposedPorts == null) exposedPorts = List.of();
+        if (exposedPorts == null) {
+            exposedPorts = List.of();
+        }
 
         CreateContainerResponse response =
                 client.createContainerCmd(image)
@@ -194,5 +199,17 @@ public class DockerEngineManager implements EngineManager {
         return Optional.ofNullable(serverConfig.getPortMappings()).orElse(List.of()).stream()
                 .map(PortMapping::getInstancePort)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (client != null) {
+            try {
+                client.close();
+            }
+            catch (Exception e) {
+                throw new IOException("Failed to close DockerClient", e);
+            }
+        }
     }
 }

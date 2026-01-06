@@ -57,7 +57,7 @@ public class EngineConfiguration {
     public EngineManager dockerEngineManager(
             DockerClient dockerClient, EngineProperties properties) {
 
-        return new DockerEngineManager(dockerClient, properties.docker());
+        return new DockerEngineManager(properties.docker(), dockerClient);
     }
 
     /* ---------------- Kubernetes ---------------- */
@@ -89,6 +89,6 @@ public class EngineConfiguration {
     @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "KUBERNETES")
     public EngineManager kubernetesEngineManager(CoreV1Api api, EngineProperties properties) {
 
-        return new KubernetesEngineManager(api, properties.kubernetes());
+        return new KubernetesEngineManager(properties.kubernetes(), api);
     }
 }
