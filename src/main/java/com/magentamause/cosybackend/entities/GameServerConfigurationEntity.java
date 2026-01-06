@@ -80,7 +80,7 @@ public class GameServerConfigurationEntity {
                 .owner(this.getOwner().toDto())
                 .status(this.getStatus())
                 .timestampLastStarted(this.getTimestampLastStarted())
-                .game(this.getGame())
+                .gameUuid(this.getGame().getUuid())
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
                 .template(this.getTemplate())

@@ -3,7 +3,6 @@ package com.magentamause.cosybackend.dtos.entitydtos;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
@@ -30,7 +29,7 @@ public class GameServerDto {
 
     @NotNull @Valid private LocalDateTime timestampLastStarted;
 
-    @NotNull private GameEntity game;
+    @NotBlank private String gameUuid;
 
     @NotBlank private String dockerImageName;
 
