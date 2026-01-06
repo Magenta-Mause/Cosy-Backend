@@ -6,6 +6,7 @@ import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -66,10 +67,10 @@ public class GameServerConfigurationService {
     }
 
     public GameServerConfigurationEntity convertDtoToEntity(GameServerCreationDto dto) {
-        GameEntity game = gameEntityService.getGameFromUuid(dto.getGameUuid());
+        Optional<GameEntity> game = gameEntityService.getGameFromUuid(dto.getGameUuid());
 
         return GameServerConfigurationEntity.builder()
-                .game(game)
+                .game(game.orElse(null))
                 .serverName(dto.getServerName())
                 .template(dto.getTemplate())
                 .dockerImageName(dto.getDockerImageName())

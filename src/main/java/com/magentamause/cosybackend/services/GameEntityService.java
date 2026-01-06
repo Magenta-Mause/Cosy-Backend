@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.services;
 
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.repositories.GameRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +12,7 @@ public class GameEntityService {
 
     private final GameRepository gameRepository;
 
-    public GameEntity getGameFromUuid(String uuid) {
-        return gameRepository.findById(uuid).orElse(null);
+    public Optional<GameEntity> getGameFromUuid(String uuid) {
+        return gameRepository.findById(uuid);
     }
 }
