@@ -82,7 +82,7 @@ public class GameServerConfigurationService {
                                 ? dto.getVolumeMounts().stream()
                                         .map(VolumeMountConfiguration::fromDto)
                                         .toList()
-                                : null)
+                                : List.of())
                 .portMappings(dto.getPortMappings() != null ? dto.getPortMappings() : List.of())
                 .build();
     }
