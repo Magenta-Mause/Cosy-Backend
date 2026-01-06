@@ -37,6 +37,50 @@ public class GameServerService {
         log.info("GameServerService initialized with engine '{}'", engineType);
     }
 
+    public List<GameServerEntity> getAllGameServers() {
+        return gameServerRepository.findAll();
+    }
+
+    public GameServerEntity getGameServerById(String uuid) {
+        return gameServerRepository
+                .findById(uuid)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Game server with uuid " + uuid + " not found"));
+    }
+
+    public GameServerEntity saveGameServer(GameServerEntity entity) {
+        entity.setUuid(null);
+        entity.setStatus(GameServerEntity.GameServerStatus.STOPPED);
+        log.info("Saving game server {}", entity);
+        return gameServerRepository.save(entity);
+    }
+
+    public void deleteGameServerById(String uuid) {
+        gameServerRepository
+                .findById(uuid)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Game server with uuid " + uuid + " not found"));
+        gameServerRepository.deleteById(uuid);
+    }
+
+    public GameServerEntity updateGameServerConfiguration(String uuid, GameServerEntity entity) {
+        gameServerRepository
+                .findById(uuid)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Game server with uuid " + uuid + " not found"));
+        entity.setUuid(uuid);
+        return gameServerRepository.save(entity);
+    }
+
     @Transactional
     public List<Integer> startServer(String serviceName) {
         if (!startingServers.add(serviceName)) {

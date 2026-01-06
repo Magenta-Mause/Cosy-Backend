@@ -4,7 +4,7 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
-import com.magentamause.cosybackend.services.GameServerConfigurationService;
+import com.magentamause.cosybackend.services.GameServerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -12,10 +12,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class GameServerPolicy implements AccessPolicy {
 
-    private final GameServerConfigurationService gameServerConfigurationService;
+    private final GameServerService gameServerService;
 
-    public GameServerPolicy(GameServerConfigurationService gameServerConfigurationService) {
-        this.gameServerConfigurationService = gameServerConfigurationService;
+    public GameServerPolicy(GameServerService gameServerService) {
+        this.gameServerService = gameServerService;
     }
 
     @Override
@@ -38,7 +38,7 @@ public class GameServerPolicy implements AccessPolicy {
         }
 
         GameServerEntity gameServerEntity =
-                gameServerConfigurationService.getGameServerById((String) referenceId);
+                gameServerService.getGameServerById((String) referenceId);
 
         return switch (action) {
             case READ, DELETE, UPDATE -> gameServerEntity

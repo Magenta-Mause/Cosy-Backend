@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 public class DummyDataService {
 
     private final PasswordEncoder passwordEncoder;
-    private final GameServerConfigurationService gameServerConfigurationService;
+    private final GameServerService gameServerService;
     private final DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository;
     private final UserEntityService userEntityService;
     private List<GameServerEntity> dummyGameServers;
@@ -33,11 +33,11 @@ public class DummyDataService {
     @Autowired
     public DummyDataService(
             PasswordEncoder passwordEncoder,
-            GameServerConfigurationService gameServerConfigurationService,
+            GameServerService gameServerService,
             UserEntityService userEntityService,
             DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository) {
         this.passwordEncoder = passwordEncoder;
-        this.gameServerConfigurationService = gameServerConfigurationService;
+        this.gameServerService = gameServerService;
         this.dummyInstantiatedPropertiesRepository = dummyInstantiatedPropertiesRepository;
         this.userEntityService = userEntityService;
 
@@ -88,7 +88,7 @@ public class DummyDataService {
         }
 
         log.info("Populating dummy game servers");
-        this.dummyGameServers.forEach(gameServerConfigurationService::saveGameServer);
+        this.dummyGameServers.forEach(gameServerService::saveGameServer);
 
         dummyInstantiatedPropertiesRepository.save(
                 DummyInstantiatedProperties.builder().key("dummy-game-servers").build());
