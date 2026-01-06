@@ -104,7 +104,6 @@ public class EngineConfiguration {
     @Bean
     @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "KUBERNETES")
     public EngineManager kubernetesEngineManager(CoreV1Api api, EngineProperties properties) {
-
         return new KubernetesEngineManager(properties.kubernetes(), api);
     }
 }
