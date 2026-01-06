@@ -18,7 +18,7 @@ public class GameServerController {
 
     private final GameServerService gameServerService;
 
-    @GetMapping("/{serviceName}")
+    @GetMapping("/{serviceName}/status")
     public ResponseEntity<String> getServiceInfo(@PathVariable String serviceName) {
         return ResponseEntity.ok(gameServerService.getStatus(serviceName));
     }
