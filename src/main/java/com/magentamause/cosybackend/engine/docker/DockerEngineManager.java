@@ -42,12 +42,21 @@ public class DockerEngineManager implements EngineManager {
 
         ensureImagePresent(image);
 
+        List<String> cmd = serverConfig.getDockerExecutionCommand();
+        if (cmd == null) cmd = List.of();
+
+        List<String> env = mapEnvironment(serverConfig.getEnvironmentVariables());
+        if (env == null) env = List.of();
+
+        List<ExposedPort> exposedPorts = mapExposedPorts(serverConfig.getPortMappings());
+        if (exposedPorts == null) exposedPorts = List.of();
+
         CreateContainerResponse response =
                 client.createContainerCmd(image)
                         .withName(containerName)
-                        .withCmd(serverConfig.getDockerExecutionCommand())
-                        .withEnv(mapEnvironment(serverConfig.getEnvironmentVariables()))
-                        .withExposedPorts(mapExposedPorts(serverConfig.getPortMappings()))
+                        .withCmd(cmd)
+                        .withEnv(env)
+                        .withExposedPorts(exposedPorts)
                         .withHostConfig(buildHostConfig(serverConfig))
                         .exec();
 

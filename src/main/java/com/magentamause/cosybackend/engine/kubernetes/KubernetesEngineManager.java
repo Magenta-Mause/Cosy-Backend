@@ -6,6 +6,7 @@ import com.magentamause.cosybackend.engine.config.EngineProperties.Kubernetes;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
+import com.magentamause.cosybackend.exceptions.CreateGameInstanceException;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
@@ -27,44 +28,11 @@ public class KubernetesEngineManager implements EngineManager {
 
     @Override
     public List<Integer> start(GameServerConfigurationEntity server) {
-        Optional<V1Pod> existingPod = findPod(server);
-        Optional<V1Service> existingService = findService(server);
-
-        if (existingPod.isPresent() && existingService.isPresent()) {
-            return getNodePorts(existingService.get());
-        }
-
-        V1Pod pod = buildPod(server);
-        try {
-            existingPod.orElseGet(
-                    () -> {
-                        createPod(pod);
-                        try {
-                            waitForPodRunning(podName(server));
-                        }
-                        catch (ApiException e) {
-                            throw new RuntimeException(e);
-                        }
-                        return pod;
-                    });
-
-            existingService.orElseGet(
-                    () -> {
-                        createService(server);
-                        return findService(server).orElseThrow();
-                    });
-
-            V1Service service =
-                    api.readNamespacedService(
-                                    String.format("cosy-%s", server.getUuid()), config.namespace())
-                            .execute();
-
-            return getNodePorts(service);
-        }
-        catch (ApiException e) {
-            throw new IllegalStateException("Failed to create pod or service", e);
-        }
+        V1Pod pod = getOrCreatePod(server);
+        V1Service service = getOrCreateService(server);
+        return getNodePorts(service);
     }
+
 
     @Override
     public void stop(GameServerConfigurationEntity server) {
@@ -224,6 +192,27 @@ public class KubernetesEngineManager implements EngineManager {
         }
     }
 
+    private V1Pod getOrCreatePod(GameServerConfigurationEntity server) {
+        return findPod(server).orElseGet(() -> {
+            V1Pod pod = buildPod(server);
+            createPod(pod);
+            try {
+                waitForPodRunning(podName(server));
+            } catch (ApiException e) {
+                throw new CreateGameInstanceException("Failed waiting for pod to start", e);
+            }
+            return pod;
+        });
+    }
+
+    private V1Service getOrCreateService(GameServerConfigurationEntity server) {
+        return findService(server).orElseGet(() -> {
+            createService(server);
+            return findService(server)
+                    .orElseThrow(() -> new CreateGameInstanceException("Service creation failed"));
+        });
+    }
+
     private String podName(GameServerConfigurationEntity server) {
         return String.format("cosy-%s", server.getUuid());
     }
@@ -276,11 +265,11 @@ public class KubernetesEngineManager implements EngineManager {
             }
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new IllegalStateException("Interrupted while waiting for pod to start", e);
+                throw new CreateGameInstanceException("Interrupted while waiting for pod to start", e);
             }
         }
 
-        throw new IllegalStateException(
+        throw new CreateGameInstanceException(
                 String.format("Pod %s did not reach 'Running' state in time", podName));
     }
 }
