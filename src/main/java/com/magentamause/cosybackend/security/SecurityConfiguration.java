@@ -41,7 +41,9 @@ public class SecurityConfiguration {
                                         .requestMatchers(HttpMethod.GET, "/user-invites/*")
                                         .permitAll()
                                         .dispatcherTypeMatchers(DispatcherType.ASYNC)
-                                        .permitAll() // Allow async dispatches to bypass re-authentication (e.g. for streaming responses)
+                                        .permitAll() // Allow async dispatches to bypass
+                                        // re-authentication (e.g. for streaming
+                                        // responses)
                                         .requestMatchers("/**")
                                         .authenticated())
                 .cors(Customizer.withDefaults())
