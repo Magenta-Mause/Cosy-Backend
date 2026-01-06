@@ -56,7 +56,7 @@ public class GameServerConfigurationController {
         UserEntity user = securityContextService.getUser();
 
         GameServerConfigurationEntity createdGameServer =
-                gameServerConfigurationService.getEntityFromDto(gameServerCreationDto);
+                gameServerConfigurationService.convertDtoToEntity(gameServerCreationDto);
         createdGameServer.setOwner(user);
 
         gameServerConfigurationService.saveGameServer(createdGameServer);

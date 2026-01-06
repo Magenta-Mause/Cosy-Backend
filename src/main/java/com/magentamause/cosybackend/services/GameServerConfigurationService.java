@@ -65,7 +65,7 @@ public class GameServerConfigurationService {
         return gameServerRepository.save(entity);
     }
 
-    public GameServerConfigurationEntity getEntityFromDto(GameServerCreationDto dto) {
+    public GameServerConfigurationEntity convertDtoToEntity(GameServerCreationDto dto) {
         GameEntity game = gameEntityService.getGameFromUuid(dto.getGameUuid());
 
         return GameServerConfigurationEntity.builder()
