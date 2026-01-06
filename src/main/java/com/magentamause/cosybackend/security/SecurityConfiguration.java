@@ -40,10 +40,8 @@ public class SecurityConfiguration {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/user-invites/*")
                                         .permitAll()
-                                        .dispatcherTypeMatchers(
-                                                DispatcherType
-                                                        .ASYNC) // Disable second authentication
-                                        .permitAll() // requirement for streaming responses
+                                        .dispatcherTypeMatchers(DispatcherType.ASYNC)
+                                        .permitAll() // Allow async dispatches to bypass re-authentication (e.g. for streaming responses)
                                         .requestMatchers("/**")
                                         .authenticated())
                 .cors(Customizer.withDefaults())
