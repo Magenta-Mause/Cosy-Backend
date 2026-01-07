@@ -1,8 +1,12 @@
 package com.magentamause.cosybackend.services;
 
+import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
+import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class GameServerConfigurationService {
 
     private final GameServerRepository gameServerRepository;
+    private final GameEntityService gameEntityService;
 
     public List<GameServerConfigurationEntity> getAllGameServers() {
         return gameServerRepository.findAll();
@@ -59,5 +64,26 @@ public class GameServerConfigurationService {
                                         "Game server with uuid " + uuid + " not found"));
         entity.setUuid(uuid);
         return gameServerRepository.save(entity);
+    }
+
+    public GameServerConfigurationEntity convertDtoToEntity(GameServerCreationDto dto) {
+        Optional<GameEntity> game = gameEntityService.getGameFromUuid(dto.getGameUuid());
+
+        return GameServerConfigurationEntity.builder()
+                .game(game.orElse(null))
+                .serverName(dto.getServerName())
+                .template(dto.getTemplate())
+                .dockerImageName(dto.getDockerImageName())
+                .dockerImageTag(dto.getDockerImageTag())
+                .dockerExecutionCommand(dto.getExecutionCommand())
+                .environmentVariables(dto.getEnvironmentVariables())
+                .volumeMounts(
+                        dto.getVolumeMounts() != null
+                                ? dto.getVolumeMounts().stream()
+                                        .map(VolumeMountConfiguration::fromDto)
+                                        .toList()
+                                : List.of())
+                .portMappings(dto.getPortMappings() != null ? dto.getPortMappings() : List.of())
+                .build();
     }
 }
