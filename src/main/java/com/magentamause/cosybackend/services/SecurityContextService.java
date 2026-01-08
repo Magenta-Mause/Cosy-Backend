@@ -59,7 +59,6 @@ public class SecurityContextService {
 		}
 	}
 
-
 	public boolean canUser(Action action, Resource resource, Object referenceId, UserEntity user) {
 		AccessPolicy policy = policies.get(resource);
 		if (policy == null) {

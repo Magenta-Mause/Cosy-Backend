@@ -6,7 +6,6 @@ import com.magentamause.cosybackend.services.UserEntityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
-import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +13,6 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class WebsocketVerifier {
 	private final Map<String, WebsocketEndpointVerifier> websocketVerifier = new HashMap<>();
