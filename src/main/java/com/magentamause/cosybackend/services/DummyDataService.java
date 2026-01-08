@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.services;
 
 import static com.magentamause.cosybackend.entities.GameServerEntity.GameServerStatus.STOPPED;
 
-import com.magentamause.cosybackend.entities.DummyInstantiatedProperties;
+import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
@@ -90,7 +90,7 @@ public class DummyDataService {
         this.dummyGameServers.forEach(gameServerService::saveGameServer);
 
         dummyInstantiatedPropertiesRepository.save(
-                DummyInstantiatedProperties.builder().key("dummy-game-servers").build());
+                DummyInstantiatedEntity.builder().key("dummy-game-servers").build());
     }
 
     private void initializeAdminUserEntity() {
@@ -102,7 +102,7 @@ public class DummyDataService {
         this.userEntityService.saveUserEntity(adminUser);
 
         dummyInstantiatedPropertiesRepository.save(
-                DummyInstantiatedProperties.builder().key("admin-user-entity").build());
+                DummyInstantiatedEntity.builder().key("admin-user-entity").build());
 
         log.info("Admin user entity initialized");
     }
