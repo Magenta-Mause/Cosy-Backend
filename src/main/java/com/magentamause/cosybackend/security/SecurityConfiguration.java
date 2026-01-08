@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.security;
 
 import com.magentamause.cosybackend.security.jwtfilter.JwtFilter;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -39,6 +40,10 @@ public class SecurityConfiguration {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/user-invites/*")
                                         .permitAll()
+                                        .dispatcherTypeMatchers(DispatcherType.ASYNC)
+                                        .permitAll() // Allow async dispatches to bypass
+                                        // re-authentication (e.g. for streaming
+                                        // responses)
                                         .requestMatchers("/**")
                                         .authenticated())
                 .cors(Customizer.withDefaults())

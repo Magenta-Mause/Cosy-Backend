@@ -18,7 +18,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class GameServerConfigurationEntity {
+public class GameServerEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String uuid;

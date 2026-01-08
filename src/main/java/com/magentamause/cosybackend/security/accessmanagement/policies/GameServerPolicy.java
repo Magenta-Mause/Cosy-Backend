@@ -1,22 +1,20 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
-import com.magentamause.cosybackend.services.GameServerConfigurationService;
+import com.magentamause.cosybackend.services.GameServerService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class GameServerPolicy implements AccessPolicy {
 
-    private final GameServerConfigurationService gameServerConfigurationService;
-
-    public GameServerPolicy(GameServerConfigurationService gameServerConfigurationService) {
-        this.gameServerConfigurationService = gameServerConfigurationService;
-    }
+    private final GameServerService gameServerService;
 
     @Override
     public Resource resource() {
@@ -37,11 +35,11 @@ public class GameServerPolicy implements AccessPolicy {
             return action == Action.READ;
         }
 
-        GameServerConfigurationEntity gameServerConfigurationEntity =
-                gameServerConfigurationService.getGameServerById((String) referenceId);
+        GameServerEntity gameServerEntity =
+                gameServerService.getGameServerById((String) referenceId);
 
         return switch (action) {
-            case READ, DELETE, UPDATE -> gameServerConfigurationEntity
+            case READ, DELETE, UPDATE -> gameServerEntity
                     .getOwner()
                     .getUuid()
                     .equals(user.getUuid());
