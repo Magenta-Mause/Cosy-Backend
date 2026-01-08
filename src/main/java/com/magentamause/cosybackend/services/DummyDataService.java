@@ -57,7 +57,6 @@ public class DummyDataService {
                                 .owner(adminUser)
                                 .status(STOPPED)
                                 .timestampLastStarted(LocalDateTime.now().minusHours(2))
-                                .gameUuid("game-tosios")
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
                                 .portMappings(

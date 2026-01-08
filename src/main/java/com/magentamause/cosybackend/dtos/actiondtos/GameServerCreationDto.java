@@ -3,10 +3,8 @@ package com.magentamause.cosybackend.dtos.actiondtos;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.annotations.uniqueElements.UniqueElementsBy;
-import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
-import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
@@ -40,23 +38,4 @@ public class GameServerCreationDto {
             message = "duplicate volume mounts")
     @Valid
     private List<VolumeMountConfigurationCreationDto> volumeMounts;
-
-    public GameServerEntity toEntity() {
-        return GameServerEntity.builder()
-                .gameUuid(this.getGameUuid())
-                .serverName(this.getServerName())
-                .template(this.getTemplate())
-                .dockerImageName(this.getDockerImageName())
-                .dockerImageTag(this.getDockerImageTag())
-                .dockerExecutionCommand(this.getExecutionCommand())
-                .environmentVariables(this.getEnvironmentVariables())
-                .volumeMounts(
-                        this.getVolumeMounts() != null
-                                ? this.getVolumeMounts().stream()
-                                        .map(VolumeMountConfiguration::fromDto)
-                                        .toList()
-                                : null)
-                .portMappings(this.getPortMappings() != null ? this.getPortMappings() : List.of())
-                .build();
-    }
 }

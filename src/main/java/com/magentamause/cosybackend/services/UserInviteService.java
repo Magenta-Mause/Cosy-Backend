@@ -54,6 +54,8 @@ public class UserInviteService {
                         .secretKey(generateRandomKey())
                         .username(userInviteCreationDto.getUsername())
                         .role(userInviteCreationDto.getRole())
+                        .maxMemory(userInviteCreationDto.getMaxMemory())
+                        .maxCpu(userInviteCreationDto.getMaxCpu())
                         .build();
 
         return userInviteRepository.save(invite);
@@ -101,6 +103,8 @@ public class UserInviteService {
                 UserEntity.builder()
                         .role(inviteRole)
                         .password(passwordEncoder.encode(password))
+                        .maxMemory(invite.getMaxMemory())
+                        .maxCpu(invite.getMaxCpu())
                         .defaultPasswordReset(true);
 
         if (Objects.isNull(invite.getUsername())) {

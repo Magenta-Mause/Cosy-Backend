@@ -1,14 +1,18 @@
 package com.magentamause.cosybackend.services;
 
+import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.engine.EngineManager;
 import com.magentamause.cosybackend.engine.EngineType;
 import com.magentamause.cosybackend.engine.config.EngineProperties;
+import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
@@ -21,16 +25,19 @@ import org.springframework.web.server.ResponseStatusException;
 public class GameServerService {
 
     private final GameServerRepository gameServerRepository;
+    private final GameEntityService gameEntityService;
     private final EngineManager engineManager;
     private final EngineType engineType;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
 
     public GameServerService(
             EngineManager engineManager,
+            GameEntityService gameEntityService,
             EngineProperties engineProperties,
             GameServerRepository gameServerRepository) {
 
         this.engineManager = engineManager;
+        this.gameEntityService = gameEntityService;
         this.engineType = engineProperties.selected();
         this.gameServerRepository = gameServerRepository;
 
@@ -130,5 +137,26 @@ public class GameServerService {
                                         new ResponseStatusException(
                                                 HttpStatus.NOT_FOUND,
                                                 "Server '" + serviceName + "' not found")));
+    }
+
+    public GameServerEntity convertDtoToEntity(GameServerCreationDto dto) {
+        Optional<GameEntity> game = gameEntityService.getGameFromUuid(dto.getGameUuid());
+
+        return GameServerEntity.builder()
+                .game(game.orElse(null))
+                .serverName(dto.getServerName())
+                .template(dto.getTemplate())
+                .dockerImageName(dto.getDockerImageName())
+                .dockerImageTag(dto.getDockerImageTag())
+                .dockerExecutionCommand(dto.getExecutionCommand())
+                .environmentVariables(dto.getEnvironmentVariables())
+                .volumeMounts(
+                        dto.getVolumeMounts() != null
+                                ? dto.getVolumeMounts().stream()
+                                        .map(VolumeMountConfiguration::fromDto)
+                                        .toList()
+                                : List.of())
+                .portMappings(dto.getPortMappings() != null ? dto.getPortMappings() : List.of())
+                .build();
     }
 }

@@ -32,7 +32,8 @@ public class GameServerEntity {
 
     private LocalDateTime timestampLastStarted;
 
-    private String gameUuid;
+    // No cascading or orphanRemoval, because GameEntities without a server can exist
+    @ManyToOne private GameEntity game;
 
     @Column(nullable = false)
     private String dockerImageName;
@@ -79,7 +80,7 @@ public class GameServerEntity {
                 .owner(this.getOwner().toDto())
                 .status(this.getStatus())
                 .timestampLastStarted(this.getTimestampLastStarted())
-                .gameUuid(this.getGameUuid())
+                .gameUuid(this.getGame() == null ? null : this.getGame().getUuid())
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
                 .template(this.getTemplate())
