@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.services.engine;
 
-import com.magentamause.cosybackend.dtos.entitydtos.GameLogMessage;
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerLogMessage;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 
@@ -12,11 +12,11 @@ public interface EngineManager {
 
 	void stop(GameServerEntity serviceConfig);
 
-	void attachLogListener(GameServerEntity serviceConfig, Consumer<GameLogMessage> listener);
+	void attachLogListener(GameServerEntity serviceConfig, Consumer<GameServerLogMessage> listener);
 
 	GameServerStatusDto status(GameServerEntity serviceConfig);
 
-	default List<Integer> startAndAttachLogListener(GameServerEntity serviceConfig, Consumer<GameLogMessage> listener) {
+	default List<Integer> startAndAttachLogListener(GameServerEntity serviceConfig, Consumer<GameServerLogMessage> listener) {
 		List<Integer> exposedPorts = start(serviceConfig);
 		attachLogListener(serviceConfig, listener);
 		return exposedPorts;

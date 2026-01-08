@@ -10,6 +10,7 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.EngineType;
 import com.magentamause.cosybackend.services.engine.config.EngineProperties;
+import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -30,12 +31,13 @@ public class GameServerService {
 	private final EngineManager engineManager;
 	private final EngineType engineType;
 	private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
+	private final GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher;
 
 	public GameServerService(
 			EngineManager engineManager,
 			GameEntityService gameEntityService,
 			EngineProperties engineProperties,
-			GameServerRepository gameServerRepository) {
+			GameServerRepository gameServerRepository, GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher) {
 
 		this.engineManager = engineManager;
 		this.gameEntityService = gameEntityService;
@@ -43,6 +45,7 @@ public class GameServerService {
 		this.gameServerRepository = gameServerRepository;
 
 		log.info("GameServerService initialized with engine '{}'", engineType);
+		this.gameServerLogWebsocketPublisher = gameServerLogWebsocketPublisher;
 	}
 
 	public List<GameServerEntity> getAllGameServers() {
@@ -107,8 +110,7 @@ public class GameServerService {
 													"Server '" + serviceName + "' not found"));
 
 			return engineManager.startAndAttachLogListener(config, (logMessage) -> {
-				// Here you can handle log messages, e.g., store them or forward them
-				log.info("Log from server {}: {}", serviceName, logMessage.getMessage());
+				gameServerLogWebsocketPublisher.publishLog(config.getUuid(), logMessage);
 			});
 		} finally {
 			startingServers.remove(serviceName);

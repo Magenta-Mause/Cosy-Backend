@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.services.engine.kubernetes;
 
-import com.magentamause.cosybackend.dtos.entitydtos.GameLogMessage;
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerLogMessage;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
@@ -74,7 +74,7 @@ public class KubernetesEngineManager implements EngineManager {
 	@Override
 	public void attachLogListener(
 			GameServerEntity server,
-			Consumer<GameLogMessage> listener
+			Consumer<GameServerLogMessage> listener
 	) {
 		V1Pod pod =
 				findPod(server)
@@ -113,7 +113,7 @@ public class KubernetesEngineManager implements EngineManager {
 										String line = scanner.nextLine();
 
 										listener.accept(
-												GameLogMessage.builder()
+												GameServerLogMessage.builder()
 														.message(line)
 														.level(LogLevel.INFO)
 														.timestamp(LocalDateTime.now())
@@ -122,7 +122,7 @@ public class KubernetesEngineManager implements EngineManager {
 								}
 							} catch (Exception e) {
 								listener.accept(
-										GameLogMessage.builder()
+										GameServerLogMessage.builder()
 												.message(e.getMessage())
 												.level(LogLevel.ERROR)
 												.timestamp(LocalDateTime.now())

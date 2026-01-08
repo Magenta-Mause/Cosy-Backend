@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class GameLogMessage {
+public class GameServerLogMessage {
 	private String message;
 	private LogLevel level;
 	private LocalDateTime timestamp;
