@@ -1,13 +1,13 @@
-package com.magentamause.cosybackend.engine.config;
+package com.magentamause.cosybackend.services.engine.config;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
-import com.magentamause.cosybackend.engine.EngineManager;
-import com.magentamause.cosybackend.engine.docker.DockerEngineManager;
-import com.magentamause.cosybackend.engine.kubernetes.KubernetesEngineManager;
+import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.docker.DockerEngineManager;
+import com.magentamause.cosybackend.services.engine.kubernetes.KubernetesEngineManager;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.util.Config;

@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.engine;
+package com.magentamause.cosybackend.services.engine;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;

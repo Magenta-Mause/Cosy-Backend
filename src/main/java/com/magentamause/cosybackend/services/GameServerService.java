@@ -2,9 +2,9 @@ package com.magentamause.cosybackend.services;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
-import com.magentamause.cosybackend.engine.EngineManager;
-import com.magentamause.cosybackend.engine.EngineType;
-import com.magentamause.cosybackend.engine.config.EngineProperties;
+import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.EngineType;
+import com.magentamause.cosybackend.services.engine.config.EngineProperties;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
