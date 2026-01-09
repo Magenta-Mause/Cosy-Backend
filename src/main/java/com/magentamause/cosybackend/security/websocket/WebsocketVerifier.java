@@ -20,17 +20,23 @@ public class WebsocketVerifier {
 	private final UserEntityService userEntityService;
 
 	public WebsocketVerifier addVerifier(String channel, WebsocketEndpointVerifier verifier) {
-		websocketVerifier.put("^" + channel.replace("{serverId}", "([1-9][0-9]*)") + "$", verifier);
+		websocketVerifier.put("^" + channel.replace("{serverId}", "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})") + "$", verifier);
 		return this;
 	}
 
 	public boolean verify(String channel, StompHeaderAccessor accessor) {
-		for (final Map.Entry<String, WebsocketEndpointVerifier> entry : websocketVerifier.entrySet()) {
-			Pattern pattern = Pattern.compile(entry.getKey());
+		for (final Map.Entry<String, WebsocketEndpointVerifier> verifier : websocketVerifier.entrySet()) {
+			Pattern pattern = Pattern.compile(verifier.getKey());
+			log.info("pattern: {}", pattern.toString());
 			if (pattern.matcher(channel).matches()) {
-				UserEntity user = userEntityService.getUserByUuid(Objects.requireNonNull(accessor.getSessionAttributes()).get("userId").toString());
-				if (entry.getValue().verify(channel, accessor, securityContextService, user)) {
+				String userId = Objects.requireNonNull(accessor.getSessionAttributes()).get("userId").toString();
+				log.info("User: {} trying to access channel: {}", userId, channel);
+				UserEntity user = userEntityService.getUserByUuid(userId);
+				if (verifier.getValue().verify(channel, accessor, securityContextService, user)) {
+					log.info("Access granted for user: {}", userId);
 					return true;
+				} else {
+					log.info("Access denied for user: {}", userId);
 				}
 			}
 		}

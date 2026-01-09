@@ -16,6 +16,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 @EnableConfigurationProperties(CorsProperties.class)
 public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
+
 	private final CorsProperties corsProperties;
 	private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
 	private final JwtChannelInterceptor jwtChannelInterceptor;
@@ -23,12 +24,12 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry config) {
 		config.enableSimpleBroker("/topics");
-		config.setApplicationDestinationPrefixes("/api/v1/app");
+		config.setApplicationDestinationPrefixes("/v1/app");
 	}
 
 	@Override
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
-		registry.addEndpoint("/api/v1/ws")
+		registry.addEndpoint("/v1/ws")
 				.setAllowedOrigins(corsProperties.getAllowedOrigins().toArray(new String[0]))
 				.addInterceptors(jwtHandshakeInterceptor)
 				.withSockJS();

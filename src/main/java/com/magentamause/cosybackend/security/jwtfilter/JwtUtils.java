@@ -67,16 +67,16 @@ public class JwtUtils {
 
             return claims;
         } catch (ExpiredJwtException e) {
-            log.error("Token expired: {}", e.getMessage());
+            log.debug("Token expired: {}", e.getMessage());
             throw new SecurityException("Token expired");
         } catch (UnsupportedJwtException | MalformedJwtException e) {
-            log.error("Invalid token format: {}", e.getMessage());
+            log.debug("Invalid token format: {}", e.getMessage());
             throw new SecurityException("Invalid token format");
         } catch (SecurityException e) {
-            log.error("Token validation failed: {}", e.getMessage());
+            log.debug("Token validation failed: {}", e.getMessage());
             throw new SecurityException(e.getMessage());
         } catch (Exception e) {
-            log.error("Unexpected error while parsing JWT token", e);
+            log.debug("Unexpected error while parsing JWT token", e);
             throw new SecurityException("Token validation failed");
         }
     }

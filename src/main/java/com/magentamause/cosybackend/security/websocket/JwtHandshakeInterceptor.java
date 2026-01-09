@@ -27,25 +27,33 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
 	@Override
 	public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-		if (request instanceof org.springframework.http.server.ServletServerHttpRequest) {
-			HttpServletRequest servletRequest = ((ServletServerHttpRequest) request).getServletRequest();
-			String token = servletRequest.getParameter("authToken");
-			if (token == null) {
-				return false;
+		try {
+
+			if (request instanceof org.springframework.http.server.ServletServerHttpRequest) {
+				HttpServletRequest servletRequest = ((ServletServerHttpRequest) request).getServletRequest();
+				String token = servletRequest.getParameter("authToken");
+				if (token == null || token.isBlank()) {
+					throw new NoAuthException();
+				}
+				Claims jwtBody = jwtUtils.getTokenContentBody(token, JwtTokenBody.TokenType.IDENTITY_TOKEN);
+				Optional<UserEntity> userEntity = userEntityService.getOptionalUserByUuid(jwtBody.getSubject());
+				if (userEntity.isEmpty()) {
+					throw new NoAuthException();
+				}
+				attributes.put("userId", jwtBody.getSubject());
+				attributes.put("user", userEntity.get());
+				return true;
 			}
-			Claims jwtBody = jwtUtils.getTokenContentBody(token, JwtTokenBody.TokenType.IDENTITY_TOKEN);
-			Optional<UserEntity> userEntity = userEntityService.getOptionalUserByUuid(jwtBody.getSubject());
-			if (userEntity.isEmpty()) {
-				return false;
-			}
-			attributes.put("userId", jwtBody.getSubject());
-			attributes.put("user", userEntity.get());
+			throw new NoAuthException();
+		} catch (NoAuthException e) {
+			attributes.put("unauthorized", true);
 			return true;
 		}
-		return false;
 	}
 
 	@Override
 	public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Exception exception) {
 	}
+
+	class NoAuthException extends RuntimeException { }
 }

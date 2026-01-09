@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.services;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerLogMessage;
+import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
@@ -119,10 +119,10 @@ public class GameServerService {
 		}
 	}
 
-	public GameServerLogMessage propagateLogMessage(GameServerEntity gameServer, GameServerLogMessage logMessage) {
+	public GameServerLogMessageEntity propagateLogMessage(GameServerEntity gameServer, GameServerLogMessageEntity logMessage) {
 		String logMessageUuid = UUID.randomUUID().toString();
 
-		GameServerLogMessage gameServerLogMessage = GameServerLogMessage.builder()
+		GameServerLogMessageEntity gameServerLogMessage = GameServerLogMessageEntity.builder()
 				.uuid(logMessageUuid)
 				.gameServerUuid(gameServer.getUuid())
 				.timestamp(logMessage.getTimestamp())

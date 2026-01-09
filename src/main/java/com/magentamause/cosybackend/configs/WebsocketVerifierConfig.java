@@ -16,6 +16,6 @@ public class WebsocketVerifierConfig {
 	@Bean
 	public WebsocketVerifier websocketVerifier(SecurityContextService securityContextService, UserEntityService userEntityService) {
 		return new WebsocketVerifier(securityContextService, userEntityService)
-				.addVerifier("/topics/game-server-logs/creation/{serverId}", new AccessManagementVerifier("/topics/athlete/creation/{serverId}", Action.READ, Resource.GAME_SERVER_LOG));
+				.addVerifier("/topics/game-server-logs/creation/{serverId}", new AccessManagementVerifier("/topics/game-server-logs/creation/{serverId}", Action.READ, Resource.GAME_SERVER_LOG));
 	}
 }

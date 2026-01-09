@@ -4,7 +4,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.*;
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerLogMessage;
+import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
@@ -102,7 +102,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
 	@Override
 	public void attachLogListener(
 			GameServerEntity serviceConfig,
-			Consumer<GameServerLogMessage> listener
+			Consumer<GameServerLogMessageEntity> listener
 	) {
 		String containerName = containerName(serviceConfig);
 
@@ -119,7 +119,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
 								StandardCharsets.UTF_8
 						);
 
-						GameServerLogMessage logMessage = GameServerLogMessage.builder()
+						GameServerLogMessageEntity logMessage = GameServerLogMessageEntity.builder()
 								.message(
 										message)
 								.level(
@@ -136,7 +136,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
 					@Override
 					public void onError(Throwable throwable) {
 						listener.accept(
-								GameServerLogMessage.builder()
+								GameServerLogMessageEntity.builder()
 										.message(throwable.getMessage())
 										.level(LogLevel.ERROR)
 										.timestamp(LocalDateTime.now())
