@@ -45,6 +45,7 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             tokenBody = jwtUtils.getTokenContentBody(token, JwtTokenBody.TokenType.IDENTITY_TOKEN);
         } catch (SecurityException e) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
             return;
         }
 
@@ -53,6 +54,7 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             userEntity = userEntityService.getUserByUuid(subject);
         } catch (ResponseStatusException e) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
             return;
         }
 

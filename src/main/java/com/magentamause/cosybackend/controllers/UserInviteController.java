@@ -6,6 +6,9 @@ import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
 import com.magentamause.cosybackend.dtos.entitydtos.UserInviteDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.UserInviteEntity;
+import com.magentamause.cosybackend.security.accessmanagement.Action;
+import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
+import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.services.SecurityContextService;
 import com.magentamause.cosybackend.services.UserEntityService;
 import com.magentamause.cosybackend.services.UserInviteService;
@@ -27,8 +30,8 @@ public class UserInviteController {
     private final UserEntityService userEntityService;
 
     @GetMapping
+    @RequireAccess(action = Action.READ, resource = Resource.USER_INVITE)
     public ResponseEntity<List<UserInviteDto>> getAllUserInvites() {
-        securityContextService.assertUserHasAccessOfRole(UserEntity.Role.OWNER);
         return ResponseEntity.ok(
                 userInviteService.getAllInvites().stream()
                         .map(UserInviteEntity::convertToDto)
@@ -38,19 +41,19 @@ public class UserInviteController {
     @GetMapping("/{secretKey}")
     public ResponseEntity<UserInviteDto> getUserInvite(
             @PathVariable("secretKey") String secretKey) {
-        return ResponseEntity.ok(userInviteService.getInviteBySecretKey(secretKey).convertToDto());
+        return ResponseEntity.ok(
+                userInviteService.getInviteBySecretKeyOrElseThrow(secretKey).convertToDto());
     }
 
     @PostMapping
+    @RequireAccess(action = Action.CREATE, resource = Resource.USER_INVITE)
     public ResponseEntity<UserInviteDto> createInvite(
             @Valid @RequestBody UserInviteCreationDto userInviteCreationDto) {
-        securityContextService.assertUserHasAccessOfRole(UserEntity.Role.OWNER);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
                         userInviteService
                                 .createInvite(
-                                        securityContextService.getUserId(),
-                                        userInviteCreationDto.getUsername())
+                                        securityContextService.getUserId(), userInviteCreationDto)
                                 .convertToDto());
     }
 
@@ -63,6 +66,7 @@ public class UserInviteController {
     }
 
     @DeleteMapping("/{uuid}")
+    @RequireAccess(action = Action.DELETE, resource = Resource.USER_INVITE)
     public ResponseEntity<Void> revokeInvite(@PathVariable String uuid) {
         userInviteService.revokeInvite(uuid);
         return ResponseEntity.noContent().build();

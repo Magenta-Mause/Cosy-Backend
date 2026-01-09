@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.configs.globalresponse;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.magentamause.cosybackend.exceptions.GamesApiError;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -11,6 +12,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,7 +25,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiResponse<?>> handleResponseStatusException(
             ResponseStatusException ex, HttpServletRequest request) {
-        log.warn("Response status exception occurred", ex);
+        log.debug("Response status exception occurred {}", ex);
         return ResponseEntity.status(ex.getStatusCode())
                 .body(
                         ApiResponse.builder()
@@ -37,7 +39,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiResponse<?>> handleResourceNotFound(NoResourceFoundException ex) {
-        log.warn("Resource not found: \"{}\"", ex.getResourcePath());
+        log.debug("Resource not found: {}", ex.getResourcePath());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(
                         ApiResponse.builder()
@@ -122,6 +124,36 @@ public class GlobalExceptionHandler {
                                 .success(false)
                                 .data("Required cookie is missing")
                                 .error("Required cookie is missing.")
+                                .build());
+    }
+
+    @ExceptionHandler(GamesApiError.class)
+    public ResponseEntity<ApiResponse<?>> handleGamesApiError(
+            GamesApiError ex, HttpServletRequest request) {
+        log.warn("Games API error occurred", ex);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(
+                        ApiResponse.builder()
+                                .success(false)
+                                .data(
+                                        "Downstream Games API request failed; see 'error' for details.")
+                                .error(ex.getMessage())
+                                .path(request.getRequestURI())
+                                .statusCode(HttpStatus.BAD_GATEWAY.value())
+                                .build());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<?>> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        String parameterName = ex.getParameterName();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(
+                        ApiResponse.builder()
+                                .success(false)
+                                .error("Missing required request parameter: " + parameterName)
+                                .path(request.getRequestURI())
+                                .statusCode(HttpStatus.BAD_REQUEST.value())
                                 .build());
     }
 

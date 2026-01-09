@@ -18,7 +18,6 @@ public class UserEntityService {
     private final UserEntityRepository userEntityRepository;
 
     public List<UserEntity> getAllUsers() {
-
         return userEntityRepository.findAll();
     }
 
@@ -63,6 +62,8 @@ public class UserEntityService {
                 .username(user.getUsername())
                 .role(user.getRole())
                 .uuid(user.getUuid())
+                .maxMemory(user.getMaxMemory())
+                .maxCpu(user.getMaxCpu())
                 .build();
     }
 

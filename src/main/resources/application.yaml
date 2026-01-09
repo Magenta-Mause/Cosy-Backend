@@ -34,3 +34,28 @@ cosy:
       - http://localhost:3000
       - http://localhost:5173
       - https://cosy.jannekeipert.de
+      - https://cosy-docker.pybay.de
+  games-api:
+    url: https://cosy-game-api.jannekeipert.de
+
+  engine:
+    selected: DOCKER
+
+    # Docker-specific configuration
+    docker:
+      socket-path: ${COSY_DOCKER_SOCKER_PATH:unix:///var/run/docker.sock}  # Docker socket
+      api-version: "1.41"                       # Optional: API version
+      tls: false                                # Whether to use TLS
+      cert-path: ""                             # Path to TLS certs if enabled
+
+    # Kubernetes-specific configuration
+    kubernetes:
+      kubeconfig: ${COSY_KUBECONFIG_PATH:~/.kube/config} # Path to kubeconfig file
+      context: "docker-desktop"                 # Docker Desktop Kubernetes context
+      namespace: "default"                      # Namespace to operate in
+      in-cluster: false                         # Backend runs on host, not in cluster
+      timeout-seconds: 30                       # Request timeout (seconds)
+
+      labels: # Default labels added to all pods
+        app: cosy
+        platform: docker-desktop

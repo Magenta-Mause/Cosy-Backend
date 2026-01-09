@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### SdkMan
+.sdkmanrc
+
+# local dev spring profile
+src/main/resources/application-local.yaml

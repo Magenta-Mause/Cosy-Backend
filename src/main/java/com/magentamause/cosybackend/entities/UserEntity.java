@@ -36,9 +36,18 @@ public class UserEntity {
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GameServerEntity> gameServerConfigurationEntities;
 
+    @Column private Long maxMemory;
+
+    @Column private Long maxCpu;
+
+    @Getter
+    @RequiredArgsConstructor
     public enum Role {
-        OWNER,
-        QUOTA_USER
+        OWNER(true),
+        ADMIN(true),
+        QUOTA_USER(false);
+
+        private final boolean admin;
     }
 
     public UserEntityDto toDto() {
@@ -46,6 +55,8 @@ public class UserEntity {
                 .uuid(this.uuid)
                 .username(this.username)
                 .role(this.role)
+                .maxMemory(this.maxMemory)
+                .maxCpu(this.maxCpu)
                 .build();
     }
 }

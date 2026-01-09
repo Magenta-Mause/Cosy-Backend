@@ -36,6 +36,15 @@ public class UserInviteEntity {
     @JoinColumn(name = "invited_by_id")
     private UserEntity invitedBy;
 
+    @Enumerated(EnumType.STRING)
+    private UserEntity.Role role;
+
+    @Column(nullable = true)
+    private Long maxMemory;
+
+    @Column(nullable = true)
+    private Long maxCpu;
+
     public UserInviteDto convertToDto() {
         return UserInviteDto.builder()
                 .uuid(this.getUuid())
@@ -44,6 +53,9 @@ public class UserInviteEntity {
                 .secretKey(this.getSecretKey())
                 .createdAt(this.getCreatedAt())
                 .inviteByUsername(this.getInvitedBy().getUsername())
+                .role(this.getRole())
+                .maxMemory(this.maxMemory)
+                .maxCpu(this.maxCpu)
                 .build();
     }
 }
