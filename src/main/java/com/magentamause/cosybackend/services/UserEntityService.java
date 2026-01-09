@@ -5,7 +5,6 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.repositories.UserEntityRepository;
 import java.util.List;
 import java.util.Optional;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

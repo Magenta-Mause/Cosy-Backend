@@ -14,21 +14,21 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class JwtChannelInterceptor implements ChannelInterceptor {
 
-	private final WebsocketVerifier websocketVerifier;
+    private final WebsocketVerifier websocketVerifier;
 
-	@Override
-	public Message<?> preSend(Message<?> message, MessageChannel channel) {
-		StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-		if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
-			String subscribedEndpoint = accessor.getDestination();
-			log.info("Subscribed to {}", subscribedEndpoint);
-			if (websocketVerifier.verify(subscribedEndpoint, accessor)) {
-				return message;
-			} else {
-				log.debug("Missing Authentication for {}", subscribedEndpoint);
-				return null;
-			}
-		}
-		return message;
-	}
+    @Override
+    public Message<?> preSend(Message<?> message, MessageChannel channel) {
+        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
+        if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
+            String subscribedEndpoint = accessor.getDestination();
+            log.info("Subscribed to {}", subscribedEndpoint);
+            if (websocketVerifier.verify(subscribedEndpoint, accessor)) {
+                return message;
+            } else {
+                log.debug("Missing Authentication for {}", subscribedEndpoint);
+                return null;
+            }
+        }
+        return message;
+    }
 }

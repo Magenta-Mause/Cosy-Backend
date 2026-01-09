@@ -16,34 +16,36 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class GameServerLogPolicy implements AccessPolicy {
 
-	private final GameServerRepository gameServerRepository;
+    private final GameServerRepository gameServerRepository;
 
-	@Override
-	public Resource resource() {
-		return Resource.GAME_SERVER_LOG;
-	}
+    @Override
+    public Resource resource() {
+        return Resource.GAME_SERVER_LOG;
+    }
 
-	@Override
-	public boolean can(UserEntity user, Action action, Object referenceId) {
-		if (user.getRole().isAdmin()) {
-			return true;
-		}
+    @Override
+    public boolean can(UserEntity user, Action action, Object referenceId) {
+        if (user.getRole().isAdmin()) {
+            return true;
+        }
 
-		GameServerEntity gameServerEntity =
-				gameServerRepository
-						.findById((String) referenceId)
-						.orElseThrow(
-								() ->
-										new ResponseStatusException(
-												HttpStatus.NOT_FOUND,
-												"Game server with uuid " + referenceId + " not found"));
+        GameServerEntity gameServerEntity =
+                gameServerRepository
+                        .findById((String) referenceId)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game server with uuid "
+                                                        + referenceId
+                                                        + " not found"));
 
-		return switch (action) {
-			case READ, DELETE, UPDATE -> gameServerEntity
-					.getOwner()
-					.getUuid()
-					.equals(user.getUuid());
-			default -> throw new IllegalStateException("Unexpected value: " + action);
-		};
-	}
+        return switch (action) {
+            case READ, DELETE, UPDATE -> gameServerEntity
+                    .getOwner()
+                    .getUuid()
+                    .equals(user.getUuid());
+            default -> throw new IllegalStateException("Unexpected value: " + action);
+        };
+    }
 }

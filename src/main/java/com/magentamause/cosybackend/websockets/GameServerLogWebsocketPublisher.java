@@ -11,9 +11,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class GameServerLogWebsocketPublisher {
 
-	private final SimpMessagingTemplate messagingTemplate;
+    private final SimpMessagingTemplate messagingTemplate;
 
-	public void publishLog(String serverUuid, GameServerLogMessageEntity logMessage) {
-		messagingTemplate.convertAndSend("/topics/game-server-logs/creation/" + serverUuid, logMessage);
-	}
+    public void publishLog(String serverUuid, GameServerLogMessageEntity logMessage) {
+        messagingTemplate.convertAndSend(
+                "/topics/game-server-logs/creation/" + serverUuid, logMessage);
+    }
 }
