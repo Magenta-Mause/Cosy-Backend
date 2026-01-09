@@ -1,5 +1,7 @@
 package com.magentamause.cosybackend.controllers;
 
+import static reactor.netty.http.HttpConnectionLiveness.log;
+
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
@@ -23,8 +25,6 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-
-import static reactor.netty.http.HttpConnectionLiveness.log;
 
 @RestController
 @RequiredArgsConstructor
@@ -75,9 +75,7 @@ public class GameServerController {
 
     @PutMapping("/{uuid}")
     public ResponseEntity<GameServerDto> updateGameServer(
-            @PathVariable String uuid,
-            @Valid @RequestBody GameServerUpdateDto updateDto
-    ) {
+            @PathVariable String uuid, @Valid @RequestBody GameServerUpdateDto updateDto) {
         log.info("Received request to update the game server with id {}", uuid);
 
         UserEntity user = securityContextService.getUser();
@@ -116,5 +114,4 @@ public class GameServerController {
         gameServerService.stopServer(uuid);
         return ResponseEntity.ok().build();
     }
-
 }

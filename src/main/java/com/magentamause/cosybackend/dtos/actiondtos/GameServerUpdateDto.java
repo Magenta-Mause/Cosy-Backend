@@ -7,8 +7,8 @@ import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfigur
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
 import java.util.List;
+import lombok.Data;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.services;
 
-import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.engine.EngineManager;
 import com.magentamause.cosybackend.engine.EngineType;
@@ -13,7 +13,6 @@ import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import jakarta.transaction.Transactional;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -83,12 +82,14 @@ public class GameServerService {
     public GameServerEntity updateGameServerConfiguration(
             String uuid, GameServerUpdateDto dto, UserEntity owner) {
 
-        GameServerEntity gameServer = gameServerRepository
-                .findById(uuid)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Game server with uuid " + uuid + " not found"));
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(uuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game server with uuid " + uuid + " not found"));
 
         if (!gameServer.getOwner().getUuid().equals(owner.getUuid())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
@@ -115,14 +116,16 @@ public class GameServerService {
             gameServer.setVolumeMounts(new ArrayList<>());
         }
         gameServer.getVolumeMounts().clear();
-        gameServer.getVolumeMounts().addAll(
-                dto.getVolumeMounts().stream()
-                        .map(VolumeMountConfiguration::fromDto)
-                        .toList()
-        );
+        gameServer
+                .getVolumeMounts()
+                .addAll(
+                        dto.getVolumeMounts().stream()
+                                .map(VolumeMountConfiguration::fromDto)
+                                .toList());
 
         return gameServerRepository.save(gameServer);
     }
+
     @Transactional
     public List<Integer> startServer(String serviceName) {
         if (!startingServers.add(serviceName)) {
@@ -175,7 +178,8 @@ public class GameServerService {
     }
 
     public GameServerEntity convertDtoToEntity(GameServerCreationDto dto) {
-        Optional<GameEntity> game = Optional.ofNullable(gameEntityService.getGameFromUuid(dto.getGameUuid()));
+        Optional<GameEntity> game =
+                Optional.ofNullable(gameEntityService.getGameFromUuid(dto.getGameUuid()));
 
         return GameServerEntity.builder()
                 .game(game.orElse(null))
@@ -188,11 +192,10 @@ public class GameServerService {
                 .volumeMounts(
                         dto.getVolumeMounts() != null
                                 ? dto.getVolumeMounts().stream()
-                                .map(VolumeMountConfiguration::fromDto)
-                                .toList()
+                                        .map(VolumeMountConfiguration::fromDto)
+                                        .toList()
                                 : List.of())
                 .portMappings(dto.getPortMappings() != null ? dto.getPortMappings() : List.of())
                 .build();
     }
 }
-
