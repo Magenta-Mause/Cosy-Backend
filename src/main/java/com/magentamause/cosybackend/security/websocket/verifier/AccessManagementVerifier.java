@@ -37,8 +37,7 @@ public class AccessManagementVerifier implements WebsocketEndpointVerifier {
         Matcher matcher = pathPattern.matcher(url);
         if (matcher.matches()) {
             final String serverId = matcher.group(1);
-            securityContextService.canUser(action, resource, serverId, user);
-            return true;
+            return securityContextService.canUser(action, resource, serverId, user);
         }
         return false;
     }

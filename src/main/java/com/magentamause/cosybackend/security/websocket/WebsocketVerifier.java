@@ -35,7 +35,7 @@ public class WebsocketVerifier {
                 websocketVerifier.entrySet()) {
             Pattern pattern = verifier.getKey();
             log.debug("pattern: {}", pattern.toString());
-            if (pattern.matcher(channel).matches()) {
+            if (accessor != null && pattern.matcher(channel).matches()) {
                 String userId =
                         Objects.requireNonNull(accessor.getSessionAttributes())
                                 .get("userId")

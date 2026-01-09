@@ -65,5 +65,5 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
             WebSocketHandler wsHandler,
             Exception exception) {}
 
-    class NoAuthException extends RuntimeException {}
+    static class NoAuthException extends RuntimeException {}
 }
