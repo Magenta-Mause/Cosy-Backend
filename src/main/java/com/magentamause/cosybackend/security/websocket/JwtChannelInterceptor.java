@@ -21,7 +21,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
         if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
             String subscribedEndpoint = accessor.getDestination();
-            log.info("Subscribed to {}", subscribedEndpoint);
+            log.debug("Subscribed to {}", subscribedEndpoint);
             if (websocketVerifier.verify(subscribedEndpoint, accessor)) {
                 return message;
             } else {

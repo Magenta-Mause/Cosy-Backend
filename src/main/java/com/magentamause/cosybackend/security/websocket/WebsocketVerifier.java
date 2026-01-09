@@ -14,38 +14,39 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 @Slf4j
 @RequiredArgsConstructor
 public class WebsocketVerifier {
-    private final Map<String, WebsocketEndpointVerifier> websocketVerifier = new HashMap<>();
+    private final Map<Pattern, WebsocketEndpointVerifier> websocketVerifier = new HashMap<>();
     private final SecurityContextService securityContextService;
     private final UserEntityService userEntityService;
 
     public WebsocketVerifier addVerifier(String channel, WebsocketEndpointVerifier verifier) {
-        websocketVerifier.put(
+        String regex =
                 "^"
                         + channel.replace(
                                 "{serverId}",
                                 "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
-                        + "$",
-                verifier);
+                        + "$";
+        Pattern pattern = Pattern.compile(regex);
+        websocketVerifier.put(pattern, verifier);
         return this;
     }
 
     public boolean verify(String channel, StompHeaderAccessor accessor) {
-        for (final Map.Entry<String, WebsocketEndpointVerifier> verifier :
+        for (final Map.Entry<Pattern, WebsocketEndpointVerifier> verifier :
                 websocketVerifier.entrySet()) {
-            Pattern pattern = Pattern.compile(verifier.getKey());
-            log.info("pattern: {}", pattern.toString());
+            Pattern pattern = verifier.getKey();
+            log.debug("pattern: {}", pattern.toString());
             if (pattern.matcher(channel).matches()) {
                 String userId =
                         Objects.requireNonNull(accessor.getSessionAttributes())
                                 .get("userId")
                                 .toString();
-                log.info("User: {} trying to access channel: {}", userId, channel);
+                log.debug("User: {} trying to access channel: {}", userId, channel);
                 UserEntity user = userEntityService.getUserByUuid(userId);
                 if (verifier.getValue().verify(channel, accessor, securityContextService, user)) {
-                    log.info("Access granted for user: {}", userId);
+                    log.debug("Access granted for user: {}", userId);
                     return true;
                 } else {
-                    log.info("Access denied for user: {}", userId);
+                    log.debug("Access denied for user: {}", userId);
                 }
             }
         }

@@ -15,6 +15,8 @@ public class GameServerLogController {
     @GetMapping
     public ResponseEntity<List<GameServerLogMessageEntity>> getLogs(
             @PathVariable String gameServerUuid) {
+        // TODO: Replace placeholder empty response with retrieval of log messages for the given
+        //       gameServerUuid (e.g. query the log storage or database and return the results).
         return ResponseEntity.ok().body(List.of());
     }
 }

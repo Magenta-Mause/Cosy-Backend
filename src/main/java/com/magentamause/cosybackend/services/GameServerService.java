@@ -45,9 +45,9 @@ public class GameServerService {
         this.gameEntityService = gameEntityService;
         this.engineType = engineProperties.selected();
         this.gameServerRepository = gameServerRepository;
+        this.gameServerLogWebsocketPublisher = gameServerLogWebsocketPublisher;
 
         log.info("GameServerService initialized with engine '{}'", engineType);
-        this.gameServerLogWebsocketPublisher = gameServerLogWebsocketPublisher;
     }
 
     public List<GameServerEntity> getAllGameServers() {
@@ -114,28 +114,23 @@ public class GameServerService {
             return engineManager.startAndAttachLogListener(
                     config,
                     (logMessage) -> {
-                        propagateLogMessage(config, logMessage);
+                        enrichAndPublishLogMessage(config, logMessage);
                     });
         } finally {
             startingServers.remove(serviceName);
         }
     }
 
-    public GameServerLogMessageEntity propagateLogMessage(
+    public GameServerLogMessageEntity enrichAndPublishLogMessage(
             GameServerEntity gameServer, GameServerLogMessageEntity logMessage) {
         String logMessageUuid = UUID.randomUUID().toString();
 
-        GameServerLogMessageEntity gameServerLogMessage =
-                GameServerLogMessageEntity.builder()
-                        .uuid(logMessageUuid)
-                        .gameServerUuid(gameServer.getUuid())
-                        .timestamp(logMessage.getTimestamp())
-                        .level(logMessage.getLevel())
-                        .message(logMessage.getMessage())
-                        .build();
+        // Augment the existing logMessage instead of rebuilding a new one
+        logMessage.setUuid(logMessageUuid);
+        logMessage.setGameServerUuid(gameServer.getUuid());
 
-        gameServerLogWebsocketPublisher.publishLog(gameServer.getUuid(), gameServerLogMessage);
-        return gameServerLogMessage;
+        gameServerLogWebsocketPublisher.publishLog(gameServer.getUuid(), logMessage);
+        return logMessage;
     }
 
     public void stopServer(String serviceName) {
