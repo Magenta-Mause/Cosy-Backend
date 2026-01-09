@@ -4,9 +4,12 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
-import com.magentamause.cosybackend.services.GameServerService;
+import com.magentamause.cosybackend.repositories.GameServerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import java.util.Optional;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -14,7 +17,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class GameServerPolicy implements AccessPolicy {
 
-    private final GameServerService gameServerService;
+    private final GameServerRepository gameServerRepository;
 
     @Override
     public Resource resource() {
@@ -36,7 +39,13 @@ public class GameServerPolicy implements AccessPolicy {
         }
 
         GameServerEntity gameServerEntity =
-                gameServerService.getGameServerById((String) referenceId);
+                gameServerRepository
+                        .findById((String) referenceId)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game server with uuid " + referenceId + " not found"));
 
         return switch (action) {
             case READ, DELETE, UPDATE -> gameServerEntity

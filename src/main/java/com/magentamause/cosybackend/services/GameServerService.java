@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.services;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerLogMessage;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
@@ -20,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -110,11 +112,26 @@ public class GameServerService {
 													"Server '" + serviceName + "' not found"));
 
 			return engineManager.startAndAttachLogListener(config, (logMessage) -> {
-				gameServerLogWebsocketPublisher.publishLog(config.getUuid(), logMessage);
+				propagateLogMessage(config, logMessage);
 			});
 		} finally {
 			startingServers.remove(serviceName);
 		}
+	}
+
+	public GameServerLogMessage propagateLogMessage(GameServerEntity gameServer, GameServerLogMessage logMessage) {
+		String logMessageUuid = UUID.randomUUID().toString();
+
+		GameServerLogMessage gameServerLogMessage = GameServerLogMessage.builder()
+				.uuid(logMessageUuid)
+				.gameServerUuid(gameServer.getUuid())
+				.timestamp(logMessage.getTimestamp())
+				.level(logMessage.getLevel())
+				.message(logMessage.getMessage())
+				.build();
+
+		gameServerLogWebsocketPublisher.publishLog(gameServer.getUuid(), gameServerLogMessage);
+		return gameServerLogMessage;
 	}
 
 	public void stopServer(String serviceName) {

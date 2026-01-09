@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class GameServerLogMessage {
+	private String uuid;
+	private String gameServerUuid;
 	private String message;
 	private LogLevel level;
 	private LocalDateTime timestamp;
