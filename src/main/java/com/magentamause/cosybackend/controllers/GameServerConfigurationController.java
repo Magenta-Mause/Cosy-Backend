@@ -3,10 +3,10 @@ package com.magentamause.cosybackend.controllers;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
-import com.magentamause.cosybackend.services.GameServerConfigurationService;
+import com.magentamause.cosybackend.services.GameServerService;
 import com.magentamause.cosybackend.services.SecurityContextService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -21,28 +21,28 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/game-server-configurations")
 public class GameServerConfigurationController {
 
-    private final GameServerConfigurationService gameServerConfigurationService;
+    private final GameServerService gameServerService;
     private final SecurityContextService securityContextService;
 
     @GetMapping
     public ResponseEntity<List<GameServerDto>> getAllGameServers() {
         List<GameServerDto> dtos =
-                gameServerConfigurationService.getAllGameServers().stream()
-                        .map(GameServerConfigurationEntity::toDto)
+                gameServerService.getAllGameServers().stream()
+                        .map(GameServerEntity::toDto)
                         .toList();
         return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/{uuid}")
     public ResponseEntity<GameServerDto> getGameServerById(@PathVariable String uuid) {
-        GameServerConfigurationEntity entity =
-                gameServerConfigurationService.getGameServerById(uuid);
+        GameServerEntity entity =
+                gameServerService.getGameServerById(uuid);
         return ResponseEntity.ok(entity.toDto());
     }
 
     @DeleteMapping("/{uuid}")
     public ResponseEntity<Void> deleteGameServerById(@PathVariable String uuid) {
-        gameServerConfigurationService.deleteGameServerById(uuid);
+        gameServerService.deleteGameServerById(uuid);
         return ResponseEntity.noContent().build();
     }
 
@@ -51,8 +51,8 @@ public class GameServerConfigurationController {
             @Valid @RequestBody GameServerCreationDto gameServerCreationDto) {
         UserEntity user = securityContextService.getUser();
 
-        GameServerConfigurationEntity createdGameServer =
-                GameServerConfigurationEntity.builder()
+        GameServerEntity createdGameServer =
+                GameServerEntity.builder()
                         .owner(user)
                         .gameUuid(gameServerCreationDto.getGameUuid())
                         .serverName(gameServerCreationDto.getServerName())
@@ -73,7 +73,7 @@ public class GameServerConfigurationController {
                                         : List.of())
                         .build();
 
-        gameServerConfigurationService.saveGameServer(createdGameServer);
+        gameServerService.saveGameServer(createdGameServer);
         return ResponseEntity.status(201).body(createdGameServer.toDto());
     }
 
@@ -86,8 +86,8 @@ public class GameServerConfigurationController {
 
         UserEntity user = securityContextService.getUser();
 
-        GameServerConfigurationEntity updated =
-                gameServerConfigurationService.updateGameServerConfiguration(uuid, updateDto, user);
+        GameServerEntity updated =
+                gameServerService.updateGameServerConfiguration(uuid, updateDto, user);
 
         return ResponseEntity.ok(updated.toDto());
     }

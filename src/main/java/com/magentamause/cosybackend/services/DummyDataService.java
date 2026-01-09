@@ -1,9 +1,9 @@
 package com.magentamause.cosybackend.services;
 
-import static com.magentamause.cosybackend.entities.GameServerConfigurationEntity.GameServerStatus.*;
+import static com.magentamause.cosybackend.entities.GameServerEntity.GameServerStatus.*;
 
 import com.magentamause.cosybackend.entities.DummyInstantiatedProperties;
-import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
@@ -25,20 +25,20 @@ import org.springframework.stereotype.Service;
 public class DummyDataService {
 
     private final PasswordEncoder passwordEncoder;
-    private final GameServerConfigurationService gameServerConfigurationService;
+    private final GameServerService gameServerService;
     private final DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository;
     private final UserEntityService userEntityService;
-    private List<GameServerConfigurationEntity> dummyGameServers;
+    private List<GameServerEntity> dummyGameServers;
     private UserEntity adminUser;
 
     @Autowired
     public DummyDataService(
             PasswordEncoder passwordEncoder,
-            GameServerConfigurationService gameServerConfigurationService,
+            GameServerService gameServerService,
             UserEntityService userEntityService,
             DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository) {
         this.passwordEncoder = passwordEncoder;
-        this.gameServerConfigurationService = gameServerConfigurationService;
+        this.gameServerService = gameServerService;
         this.dummyInstantiatedPropertiesRepository = dummyInstantiatedPropertiesRepository;
         this.userEntityService = userEntityService;
 
@@ -52,7 +52,7 @@ public class DummyDataService {
 
         this.dummyGameServers =
                 List.of(
-                        GameServerConfigurationEntity.builder()
+                        GameServerEntity.builder()
                                 .uuid(UUID.randomUUID().toString())
                                 .serverName("Minecraft Survival EU-1")
                                 .owner(adminUser)
@@ -81,7 +81,7 @@ public class DummyDataService {
                                                         .value("20")
                                                         .build()))
                                 .build(),
-                        GameServerConfigurationEntity.builder()
+                        GameServerEntity.builder()
                                 .uuid(UUID.randomUUID().toString())
                                 .serverName("Valheim Dedicated #2")
                                 .owner(adminUser)
@@ -114,7 +114,7 @@ public class DummyDataService {
                                                         .value("Midgard")
                                                         .build()))
                                 .build(),
-                        GameServerConfigurationEntity.builder()
+                        GameServerEntity.builder()
                                 .uuid(UUID.randomUUID().toString())
                                 .serverName("CS2 Competitive Server")
                                 .owner(adminUser)
@@ -163,7 +163,7 @@ public class DummyDataService {
         }
 
         log.info("Populating dummy game servers");
-        this.dummyGameServers.forEach(gameServerConfigurationService::saveGameServer);
+        this.dummyGameServers.forEach(gameServerService::saveGameServer);
 
         dummyInstantiatedPropertiesRepository.save(
                 DummyInstantiatedProperties.builder().key("dummy-game-servers").build());

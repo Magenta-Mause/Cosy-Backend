@@ -34,7 +34,7 @@ public class UserEntity {
     private List<UserInviteEntity> invites;
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<GameServerConfigurationEntity> gameServerConfigurationEntities;
+    private List<GameServerEntity> gameServerConfigurationEntities;
 
     public enum Role {
         OWNER,
