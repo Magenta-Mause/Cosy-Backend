@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameServerConfigurationEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
@@ -10,9 +11,11 @@ import com.magentamause.cosybackend.services.SecurityContextService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/game-server-configurations")
@@ -61,8 +64,8 @@ public class GameServerConfigurationController {
                         .volumeMounts(
                                 gameServerCreationDto.getVolumeMounts() != null
                                         ? gameServerCreationDto.getVolumeMounts().stream()
-                                                .map(VolumeMountConfiguration::fromDto)
-                                                .toList()
+                                        .map(VolumeMountConfiguration::fromDto)
+                                        .toList()
                                         : null)
                         .portMappings(
                                 gameServerCreationDto.getPortMappings() != null
@@ -72,5 +75,20 @@ public class GameServerConfigurationController {
 
         gameServerConfigurationService.saveGameServer(createdGameServer);
         return ResponseEntity.status(201).body(createdGameServer.toDto());
+    }
+
+    @PutMapping("/{uuid}")
+    public ResponseEntity<GameServerDto> updateGameServer(
+            @PathVariable String uuid,
+            @Valid @RequestBody GameServerUpdateDto updateDto
+    ) {
+        log.info("Received request to update the game server with id {}", uuid);
+
+        UserEntity user = securityContextService.getUser();
+
+        GameServerConfigurationEntity updated =
+                gameServerConfigurationService.updateGameServerConfiguration(uuid, updateDto, user);
+
+        return ResponseEntity.ok(updated.toDto());
     }
 }
