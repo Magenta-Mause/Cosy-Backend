@@ -38,5 +38,6 @@ public class UtilConfig {
         return Jwts.parser().verifyWith(jwtSecretKey).build();
     }
 
-    public static final String UUID_REGEX = "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})";
+    public static final String UUID_REGEX =
+            "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})";
 }

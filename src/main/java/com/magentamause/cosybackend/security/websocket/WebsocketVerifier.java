@@ -19,12 +19,7 @@ public class WebsocketVerifier {
     private final UserEntityService userEntityService;
 
     public WebsocketVerifier addVerifier(String channel, WebsocketEndpointVerifier verifier) {
-        String regex =
-                "^"
-                        + channel.replace(
-                                "{serverId}",
-                                UtilConfig.UUID_REGEX)
-                        + "$";
+        String regex = "^" + channel.replace("{serverId}", UtilConfig.UUID_REGEX) + "$";
         Pattern pattern = Pattern.compile(regex);
         websocketVerifier.put(pattern, verifier);
         return this;
