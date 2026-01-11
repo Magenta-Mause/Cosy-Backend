@@ -13,7 +13,6 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
-import io.netty.handler.logging.LogLevel;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -111,7 +110,7 @@ public class KubernetesEngineManager implements EngineManager {
                                         listener.accept(
                                                 GameServerLogMessageEntity.builder()
                                                         .message(line)
-                                                        .level(LogLevel.INFO)
+                                                        .level(GameServerLogMessageEntity.LogLevel.INFO)
                                                         .timestamp(LocalDateTime.now())
                                                         .build());
                                     }
@@ -120,7 +119,7 @@ public class KubernetesEngineManager implements EngineManager {
                                 listener.accept(
                                         GameServerLogMessageEntity.builder()
                                                 .message(e.getMessage())
-                                                .level(LogLevel.ERROR)
+                                                .level(GameServerLogMessageEntity.LogLevel.ERROR)
                                                 .timestamp(LocalDateTime.now())
                                                 .build());
                             }

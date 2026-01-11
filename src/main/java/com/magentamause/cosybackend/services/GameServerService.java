@@ -125,7 +125,6 @@ public class GameServerService {
             GameServerEntity gameServer, GameServerLogMessageEntity logMessage) {
         String logMessageUuid = UUID.randomUUID().toString();
 
-        // Augment the existing logMessage instead of rebuilding a new one
         logMessage.setUuid(logMessageUuid);
         logMessage.setGameServerUuid(gameServer.getUuid());
 

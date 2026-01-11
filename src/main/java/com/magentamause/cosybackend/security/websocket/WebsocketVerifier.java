@@ -3,53 +3,63 @@ package com.magentamause.cosybackend.security.websocket;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.services.SecurityContextService;
 import com.magentamause.cosybackend.services.UserEntityService;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
+
 @Slf4j
 @RequiredArgsConstructor
 public class WebsocketVerifier {
-    private final Map<Pattern, WebsocketEndpointVerifier> websocketVerifier = new HashMap<>();
-    private final SecurityContextService securityContextService;
-    private final UserEntityService userEntityService;
+	private final Map<Pattern, WebsocketEndpointVerifier> websocketVerifier = new HashMap<>();
+	private final SecurityContextService securityContextService;
+	private final UserEntityService userEntityService;
 
-    public WebsocketVerifier addVerifier(String channel, WebsocketEndpointVerifier verifier) {
-        String regex =
-                "^"
-                        + channel.replace(
-                                "{serverId}",
-                                "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
-                        + "$";
-        Pattern pattern = Pattern.compile(regex);
-        websocketVerifier.put(pattern, verifier);
-        return this;
-    }
+	public WebsocketVerifier addVerifier(String channel, WebsocketEndpointVerifier verifier) {
+		String regex =
+				"^"
+						+ channel.replace(
+						"{serverId}",
+						"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
+						+ "$";
+		Pattern pattern = Pattern.compile(regex);
+		websocketVerifier.put(pattern, verifier);
+		return this;
+	}
 
-    public boolean verify(String channel, StompHeaderAccessor accessor) {
-        for (final Map.Entry<Pattern, WebsocketEndpointVerifier> verifier :
-                websocketVerifier.entrySet()) {
-            Pattern pattern = verifier.getKey();
-            log.debug("pattern: {}", pattern.toString());
-            if (accessor != null && pattern.matcher(channel).matches()) {
-                String userId =
-                        Objects.requireNonNull(accessor.getSessionAttributes())
-                                .get("userId")
-                                .toString();
-                log.debug("User: {} trying to access channel: {}", userId, channel);
-                UserEntity user = userEntityService.getUserByUuid(userId);
-                if (verifier.getValue().verify(channel, accessor, securityContextService, user)) {
-                    log.debug("Access granted for user: {}", userId);
-                    return true;
-                } else {
-                    log.debug("Access denied for user: {}", userId);
-                }
-            }
-        }
-        return false;
-    }
+	public boolean verify(String channel, StompHeaderAccessor stompHeaders) {
+		final var registeredVerifiers = websocketVerifier.entrySet();
+		for (final var verifier : registeredVerifiers) {
+			Pattern verifierPattern = verifier.getKey();
+			if (stompHeaders == null) {
+				continue;
+			}
+			if (!verifierPattern.matcher(channel).matches()) {
+				continue;
+			}
+			String userId = extractUserId(stompHeaders);
+			if (userId == null) {
+				continue;
+			}
+			log.debug("User: {} trying to access channel: {}", userId, channel);
+			UserEntity user = userEntityService.getUserByUuid(userId);
+			return verifier.getValue().verify(channel, stompHeaders, securityContextService, user);
+		}
+		return false;
+	}
+
+	private String extractUserId(StompHeaderAccessor accessor) {
+		Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+		if (sessionAttributes == null) {
+			return null;
+		}
+		try {
+			return (String) sessionAttributes.get("userId");
+		} catch (ClassCastException e) {
+			return null;
+		}
+	}
 }

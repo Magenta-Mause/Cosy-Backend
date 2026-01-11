@@ -2,7 +2,6 @@ package com.magentamause.cosybackend.entities;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import io.netty.handler.logging.LogLevel;
 import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Data;
@@ -16,4 +15,8 @@ public class GameServerLogMessageEntity {
     private String message;
     private LogLevel level;
     private LocalDateTime timestamp;
+
+    public enum LogLevel {
+        INFO, WARNING, ERROR
+    }
 }

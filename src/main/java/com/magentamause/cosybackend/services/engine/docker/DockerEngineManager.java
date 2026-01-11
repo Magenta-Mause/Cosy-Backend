@@ -12,7 +12,6 @@ import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.config.EngineProperties.Docker;
-import io.netty.handler.logging.LogLevel;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -120,8 +119,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                                 .message(message)
                                                 .level(
                                                         frame.getStreamType() == StreamType.STDERR
-                                                                ? LogLevel.ERROR
-                                                                : LogLevel.INFO)
+                                                                ? GameServerLogMessageEntity.LogLevel.ERROR
+                                                                : GameServerLogMessageEntity.LogLevel.INFO)
                                                 .timestamp(LocalDateTime.now())
                                                 .build();
 
@@ -133,7 +132,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                 listener.accept(
                                         GameServerLogMessageEntity.builder()
                                                 .message(throwable.getMessage())
-                                                .level(LogLevel.ERROR)
+                                                .level(GameServerLogMessageEntity.LogLevel.ERROR)
                                                 .timestamp(LocalDateTime.now())
                                                 .build());
                             }
