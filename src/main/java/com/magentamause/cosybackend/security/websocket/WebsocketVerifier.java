@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.security.websocket;
 
+import com.magentamause.cosybackend.configs.UtilConfig;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.services.SecurityContextService;
 import com.magentamause.cosybackend.services.UserEntityService;
@@ -22,7 +23,7 @@ public class WebsocketVerifier {
                 "^"
                         + channel.replace(
                                 "{serverId}",
-                                "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
+                                UtilConfig.UUID_REGEX)
                         + "$";
         Pattern pattern = Pattern.compile(regex);
         websocketVerifier.put(pattern, verifier);

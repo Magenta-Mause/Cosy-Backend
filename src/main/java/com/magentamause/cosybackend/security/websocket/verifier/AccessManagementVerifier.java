@@ -1,12 +1,15 @@
 package com.magentamause.cosybackend.security.websocket.verifier;
 
+import com.magentamause.cosybackend.configs.UtilConfig;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.websocket.WebsocketEndpointVerifier;
 import com.magentamause.cosybackend.services.SecurityContextService;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 
 public class AccessManagementVerifier implements WebsocketEndpointVerifier {
@@ -21,8 +24,8 @@ public class AccessManagementVerifier implements WebsocketEndpointVerifier {
                 Pattern.compile(
                         "^"
                                 + path.replace(
-                                        "{serverId}",
-                                        "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
+                                "{serverId}",
+                                UtilConfig.UUID_REGEX)
                                 + "$");
         this.action = action;
         this.resource = resource;
