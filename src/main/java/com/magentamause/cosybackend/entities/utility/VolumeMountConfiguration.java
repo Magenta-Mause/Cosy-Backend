@@ -3,8 +3,8 @@ package com.magentamause.cosybackend.entities.utility;
 import com.magentamause.cosybackend.dtos.actiondtos.VolumeMountConfigurationCreationDto;
 import jakarta.persistence.*;
 import lombok.*;
-import tools.jackson.databind.PropertyNamingStrategies;
-import tools.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 @Getter
 @Setter
