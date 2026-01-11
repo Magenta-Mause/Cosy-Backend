@@ -110,7 +110,9 @@ public class KubernetesEngineManager implements EngineManager {
                                         listener.accept(
                                                 GameServerLogMessageEntity.builder()
                                                         .message(line)
-                                                        .level(GameServerLogMessageEntity.LogLevel.INFO)
+                                                        .level(
+                                                                GameServerLogMessageEntity.LogLevel
+                                                                        .INFO)
                                                         .timestamp(LocalDateTime.now())
                                                         .build());
                                     }

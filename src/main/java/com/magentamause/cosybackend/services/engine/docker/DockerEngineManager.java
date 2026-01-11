@@ -119,8 +119,10 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                                 .message(message)
                                                 .level(
                                                         frame.getStreamType() == StreamType.STDERR
-                                                                ? GameServerLogMessageEntity.LogLevel.ERROR
-                                                                : GameServerLogMessageEntity.LogLevel.INFO)
+                                                                ? GameServerLogMessageEntity
+                                                                        .LogLevel.ERROR
+                                                                : GameServerLogMessageEntity
+                                                                        .LogLevel.INFO)
                                                 .timestamp(LocalDateTime.now())
                                                 .build();
 

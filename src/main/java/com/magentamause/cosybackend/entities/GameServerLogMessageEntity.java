@@ -17,6 +17,8 @@ public class GameServerLogMessageEntity {
     private LocalDateTime timestamp;
 
     public enum LogLevel {
-        INFO, WARNING, ERROR
+        INFO,
+        WARNING,
+        ERROR
     }
 }
