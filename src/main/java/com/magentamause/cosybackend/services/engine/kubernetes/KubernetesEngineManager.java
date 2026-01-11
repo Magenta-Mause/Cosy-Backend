@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.services.engine.kubernetes;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.CreateGameInstanceException;

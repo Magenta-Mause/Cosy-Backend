@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.configs;
 
+import com.magentamause.cosybackend.configs.properties.CorsProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;

@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services;
+package com.magentamause.cosybackend.services.gameserver;
 
 import com.magentamause.cosybackend.configs.GamesApiConfig;
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;

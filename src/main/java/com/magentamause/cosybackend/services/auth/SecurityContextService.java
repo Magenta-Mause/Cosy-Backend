@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services;
+package com.magentamause.cosybackend.services.auth;
 
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.exceptions.NoAuthenticationFoundException;

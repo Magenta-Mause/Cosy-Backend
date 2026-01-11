@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services;
+package com.magentamause.cosybackend.services.user;
 
 import com.magentamause.cosybackend.dtos.actiondtos.UserInviteCreationDto;
 import com.magentamause.cosybackend.entities.UserEntity;
@@ -7,6 +7,7 @@ import com.magentamause.cosybackend.repositories.UserInviteRepository;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Objects;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

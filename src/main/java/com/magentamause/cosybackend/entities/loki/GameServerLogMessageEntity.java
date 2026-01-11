@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.entities;
+package com.magentamause.cosybackend.entities.loki;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;

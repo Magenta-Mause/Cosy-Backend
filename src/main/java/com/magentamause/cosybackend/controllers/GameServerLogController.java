@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.controllers;
 
-import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;

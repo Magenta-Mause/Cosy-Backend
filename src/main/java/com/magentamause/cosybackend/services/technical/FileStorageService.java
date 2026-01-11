@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services;
+package com.magentamause.cosybackend.services.technical;
 
 import java.io.IOException;
 import java.nio.file.Files;

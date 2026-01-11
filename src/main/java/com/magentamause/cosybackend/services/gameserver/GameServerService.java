@@ -1,10 +1,10 @@
-package com.magentamause.cosybackend.services;
+package com.magentamause.cosybackend.services.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;

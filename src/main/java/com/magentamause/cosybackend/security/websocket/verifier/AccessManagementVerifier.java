@@ -5,7 +5,7 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.websocket.WebsocketEndpointVerifier;
-import com.magentamause.cosybackend.services.SecurityContextService;
+import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;

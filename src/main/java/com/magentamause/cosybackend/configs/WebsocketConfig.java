@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.configs;
 
+import com.magentamause.cosybackend.configs.properties.CorsProperties;
 import com.magentamause.cosybackend.security.websocket.JwtChannelInterceptor;
 import com.magentamause.cosybackend.security.websocket.JwtHandshakeInterceptor;
 import lombok.RequiredArgsConstructor;

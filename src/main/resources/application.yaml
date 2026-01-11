@@ -37,7 +37,10 @@ cosy:
       - https://cosy-docker.pybay.de
   games-api:
     url: https://cosy-game-api.jannekeipert.de
-
+  loki:
+    username: loki-user
+    password: loki-password
+    url: http://localhost:3100
   engine:
     selected: DOCKER
 

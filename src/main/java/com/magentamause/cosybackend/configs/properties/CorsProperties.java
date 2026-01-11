@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.configs;
+package com.magentamause.cosybackend.configs.properties;
 
 import java.util.List;
 import lombok.Getter;
