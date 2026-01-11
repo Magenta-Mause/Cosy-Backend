@@ -43,8 +43,7 @@ cosy:
 
     # Docker-specific configuration
     docker:
-      socket-path: ${COSY_DOCKER_SOCKER_PATH:unix:///var/run/docker.sock}  # Docker socket
-      api-version: "1.41"                       # Optional: API version
+      socket-path: ${COSY_DOCKER_SOCKET_PATH:unix:///var/run/docker.sock}  # Docker socket
       tls: false                                # Whether to use TLS
       cert-path: ""                             # Path to TLS certs if enabled
 
