@@ -1,20 +1,27 @@
-package com.magentamause.cosybackend.engine.kubernetes;
+package com.magentamause.cosybackend.services.engine.kubernetes;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
-import com.magentamause.cosybackend.engine.EngineManager;
-import com.magentamause.cosybackend.engine.config.EngineProperties.Kubernetes;
 import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.CreateGameInstanceException;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
+import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.config.EngineProperties.Kubernetes;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import okhttp3.Call;
+import okhttp3.Response;
 
 @AllArgsConstructor
 public class KubernetesEngineManager implements EngineManager {
@@ -60,6 +67,69 @@ public class KubernetesEngineManager implements EngineManager {
                 .status(GameServerStatusDto.GameServerStatus.Found)
                 .phase(phase)
                 .build();
+    }
+
+    @Override
+    public void attachLogListener(
+            GameServerEntity server, Consumer<GameServerLogMessageEntity> listener) {
+        V1Pod pod =
+                findPod(server)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "Cannot attach logs: pod not found"));
+
+        String podName = pod.getMetadata().getName();
+        String namespace = config.namespace();
+        String containerName = "game-server";
+
+        Thread logThread =
+                new Thread(
+                        () -> {
+                            try {
+                                // Build streaming call
+                                Call call =
+                                        api.readNamespacedPodLog(podName, namespace)
+                                                .container(containerName)
+                                                .follow(true)
+                                                .timestamps(false)
+                                                .tailLines(null)
+                                                .buildCall(null);
+
+                                // Execute and stream
+                                try (Response response = call.execute();
+                                        InputStream stream = response.body().byteStream();
+                                        Scanner scanner =
+                                                new Scanner(stream, StandardCharsets.UTF_8)) {
+
+                                    while (!Thread.currentThread().isInterrupted()
+                                            && scanner.hasNextLine()) {
+
+                                        String line = scanner.nextLine();
+
+                                        listener.accept(
+                                                GameServerLogMessageEntity.builder()
+                                                        .message(line)
+                                                        .level(
+                                                                GameServerLogMessageEntity.LogLevel
+                                                                        .INFO)
+                                                        .timestamp(LocalDateTime.now())
+                                                        .build());
+                                    }
+                                }
+                            } catch (Exception e) {
+                                listener.accept(
+                                        GameServerLogMessageEntity.builder()
+                                                .message(e.getMessage())
+                                                .level(GameServerLogMessageEntity.LogLevel.ERROR)
+                                                .timestamp(LocalDateTime.now())
+                                                .build());
+                            }
+                        },
+                        "k8s-log-stream-" + server.getUuid());
+
+        logThread.setDaemon(true);
+        logThread.start();
     }
 
     private Optional<V1Pod> findPod(GameServerEntity server) {

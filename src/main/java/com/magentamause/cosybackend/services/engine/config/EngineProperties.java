@@ -1,6 +1,6 @@
-package com.magentamause.cosybackend.engine.config;
+package com.magentamause.cosybackend.services.engine.config;
 
-import com.magentamause.cosybackend.engine.EngineType;
+import com.magentamause.cosybackend.services.engine.EngineType;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

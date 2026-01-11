@@ -4,4 +4,5 @@ public enum Resource {
     GAME_SERVER,
     USER,
     USER_INVITE,
+    GAME_SERVER_LOG,
 }
