@@ -74,8 +74,10 @@ public class GameServerController {
     }
 
     @PutMapping("/{uuid}")
+    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER)
     public ResponseEntity<GameServerDto> updateGameServer(
-            @PathVariable String uuid, @Valid @RequestBody GameServerUpdateDto updateDto) {
+            @PathVariable @ResourceId String uuid,
+            @Valid @RequestBody GameServerUpdateDto updateDto) {
         log.info("Received request to update the game server with id {}", uuid);
 
         UserEntity user = securityContextService.getUser();
