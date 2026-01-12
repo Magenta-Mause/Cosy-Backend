@@ -8,6 +8,9 @@ import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.gameserver.GameServerLogService;
 import java.time.Duration;
 import java.util.List;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +26,8 @@ public class GameServerLogController {
     @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_LOG)
     public ResponseEntity<List<GameServerLogMessageEntity>> getLogs(
             @ResourceId @PathVariable String gameServerUuid,
-            @RequestParam(defaultValue = "100", required = false) int limit,
-            @RequestParam(defaultValue = "5", required = false) int sinceHours) {
+            @RequestParam(defaultValue = "100", required = false) @Min(0) @Max(500) int limit,
+            @RequestParam(defaultValue = "5", required = false) @Min(1) @Max(400) int sinceHours) {
         return ResponseEntity.ok()
                 .body(
                         gameServerLogService.getLogsForServer(

@@ -28,7 +28,7 @@ public class LokiQueryService {
 
     private final WebClient lokiWebClient;
     private final LokiProperties lokiProperties;
-    private static final Pattern UUID_REGEX = Pattern.compile("`" + UtilConfig.UUID_REGEX + "$");
+    private static final Pattern UUID_REGEX = Pattern.compile("^" + UtilConfig.UUID_REGEX + "$");
 
     public List<GameServerLogMessageEntity> queryLogs(LokiLogQuery query, TemporalAmount since) {
         String logQl = buildLogQl(query);
@@ -123,6 +123,7 @@ public class LokiQueryService {
         StringBuilder sb = new StringBuilder("{app=\"" + lokiProperties.applicationName() + "\"");
 
         if (q.gameServerUuid() != null) {
+            log.info("UUID: {}", q.gameServerUuid());
             if (!UUID_REGEX.matcher(q.gameServerUuid()).matches()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No valid game server uuid provided");
             }
