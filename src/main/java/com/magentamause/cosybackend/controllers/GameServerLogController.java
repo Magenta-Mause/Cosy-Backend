@@ -6,10 +6,8 @@ import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.gameserver.GameServerLogService;
-
 import java.time.Duration;
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +26,8 @@ public class GameServerLogController {
             @RequestParam(defaultValue = "100", required = false) int limit,
             @RequestParam(defaultValue = "5", required = false) int sinceHours) {
         return ResponseEntity.ok()
-                .body(gameServerLogService.getLogsForServer(gameServerUuid, limit, Duration.ofHours(sinceHours)));
+                .body(
+                        gameServerLogService.getLogsForServer(
+                                gameServerUuid, limit, Duration.ofHours(sinceHours)));
     }
 }

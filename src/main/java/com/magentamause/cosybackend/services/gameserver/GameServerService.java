@@ -13,12 +13,10 @@ import com.magentamause.cosybackend.services.engine.EngineType;
 import com.magentamause.cosybackend.services.engine.config.EngineProperties;
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
 import jakarta.transaction.Transactional;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -120,9 +118,7 @@ public class GameServerService {
                     GameServerLogMessageEntity.of(
                             config.getUuid(),
                             "Starting Game Server",
-                            GameServerLogMessageEntity.LogLevel.TRACE
-                    )
-            );
+                            GameServerLogMessageEntity.LogLevel.TRACE));
 
             return engineManager.startAndAttachLogListener(
                     config,
@@ -158,9 +154,7 @@ public class GameServerService {
                 GameServerLogMessageEntity.of(
                         config.getUuid(),
                         "Stopping Game Server",
-                        GameServerLogMessageEntity.LogLevel.TRACE
-                )
-        );
+                        GameServerLogMessageEntity.LogLevel.TRACE));
         try {
             engineManager.stop(config);
         } catch (ServerAlreadyStoppedException e) {
@@ -193,8 +187,8 @@ public class GameServerService {
                 .volumeMounts(
                         dto.getVolumeMounts() != null
                                 ? dto.getVolumeMounts().stream()
-                                .map(VolumeMountConfiguration::fromDto)
-                                .toList()
+                                        .map(VolumeMountConfiguration::fromDto)
+                                        .toList()
                                 : List.of())
                 .portMappings(dto.getPortMappings() != null ? dto.getPortMappings() : List.of())
                 .build();

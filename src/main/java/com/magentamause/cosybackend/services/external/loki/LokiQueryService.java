@@ -5,22 +5,16 @@ import com.magentamause.cosybackend.dtos.loki.LokiLogQuery;
 import com.magentamause.cosybackend.dtos.loki.LokiPushRequest;
 import com.magentamause.cosybackend.dtos.loki.LokiQueryResponse;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
-
-import java.net.URI;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.Map;
-
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriBuilder;
-import org.springframework.web.util.UriBuilderFactory;
 
 @Slf4j
 @Service
@@ -39,7 +33,12 @@ public class LokiQueryService {
         LokiQueryResponse response =
                 lokiClient
                         .get()
-                        .uri("/loki/api/v1/query_range?query={query}&limit={limit}&start={since}&end={end}", logQl, query.limit(), toNs(start), toNs(end))
+                        .uri(
+                                "/loki/api/v1/query_range?query={query}&limit={limit}&start={since}&end={end}",
+                                logQl,
+                                query.limit(),
+                                toNs(start),
+                                toNs(end))
                         .retrieve()
                         .bodyToMono(LokiQueryResponse.class)
                         .block();

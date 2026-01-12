@@ -16,8 +16,7 @@ public class WebClientConfig {
 
     @Bean
     public WebClient lokiWebClient(LokiProperties lokiProperties) {
-        DefaultUriBuilderFactory factory =
-                new DefaultUriBuilderFactory(lokiProperties.url());
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(lokiProperties.url());
         factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY);
 
         String encodedAuthorization =

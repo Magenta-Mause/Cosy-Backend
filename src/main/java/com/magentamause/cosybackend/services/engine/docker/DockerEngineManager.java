@@ -18,9 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -106,48 +104,46 @@ public class DockerEngineManager implements EngineManager, Closeable {
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener) {
         String containerName = containerName(serviceConfig);
 
-        ResultCallback.Adapter<Frame> callback = new ResultCallback.Adapter<>() {
-            @Override
-            public void onNext(Frame frame) {
-                String message =
-                        new String(frame.getPayload(), StandardCharsets.UTF_8);
+        ResultCallback.Adapter<Frame> callback =
+                new ResultCallback.Adapter<>() {
+                    @Override
+                    public void onNext(Frame frame) {
+                        String message = new String(frame.getPayload(), StandardCharsets.UTF_8);
 
-                GameServerLogMessageEntity logMessage =
-                        GameServerLogMessageEntity.builder()
-                                .message(message)
-                                .level(
-                                        frame.getStreamType() == StreamType.STDERR
-                                                ? GameServerLogMessageEntity
-                                                        .LogLevel.ERROR
-                                                : GameServerLogMessageEntity
-                                                        .LogLevel.INFO)
-                                .timestamp(Instant.now())
-                                .build();
+                        GameServerLogMessageEntity logMessage =
+                                GameServerLogMessageEntity.builder()
+                                        .message(message)
+                                        .level(
+                                                frame.getStreamType() == StreamType.STDERR
+                                                        ? GameServerLogMessageEntity.LogLevel.ERROR
+                                                        : GameServerLogMessageEntity.LogLevel.INFO)
+                                        .timestamp(Instant.now())
+                                        .build();
 
-                listener.accept(logMessage);
-            }
+                        listener.accept(logMessage);
+                    }
 
-            @Override
-            public void onError(Throwable throwable) {
-                listener.accept(
-                        GameServerLogMessageEntity.builder()
-                                .message(throwable.getMessage())
-                                .level(GameServerLogMessageEntity.LogLevel.ERROR)
-                                .timestamp(Instant.now())
-                                .build());
-            }
+                    @Override
+                    public void onError(Throwable throwable) {
+                        listener.accept(
+                                GameServerLogMessageEntity.builder()
+                                        .message(throwable.getMessage())
+                                        .level(GameServerLogMessageEntity.LogLevel.ERROR)
+                                        .timestamp(Instant.now())
+                                        .build());
+                    }
 
-            @Override
-            public void onComplete() {
-                log.debug("Log listener for container {} completed", containerName);
-            }
+                    @Override
+                    public void onComplete() {
+                        log.debug("Log listener for container {} completed", containerName);
+                    }
 
-            @Override
-            public void close() throws IOException {
-                super.close();
-                log.debug("Closing log listener for container {}", containerName);
-            }
-        };
+                    @Override
+                    public void close() throws IOException {
+                        super.close();
+                        log.debug("Closing log listener for container {}", containerName);
+                    }
+                };
 
         client.logContainerCmd(containerName)
                 .withStdOut(true)
