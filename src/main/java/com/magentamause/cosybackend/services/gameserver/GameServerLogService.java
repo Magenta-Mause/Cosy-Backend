@@ -7,8 +7,10 @@ import com.magentamause.cosybackend.services.external.loki.LokiQueryService;
 import java.time.temporal.TemporalAmount;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GameServerLogService {
@@ -20,7 +22,11 @@ public class GameServerLogService {
                 LokiLogQuery.builder().gameServerUuid(serverId).limit(limit).build(), since);
     }
 
-    public void saveGameServerLog(GameServerLogMessageEntity log) {
-        lokiQueryService.saveGameServerLog(log);
+    public void saveGameServerLog(GameServerLogMessageEntity logEntity) {
+        try {
+            lokiQueryService.saveGameServerLog(logEntity);
+        } catch (NullPointerException e) {
+            log.info("Error on log: {}", logEntity);
+        }
     }
 }

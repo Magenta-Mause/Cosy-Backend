@@ -18,29 +18,20 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @AllArgsConstructor
 public class DockerEngineManager implements EngineManager, Closeable {
 
     private final Docker config;
     private final DockerClient client;
-    private final ConcurrentHashMap<String, ResultCallback.Adapter<Frame>> activeLogCallbacks = new ConcurrentHashMap<>();
-
-    private void closeAndRemoveLogListener(String containerName) {
-        ResultCallback.Adapter<Frame> existingCallback = activeLogCallbacks.remove(containerName);
-        if (existingCallback != null) {
-            try {
-                existingCallback.close();
-            } catch (IOException e) {
-                System.err.println("Error closing existing log listener for container " + containerName + ": " + e.getMessage());
-            }
-        }
-    }
 
     private static ExposedPort portMappingToExposedPort(PortMapping pm) {
         return switch (pm.getProtocol()) {
@@ -108,16 +99,12 @@ public class DockerEngineManager implements EngineManager, Closeable {
         }
 
         client.stopContainerCmd(container.getId()).exec();
-        closeAndRemoveLogListener(containerName(serverConfig));
     }
 
     @Override
     public void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener) {
         String containerName = containerName(serviceConfig);
-
-        // Close any existing listener for this container
-        closeAndRemoveLogListener(containerName);
 
         ResultCallback.Adapter<Frame> callback = new ResultCallback.Adapter<>() {
             @Override
@@ -152,13 +139,13 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
             @Override
             public void onComplete() {
-                activeLogCallbacks.remove(containerName);
+                log.debug("Log listener for container {} completed", containerName);
             }
 
             @Override
             public void close() throws IOException {
                 super.close();
-                activeLogCallbacks.remove(containerName);
+                log.debug("Closing log listener for container {}", containerName);
             }
         };
 
@@ -166,10 +153,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 .withStdOut(true)
                 .withStdErr(true)
                 .withFollowStream(true)
-                .withTailAll()
+                .withTail(0)
                 .exec(callback);
-
-        activeLogCallbacks.put(containerName, callback);
     }
 
     @Override
