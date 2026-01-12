@@ -6,11 +6,10 @@ import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.gameserver.GameServerLogService;
-import java.time.Duration;
-import java.util.List;
-
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import java.time.Duration;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

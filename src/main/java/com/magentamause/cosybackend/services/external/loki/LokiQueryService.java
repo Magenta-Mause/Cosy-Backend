@@ -11,7 +11,6 @@ import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -116,6 +115,7 @@ public class LokiQueryService {
 
     /**
      * This methode assumes that lokiProperties.applicationName() is secure and can be trusted
+     *
      * @param q query item
      * @return string build query
      */
@@ -123,9 +123,9 @@ public class LokiQueryService {
         StringBuilder sb = new StringBuilder("{app=\"" + lokiProperties.applicationName() + "\"");
 
         if (q.gameServerUuid() != null) {
-            log.info("UUID: {}", q.gameServerUuid());
             if (!UUID_REGEX.matcher(q.gameServerUuid()).matches()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No valid game server uuid provided");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "No valid game server uuid provided");
             }
             sb.append(",server_uuid=\"").append(q.gameServerUuid()).append("\"");
         }
