@@ -10,7 +10,6 @@ import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @EnableConfigurationProperties(LokiProperties.class)
 public class LokiQueryService {
 
-    private final WebClient lokiClient;
+    private final WebClient lokiWebClient;
     private final LokiProperties lokiProperties;
 
     public List<GameServerLogMessageEntity> queryLogs(LokiLogQuery query, TemporalAmount since) {
@@ -31,7 +30,7 @@ public class LokiQueryService {
         Instant start = end.minus(since);
 
         LokiQueryResponse response =
-                lokiClient
+                lokiWebClient
                         .get()
                         .uri(
                                 "/loki/api/v1/query_range?query={query}&limit={limit}&start={since}&end={end}",
@@ -46,7 +45,6 @@ public class LokiQueryService {
         return LokiMapper.toEntities(response);
     }
 
-    @SneakyThrows
     public void saveGameServerLog(GameServerLogMessageEntity logEntity) {
 
         long timestampNs = logEntity.getTimestamp().toEpochMilli() * 1_000_000;
@@ -69,7 +67,7 @@ public class LokiQueryService {
                                                         String.valueOf(timestampNs),
                                                         logEntity.getMessage())))));
 
-        lokiClient
+        lokiWebClient
                 .post()
                 .uri("/loki/api/v1/push")
                 .bodyValue(payload)
@@ -101,7 +99,7 @@ public class LokiQueryService {
                                 .map(e -> new LokiPushRequest.LokiStream(e.getKey(), e.getValue()))
                                 .toList());
 
-        lokiClient
+        lokiWebClient
                 .post()
                 .uri("/loki/api/v1/push")
                 .bodyValue(payload)

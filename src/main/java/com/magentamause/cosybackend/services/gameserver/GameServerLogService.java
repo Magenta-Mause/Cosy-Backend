@@ -23,10 +23,6 @@ public class GameServerLogService {
     }
 
     public void saveGameServerLog(GameServerLogMessageEntity logEntity) {
-        try {
-            lokiQueryService.saveGameServerLog(logEntity);
-        } catch (NullPointerException e) {
-            log.info("Error on log: {}", logEntity);
-        }
+        lokiQueryService.saveGameServerLog(logEntity);
     }
 }
