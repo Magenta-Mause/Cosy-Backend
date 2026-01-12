@@ -15,9 +15,13 @@ public class GameServerLogMessageEntity {
     private LogLevel level;
     private Instant timestamp;
 
+    public static GameServerLogMessageEntity of(String gameServerUuid, String message, LogLevel level) {
+        return GameServerLogMessageEntity.builder().gameServerUuid(gameServerUuid).message(message).level(level).timestamp(Instant.now()).build();
+    }
+
     public enum LogLevel {
         INFO,
-        WARNING,
+        TRACE,
         ERROR
     }
 }

@@ -80,11 +80,9 @@ public class LokiQueryService {
     }
 
     public void saveGameServerLogs(List<GameServerLogMessageEntity> logs) {
-
         Map<Map<String, String>, List<List<String>>> grouped = new java.util.HashMap<>();
 
         for (GameServerLogMessageEntity log : logs) {
-
             Map<String, String> labels =
                     Map.of(
                             "app", lokiProperties.applicationName(),

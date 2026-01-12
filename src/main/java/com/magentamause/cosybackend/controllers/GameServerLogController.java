@@ -9,18 +9,17 @@ import com.magentamause.cosybackend.services.gameserver.GameServerLogService;
 
 import java.time.Duration;
 import java.util.List;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/game-server/{gameServerUuid}/logs")
 public class GameServerLogController {
 
     private final GameServerLogService gameServerLogService;
-
-    public GameServerLogController(GameServerLogService gameServerLogService) {
-        this.gameServerLogService = gameServerLogService;
-    }
 
     @GetMapping
     @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_LOG)
