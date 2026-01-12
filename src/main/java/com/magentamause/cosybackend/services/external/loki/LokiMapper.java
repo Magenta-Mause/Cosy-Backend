@@ -2,16 +2,16 @@ package com.magentamause.cosybackend.services.external.loki;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.magentamause.cosybackend.dtos.loki.LokiQueryResponse;
+import com.magentamause.cosybackend.dtos.loki.LokiStreamResult;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Slf4j
 public class LokiMapper {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static List<GameServerLogMessageEntity> toEntities(LokiQueryResponse response) {
 
@@ -19,25 +19,33 @@ public class LokiMapper {
             return List.of();
         }
 
-        return response.data().result().stream()
-                .flatMap(
-                        result ->
-                                result.values().stream()
-                                        .map(
-                                                value ->
-                                                        GameServerLogMessageEntity.builder()
-                                                                .message(value.get(1))
-                                                                .gameServerUuid(result.stream().get("server_uuid"))
-                                                                .timestamp(
-                                                                        Instant.ofEpochMilli(
-                                                                                Long.parseLong(
-                                                                                        value.get(
-                                                                                                0)) / 1_000_000))
-                                                                .level(result.stream().get("level").equals("ERROR") ? GameServerLogMessageEntity.LogLevel.ERROR :
-                                                                        result.stream().get("level").equals("INFO") ? GameServerLogMessageEntity.LogLevel.INFO :
-                                                                                GameServerLogMessageEntity.LogLevel.TRACE)
-                                                                .build()
-                                        ))
-                .toList();
+        Stream<LokiStreamResult> resultStream = response.data().result().stream();
+
+
+        return resultStream.flatMap(LokiMapper::parseResult).toList();
+    }
+
+    private static Stream<GameServerLogMessageEntity> parseResult(LokiStreamResult result) {
+        return result.values().stream()
+                .map(
+                        value -> parseToLogEntity(result, value)
+                );
+    }
+
+    private static GameServerLogMessageEntity parseToLogEntity(LokiStreamResult result, List<String> value) {
+        String level = result.stream().get("level");
+        String serverUuid = result.stream().get("server_uuid");
+        return GameServerLogMessageEntity.builder()
+                .message(value.get(1))
+                .gameServerUuid(serverUuid)
+                .timestamp(parseTimestamp(value.get(0)))
+                .level("ERROR".equals(level) ? GameServerLogMessageEntity.LogLevel.ERROR :
+                        "INFO".equals(level) ? GameServerLogMessageEntity.LogLevel.INFO :
+                                GameServerLogMessageEntity.LogLevel.TRACE)
+                .build();
+    }
+
+    private static Instant parseTimestamp(String timestamp) {
+        return Instant.ofEpochMilli(Long.parseLong(timestamp) / 1_000_000);
     }
 }
