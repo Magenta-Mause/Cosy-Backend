@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.security.accessmanagement;
 
-import com.magentamause.cosybackend.services.auth.SecurityContextFilter;
+import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import java.lang.annotation.Annotation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,12 +15,12 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class AuthorizationAspect {
-    private final SecurityContextFilter securityContextFilter;
+    private final SecurityContextService securityContextService;
 
     @Before("@annotation(requireAccess)")
     public void checkAccess(JoinPoint joinPoint, RequireAccess requireAccess) {
         Object specificId = findResourceId(joinPoint);
-        securityContextFilter.assertUserCan(
+        securityContextService.assertUserCan(
                 requireAccess.action(), requireAccess.resource(), specificId);
     }
 

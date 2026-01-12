@@ -10,7 +10,7 @@ import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
-import com.magentamause.cosybackend.services.auth.SecurityContextFilter;
+import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.gameserver.GameServerService;
 import jakarta.validation.Valid;
 import java.time.Duration;
@@ -29,7 +29,7 @@ import reactor.core.scheduler.Schedulers;
 public class GameServerController {
 
     private final GameServerService gameServerService;
-    private final SecurityContextFilter securityContextFilter;
+    private final SecurityContextService securityContextService;
 
     @GetMapping
     @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
@@ -59,7 +59,7 @@ public class GameServerController {
     @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
     public ResponseEntity<GameServerDto> createGameServer(
             @Valid @RequestBody GameServerCreationDto gameServerCreationDto) {
-        UserEntity user = securityContextFilter.getUser();
+        UserEntity user = securityContextService.getUser();
 
         GameServerEntity createdGameServer =
                 gameServerService.convertDtoToEntity(gameServerCreationDto);
