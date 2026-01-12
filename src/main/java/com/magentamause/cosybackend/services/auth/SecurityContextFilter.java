@@ -18,11 +18,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
-public class SecurityContextService {
+public class SecurityContextFilter {
 
     private final Map<Resource, AccessPolicy> policies;
 
-    public SecurityContextService(List<AccessPolicy> policies) {
+    public SecurityContextFilter(List<AccessPolicy> policies) {
         this.policies =
                 policies.stream()
                         .collect(Collectors.toMap(AccessPolicy::resource, Function.identity()));

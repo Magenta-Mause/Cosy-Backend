@@ -15,7 +15,7 @@ import com.magentamause.cosybackend.services.engine.config.EngineProperties.Dock
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -123,7 +123,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                                                         .LogLevel.ERROR
                                                                 : GameServerLogMessageEntity
                                                                         .LogLevel.INFO)
-                                                .timestamp(LocalDateTime.now())
+                                                .timestamp(Instant.now())
                                                 .build();
 
                                 listener.accept(logMessage);
@@ -135,7 +135,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                         GameServerLogMessageEntity.builder()
                                                 .message(throwable.getMessage())
                                                 .level(GameServerLogMessageEntity.LogLevel.ERROR)
-                                                .timestamp(LocalDateTime.now())
+                                                .timestamp(Instant.now())
                                                 .build());
                             }
                         });

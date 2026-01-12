@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
-import com.magentamause.cosybackend.services.gameserver.GamesApiService;
+import com.magentamause.cosybackend.services.external.gamesapi.GamesApiService;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

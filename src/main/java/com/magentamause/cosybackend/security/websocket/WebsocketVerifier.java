@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.security.websocket;
 
 import com.magentamause.cosybackend.configs.UtilConfig;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.services.auth.SecurityContextService;
+import com.magentamause.cosybackend.services.auth.SecurityContextFilter;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +15,7 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 @RequiredArgsConstructor
 public class WebsocketVerifier {
     private final Map<Pattern, WebsocketEndpointVerifier> websocketVerifier = new HashMap<>();
-    private final SecurityContextService securityContextService;
+    private final SecurityContextFilter securityContextFilter;
     private final UserEntityService userEntityService;
 
     public WebsocketVerifier addVerifier(String channel, WebsocketEndpointVerifier verifier) {
@@ -41,7 +41,7 @@ public class WebsocketVerifier {
             }
             log.debug("User: {} trying to access channel: {}", userId, channel);
             UserEntity user = userEntityService.getUserByUuid(userId);
-            return verifier.getValue().verify(channel, stompHeaders, securityContextService, user);
+            return verifier.getValue().verify(channel, stompHeaders, securityContextFilter, user);
         }
         return false;
     }

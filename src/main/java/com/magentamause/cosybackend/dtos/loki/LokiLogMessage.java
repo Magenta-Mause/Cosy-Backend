@@ -1,4 +1,6 @@
 package com.magentamause.cosybackend.dtos.loki;
 
-public class LokiLogMessage {
-}
+import lombok.Data;
+
+@Data
+public class LokiLogMessage {}

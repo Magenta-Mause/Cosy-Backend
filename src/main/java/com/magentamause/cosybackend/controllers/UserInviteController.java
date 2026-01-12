@@ -9,7 +9,7 @@ import com.magentamause.cosybackend.entities.UserInviteEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
-import com.magentamause.cosybackend.services.auth.SecurityContextService;
+import com.magentamause.cosybackend.services.auth.SecurityContextFilter;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.services.user.UserInviteService;
 import jakarta.validation.Valid;
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserInviteController {
 
     private final UserInviteService userInviteService;
-    private final SecurityContextService securityContextService;
+    private final SecurityContextFilter securityContextFilter;
     private final UserEntityService userEntityService;
 
     @GetMapping
@@ -53,7 +53,7 @@ public class UserInviteController {
                 .body(
                         userInviteService
                                 .createInvite(
-                                        securityContextService.getUserId(), userInviteCreationDto)
+                                        securityContextFilter.getUserId(), userInviteCreationDto)
                                 .convertToDto());
     }
 
