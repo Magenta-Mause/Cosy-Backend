@@ -25,7 +25,7 @@ public class GameServerLogController {
     @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_LOG)
     public ResponseEntity<List<GameServerLogMessageEntity>> getLogs(
             @ResourceId @PathVariable String gameServerUuid,
-            @RequestParam(defaultValue = "100", required = false) @Min(0) @Max(500) int limit,
+            @RequestParam(defaultValue = "500", required = false) @Min(1) @Max(2000) int limit,
             @RequestParam(defaultValue = "5", required = false) @Min(1) @Max(400) int sinceHours) {
         return ResponseEntity.ok()
                 .body(
