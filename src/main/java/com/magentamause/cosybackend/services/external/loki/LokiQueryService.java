@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.services.external.loki;
 
+import com.magentamause.cosybackend.configs.UtilConfig;
 import com.magentamause.cosybackend.configs.properties.LokiProperties;
 import com.magentamause.cosybackend.dtos.loki.LokiLogQuery;
 import com.magentamause.cosybackend.dtos.loki.LokiPushRequest;
@@ -9,11 +10,15 @@ import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -23,6 +28,7 @@ public class LokiQueryService {
 
     private final WebClient lokiWebClient;
     private final LokiProperties lokiProperties;
+    private static final Pattern UUID_REGEX = Pattern.compile("`" + UtilConfig.UUID_REGEX + "$");
 
     public List<GameServerLogMessageEntity> queryLogs(LokiLogQuery query, TemporalAmount since) {
         String logQl = buildLogQl(query);
@@ -108,10 +114,18 @@ public class LokiQueryService {
                 .block();
     }
 
+    /**
+     * This methode assumes that lokiProperties.applicationName() is secure and can be trusted
+     * @param q query item
+     * @return string build query
+     */
     private String buildLogQl(LokiLogQuery q) {
         StringBuilder sb = new StringBuilder("{app=\"" + lokiProperties.applicationName() + "\"");
 
         if (q.gameServerUuid() != null) {
+            if (!UUID_REGEX.matcher(q.gameServerUuid()).matches()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No valid game server uuid provided");
+            }
             sb.append(",server_uuid=\"").append(q.gameServerUuid()).append("\"");
         }
         sb.append("}");
