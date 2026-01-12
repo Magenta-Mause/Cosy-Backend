@@ -11,3 +11,4 @@ public interface EngineManager {
 
     GameServerStatusDto status(GameServerEntity serviceConfig);
 }
+

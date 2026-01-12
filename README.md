@@ -10,7 +10,7 @@ file I/O operations directly on the host, and coordinates with specialized data 
 * **Framework:** Spring Boot 3.x
 * **Build Tool:** Maven
 * **Database:** PostgreSQL (Data), InfluxDB (Metrics), Grafana Loki (Logs)
-* **Runtime Support:** Docker (Native) & Kubernetes
+* **Runtime Support:** Docker (Native)
 
 ## **📋 Prerequisites**
 
@@ -72,14 +72,12 @@ The backend uses a **Strategy Pattern** to handle different environments without
 
 * **RuntimeService Interface:** The main contract for server management.
     * **DockerRuntimeStrategy:** Uses the local Docker Socket (/var/run/docker.sock). Used for single-node setups.
-    * **KubernetesRuntimeStrategy:** Uses the K8s API. Used for cluster deployments.
 
 ### **File I/O**
 
 Unlike traditional cloud apps, Cosy uses **Direct I/O** for file management.
 
 * **Docker Mode:** Uses Java NIO to read Bind Mounts directly on the host.
-* **K8s Mode:** Uses ephemeral helper pods to access PVCs if the server is stopped.
 
 ## **🧪 Testing**
 

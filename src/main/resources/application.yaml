@@ -47,15 +47,3 @@ cosy:
       api-version: "1.41"                       # Optional: API version
       tls: false                                # Whether to use TLS
       cert-path: ""                             # Path to TLS certs if enabled
-
-    # Kubernetes-specific configuration
-    kubernetes:
-      kubeconfig: ${COSY_KUBECONFIG_PATH:~/.kube/config} # Path to kubeconfig file
-      context: "docker-desktop"                 # Docker Desktop Kubernetes context
-      namespace: "default"                      # Namespace to operate in
-      in-cluster: false                         # Backend runs on host, not in cluster
-      timeout-seconds: 30                       # Request timeout (seconds)
-
-      labels: # Default labels added to all pods
-        app: cosy
-        platform: docker-desktop
