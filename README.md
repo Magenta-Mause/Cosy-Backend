@@ -47,7 +47,7 @@ The API will be available at http://localhost:8080/api.
 ## 🛜 Dependencies
 
 Cosy uses a Postgres instance for data storage and Loki for Server Logs.
-The Postgres setup is streight forward and can be found in the `infrastructure` folder.
+The Postgres setup is straightforward and can be found in the `infrastructure` folder.
 The Loki the setup is a bit more involved as Loki itself doesn't have any authorization mechanism, so we use an nginx
 reverse proxy in front of it to add basic auth. For this you need to generate a password hash using the following command:
 ```powershell
