@@ -1,14 +1,12 @@
 package com.magentamause.cosybackend.configs.properties;
 
 import java.util.List;
+
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@Setter
-@Getter
 @ConfigurationProperties(prefix = "cosy.cors")
-public class CorsProperties {
-
-    private List<String> allowedOrigins;
+public record CorsProperties(List<String> allowedOrigins) {
 }

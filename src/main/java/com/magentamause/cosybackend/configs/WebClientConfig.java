@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.configs;
 
+import com.magentamause.cosybackend.configs.properties.GamesApiProperties;
 import com.magentamause.cosybackend.configs.properties.LokiProperties;
 import java.util.Base64;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
