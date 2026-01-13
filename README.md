@@ -49,9 +49,15 @@ The API will be available at http://localhost:8080/api.
 Cosy uses a Postgres instance for data storage and Loki for Server Logs.
 The Postgres setup is straightforward and can be found in the `infrastructure` folder.
 The Loki setup is a bit more involved as Loki itself doesn't have any authorization mechanism, so we use an nginx
-reverse proxy in front of it to add basic auth. For this you need to generate a password hash using the following command:
+reverse proxy in front of it to add basic auth. For this inside this Repository we have a `infrastructure/htpasswd` file checked in, which contains a development username/password: [user: `loki-user`, password: `loki-password`].
+This needs to be changed in prod. For this you can use this command to generate a password hashed htpasswd file:
+powershell:
 ```powershell
 docker run --rm httpd:2.4-alpine htpasswd -nbB loki-user loki-password | Out-File -Encoding ASCII htpasswd
+```
+bash:
+```bash
+docker run --rm httpd:2.4-alpine htpasswd -nbB loki-user loki-password > infrastructure/htpasswd
 ```
 
 ## **🧹 Code Style & Linting**
