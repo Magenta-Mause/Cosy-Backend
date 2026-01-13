@@ -28,6 +28,11 @@ management:
     web:
       exposure:
         include: "health,readiness,liveness"
+influx:
+  url: http://localhost:8086
+  token: nILFU7Ht_NVDejdHi6s_aS2e-ZM6uachZqwVqxwGUw6VxU2FBl_r2C9Ho2FRudfB_DdG33fQ4W0HoVoITxrB3A==
+  org: cosy-bucket
+  bucket: cosy-bucket
 cosy:
   cors:
     allowed-origins:
