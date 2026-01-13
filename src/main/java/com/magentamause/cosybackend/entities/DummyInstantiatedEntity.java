@@ -12,7 +12,7 @@ import lombok.*;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class DummyInstantiatedProperties {
+public class DummyInstantiatedEntity {
     @Column(name = "value_key") // Required for h2 databases as 'key' is a reserved word
     @Id
     private String key;

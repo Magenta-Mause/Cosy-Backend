@@ -1,20 +1,25 @@
-package com.magentamause.cosybackend.engine.docker;
+package com.magentamause.cosybackend.services.engine.docker;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.*;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
-import com.magentamause.cosybackend.engine.EngineManager;
-import com.magentamause.cosybackend.engine.config.EngineProperties.Docker;
 import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
+import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.config.EngineProperties.Docker;
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 
@@ -23,6 +28,14 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     private final Docker config;
     private final DockerClient client;
+
+    private static ExposedPort portMappingToExposedPort(PortMapping pm) {
+        return switch (pm.getProtocol()) {
+            case TCP -> ExposedPort.tcp(pm.getContainerPort());
+            case UDP -> ExposedPort.udp(pm.getContainerPort());
+            default -> throw new IllegalArgumentException("Unknown port type: " + pm.getProtocol());
+        };
+    }
 
     @Override
     public List<Integer> start(GameServerEntity serverConfig) {
@@ -82,6 +95,50 @@ public class DockerEngineManager implements EngineManager, Closeable {
         }
 
         client.stopContainerCmd(container.getId()).exec();
+    }
+
+    @Override
+    public void attachLogListener(
+            GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener) {
+        String containerName = containerName(serviceConfig);
+
+        client.logContainerCmd(containerName)
+                .withStdOut(true)
+                .withStdErr(true)
+                .withFollowStream(true)
+                .withTailAll()
+                .exec(
+                        new ResultCallback.Adapter<>() {
+                            @Override
+                            public void onNext(Frame frame) {
+                                String message =
+                                        new String(frame.getPayload(), StandardCharsets.UTF_8);
+
+                                GameServerLogMessageEntity logMessage =
+                                        GameServerLogMessageEntity.builder()
+                                                .message(message)
+                                                .level(
+                                                        frame.getStreamType() == StreamType.STDERR
+                                                                ? GameServerLogMessageEntity
+                                                                        .LogLevel.ERROR
+                                                                : GameServerLogMessageEntity
+                                                                        .LogLevel.INFO)
+                                                .timestamp(LocalDateTime.now())
+                                                .build();
+
+                                listener.accept(logMessage);
+                            }
+
+                            @Override
+                            public void onError(Throwable throwable) {
+                                listener.accept(
+                                        GameServerLogMessageEntity.builder()
+                                                .message(throwable.getMessage())
+                                                .level(GameServerLogMessageEntity.LogLevel.ERROR)
+                                                .timestamp(LocalDateTime.now())
+                                                .build());
+                            }
+                        });
     }
 
     @Override
@@ -168,14 +225,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
         }
 
         return hostConfig;
-    }
-
-    private static ExposedPort portMappingToExposedPort(PortMapping pm) {
-        return switch (pm.getProtocol()) {
-            case TCP -> ExposedPort.tcp(pm.getContainerPort());
-            case UDP -> ExposedPort.udp(pm.getContainerPort());
-            default -> throw new IllegalArgumentException("Unknown port type: " + pm.getProtocol());
-        };
     }
 
     private void ensureImagePresent(String image) {

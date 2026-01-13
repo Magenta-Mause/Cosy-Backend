@@ -58,15 +58,21 @@ public class SecurityContextService {
         }
     }
 
-    public void assertUserCan(Action action, Resource resource, Object referenceId) {
+    public boolean canUser(Action action, Resource resource, Object referenceId, UserEntity user) {
         AccessPolicy policy = policies.get(resource);
         if (policy == null) {
             throw new IllegalStateException("No policy for resource " + resource);
         }
 
-        log.debug("Checking if user {} can {} {}", getUser().getUsername(), action, referenceId);
-        boolean allowed = policy.can(getUser(), action, referenceId);
-        if (!allowed) {
+        return policy.can(user, action, referenceId);
+    }
+
+    public boolean canUser(Action action, Resource resource, Object referenceId) {
+        return canUser(action, resource, referenceId, getUser());
+    }
+
+    public void assertUserCan(Action action, Resource resource, Object referenceId) {
+        if (!canUser(action, resource, referenceId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permissions");
         }
     }

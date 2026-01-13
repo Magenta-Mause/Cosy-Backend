@@ -1,12 +1,13 @@
-package com.magentamause.cosybackend.engine.config;
+package com.magentamause.cosybackend.services.engine.config;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
-import com.magentamause.cosybackend.engine.EngineManager;
-import com.magentamause.cosybackend.engine.docker.DockerEngineManager;
+import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.docker.DockerEngineManager;
+import java.io.FileReader;
 import java.time.Duration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -16,8 +17,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @EnableConfigurationProperties(EngineProperties.class)
 public class EngineConfiguration {
-
-    /* ---------------- Docker ---------------- */
 
     @Bean
     @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "DOCKER")

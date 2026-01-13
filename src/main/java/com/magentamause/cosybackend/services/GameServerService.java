@@ -2,18 +2,21 @@ package com.magentamause.cosybackend.services;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
-import com.magentamause.cosybackend.engine.EngineManager;
-import com.magentamause.cosybackend.engine.EngineType;
-import com.magentamause.cosybackend.engine.config.EngineProperties;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.EngineType;
+import com.magentamause.cosybackend.services.engine.config.EngineProperties;
+import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -29,17 +32,20 @@ public class GameServerService {
     private final EngineManager engineManager;
     private final EngineType engineType;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
+    private final GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher;
 
     public GameServerService(
             EngineManager engineManager,
             GameEntityService gameEntityService,
             EngineProperties engineProperties,
-            GameServerRepository gameServerRepository) {
+            GameServerRepository gameServerRepository,
+            GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher) {
 
         this.engineManager = engineManager;
         this.gameEntityService = gameEntityService;
         this.engineType = engineProperties.selected();
         this.gameServerRepository = gameServerRepository;
+        this.gameServerLogWebsocketPublisher = gameServerLogWebsocketPublisher;
 
         log.info("GameServerService initialized with engine '{}'", engineType);
     }
@@ -105,10 +111,25 @@ public class GameServerService {
                                                     HttpStatus.NOT_FOUND,
                                                     "Server '" + serviceName + "' not found"));
 
-            return engineManager.start(config);
+            return engineManager.startAndAttachLogListener(
+                    config,
+                    (logMessage) -> {
+                        enrichAndPublishLogMessage(config, logMessage);
+                    });
         } finally {
             startingServers.remove(serviceName);
         }
+    }
+
+    public GameServerLogMessageEntity enrichAndPublishLogMessage(
+            GameServerEntity gameServer, GameServerLogMessageEntity logMessage) {
+        String logMessageUuid = UUID.randomUUID().toString();
+
+        logMessage.setUuid(logMessageUuid);
+        logMessage.setGameServerUuid(gameServer.getUuid());
+
+        gameServerLogWebsocketPublisher.publishLog(gameServer.getUuid(), logMessage);
+        return logMessage;
     }
 
     public void stopServer(String serviceName) {

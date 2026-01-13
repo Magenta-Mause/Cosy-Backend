@@ -14,27 +14,19 @@ import org.springframework.web.server.ResponseStatusException;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class GameServerPolicy implements AccessPolicy {
+public class GameServerLogPolicy implements AccessPolicy {
 
     private final GameServerRepository gameServerRepository;
 
     @Override
     public Resource resource() {
-        return Resource.GAME_SERVER;
+        return Resource.GAME_SERVER_LOG;
     }
 
     @Override
     public boolean can(UserEntity user, Action action, Object referenceId) {
         if (user.getRole().isAdmin()) {
             return true;
-        }
-
-        if (action == Action.CREATE) {
-            return true;
-        }
-
-        if (!(referenceId instanceof String)) {
-            return action == Action.READ;
         }
 
         GameServerEntity gameServerEntity =

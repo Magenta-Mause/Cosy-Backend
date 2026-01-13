@@ -2,3 +2,4 @@ cosy:
   engine:
     docker:
       socket-path: "npipe:////./pipe/docker_engine" # example windows path
+      # api-version: "1.41" # Optional: API version
