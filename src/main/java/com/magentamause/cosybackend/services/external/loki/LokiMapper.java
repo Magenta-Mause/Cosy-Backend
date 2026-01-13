@@ -39,7 +39,7 @@ public class LokiMapper {
                                 ? GameServerLogMessageEntity.LogLevel.ERROR
                                 : "INFO".equals(level)
                                         ? GameServerLogMessageEntity.LogLevel.INFO
-                                        : GameServerLogMessageEntity.LogLevel.TRACE)
+                                        : GameServerLogMessageEntity.LogLevel.DEBUG)
                 .build();
     }
 

@@ -118,7 +118,7 @@ public class GameServerService {
                     GameServerLogMessageEntity.of(
                             config.getUuid(),
                             "Starting Game Server",
-                            GameServerLogMessageEntity.LogLevel.TRACE));
+                            GameServerLogMessageEntity.LogLevel.DEBUG));
 
             return engineManager.startAndAttachLogListener(
                     config,
@@ -154,7 +154,7 @@ public class GameServerService {
                 GameServerLogMessageEntity.of(
                         config.getUuid(),
                         "Stopping Game Server",
-                        GameServerLogMessageEntity.LogLevel.TRACE));
+                        GameServerLogMessageEntity.LogLevel.DEBUG));
         try {
             engineManager.stop(config);
         } catch (ServerAlreadyStoppedException e) {
