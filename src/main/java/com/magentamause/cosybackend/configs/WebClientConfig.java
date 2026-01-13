@@ -11,7 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
 @Configuration
-@EnableConfigurationProperties({LokiProperties.class})
+@EnableConfigurationProperties({LokiProperties.class, GamesApiProperties.class})
 public class WebClientConfig {
 
     @Bean
@@ -33,5 +33,13 @@ public class WebClientConfig {
                             headers.set(HttpHeaders.AUTHORIZATION, "Basic " + encodedAuthorization);
                         })
                 .build();
+    }
+
+    @Bean
+    public WebClient gamesApiWebClient(GamesApiProperties gamesApiProperties) {
+        return WebClient.builder()
+            .baseUrl(gamesApiProperties.url())
+            .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+            .build();
     }
 }
