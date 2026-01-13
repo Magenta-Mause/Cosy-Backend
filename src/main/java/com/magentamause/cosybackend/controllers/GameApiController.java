@@ -23,9 +23,6 @@ public class GameApiController {
     @GetMapping
     public ResponseEntity<List<GameDto>> getGameInfo(@RequestParam @NotBlank String query) {
         List<GameDto> games = gamesApiService.query(query);
-        return ResponseEntity
-            .status(HttpStatus.OK)
-            .header(HttpHeaders.EXPIRES, "0")
-            .body(games);
+        return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.EXPIRES, "0").body(games);
     }
 }

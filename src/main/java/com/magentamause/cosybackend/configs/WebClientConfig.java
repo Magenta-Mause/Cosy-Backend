@@ -38,8 +38,8 @@ public class WebClientConfig {
     @Bean
     public WebClient gamesApiWebClient(GamesApiProperties gamesApiProperties) {
         return WebClient.builder()
-            .baseUrl(gamesApiProperties.url())
-            .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-            .build();
+                .baseUrl(gamesApiProperties.url())
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .build();
     }
 }

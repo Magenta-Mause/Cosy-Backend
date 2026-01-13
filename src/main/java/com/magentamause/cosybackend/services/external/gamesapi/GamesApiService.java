@@ -8,7 +8,6 @@ import com.magentamause.cosybackend.exceptions.GamesApiError;
 import com.magentamause.cosybackend.repositories.GameRepository;
 import java.util.Collections;
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
