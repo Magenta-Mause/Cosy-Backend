@@ -41,7 +41,7 @@ cosy:
     username: ${COSY_LOKI_PASSWORD:loki-user}
     password: ${COSY_LOKI_PASSWORD:loki-password}
     url: http://localhost:3100
-    application-name: cosy-backend
+    application-name: cosy-backend # Label to identify logs from this application
   engine:
     selected: DOCKER
 
