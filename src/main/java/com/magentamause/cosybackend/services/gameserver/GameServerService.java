@@ -1,10 +1,10 @@
-package com.magentamause.cosybackend.services;
+package com.magentamause.cosybackend.services.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
@@ -16,7 +16,6 @@ import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -33,13 +32,15 @@ public class GameServerService {
     private final EngineType engineType;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
     private final GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher;
+    private final GameServerLogService gameServerLogService;
 
     public GameServerService(
             EngineManager engineManager,
             GameEntityService gameEntityService,
             EngineProperties engineProperties,
             GameServerRepository gameServerRepository,
-            GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher) {
+            GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher,
+            GameServerLogService gameServerLogService) {
 
         this.engineManager = engineManager;
         this.gameEntityService = gameEntityService;
@@ -48,6 +49,7 @@ public class GameServerService {
         this.gameServerLogWebsocketPublisher = gameServerLogWebsocketPublisher;
 
         log.info("GameServerService initialized with engine '{}'", engineType);
+        this.gameServerLogService = gameServerLogService;
     }
 
     public List<GameServerEntity> getAllGameServers() {
@@ -111,6 +113,13 @@ public class GameServerService {
                                                     HttpStatus.NOT_FOUND,
                                                     "Server '" + serviceName + "' not found"));
 
+            enrichAndPublishLogMessage(
+                    config,
+                    GameServerLogMessageEntity.of(
+                            config.getUuid(),
+                            "Starting Game Server",
+                            GameServerLogMessageEntity.LogLevel.DEBUG));
+
             return engineManager.startAndAttachLogListener(
                     config,
                     (logMessage) -> {
@@ -123,10 +132,9 @@ public class GameServerService {
 
     public GameServerLogMessageEntity enrichAndPublishLogMessage(
             GameServerEntity gameServer, GameServerLogMessageEntity logMessage) {
-        String logMessageUuid = UUID.randomUUID().toString();
 
-        logMessage.setUuid(logMessageUuid);
         logMessage.setGameServerUuid(gameServer.getUuid());
+        gameServerLogService.saveGameServerLog(logMessage);
 
         gameServerLogWebsocketPublisher.publishLog(gameServer.getUuid(), logMessage);
         return logMessage;
@@ -141,7 +149,12 @@ public class GameServerService {
                                         new ResponseStatusException(
                                                 HttpStatus.NOT_FOUND,
                                                 "Server '" + serviceName + "' not found"));
-
+        enrichAndPublishLogMessage(
+                config,
+                GameServerLogMessageEntity.of(
+                        config.getUuid(),
+                        "Stopping Game Server",
+                        GameServerLogMessageEntity.LogLevel.DEBUG));
         try {
             engineManager.stop(config);
         } catch (ServerAlreadyStoppedException e) {

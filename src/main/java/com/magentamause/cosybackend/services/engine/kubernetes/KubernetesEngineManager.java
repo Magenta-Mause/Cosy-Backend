@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.services.engine.kubernetes;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.CreateGameInstanceException;
@@ -15,7 +15,7 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -113,7 +113,7 @@ public class KubernetesEngineManager implements EngineManager {
                                                         .level(
                                                                 GameServerLogMessageEntity.LogLevel
                                                                         .INFO)
-                                                        .timestamp(LocalDateTime.now())
+                                                        .timestamp(Instant.now())
                                                         .build());
                                     }
                                 }
@@ -122,7 +122,7 @@ public class KubernetesEngineManager implements EngineManager {
                                         GameServerLogMessageEntity.builder()
                                                 .message(e.getMessage())
                                                 .level(GameServerLogMessageEntity.LogLevel.ERROR)
-                                                .timestamp(LocalDateTime.now())
+                                                .timestamp(Instant.now())
                                                 .build());
                             }
                         },

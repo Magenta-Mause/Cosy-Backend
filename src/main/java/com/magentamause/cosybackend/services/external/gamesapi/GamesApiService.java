@@ -1,6 +1,6 @@
-package com.magentamause.cosybackend.services;
+package com.magentamause.cosybackend.services.external.gamesapi;
 
-import com.magentamause.cosybackend.configs.GamesApiConfig;
+import com.magentamause.cosybackend.configs.properties.GamesApiProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
 import com.magentamause.cosybackend.dtos.gamesapi.GamesApiGamesResponse;
 import com.magentamause.cosybackend.entities.GameEntity;
@@ -8,36 +8,27 @@ import com.magentamause.cosybackend.exceptions.GamesApiError;
 import com.magentamause.cosybackend.repositories.GameRepository;
 import java.util.Collections;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
-@Service
-@EnableConfigurationProperties(GamesApiConfig.class)
 @Slf4j
+@Service
+@RequiredArgsConstructor
+@EnableConfigurationProperties(GamesApiProperties.class)
 public class GamesApiService {
 
-    private final WebClient webClient;
+    private final WebClient gamesApiWebClient;
     private final GameRepository gameRepository;
-
-    public GamesApiService(GamesApiConfig gamesApiConfig, GameRepository gameRepository) {
-        this.webClient =
-                WebClient.builder()
-                        .baseUrl(gamesApiConfig.url())
-                        .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-                        .build();
-        this.gameRepository = gameRepository;
-    }
 
     private List<GameDto> queryGamesApi(String query) {
         GamesApiGamesResponse response;
         try {
             response =
-                    webClient
+                    gamesApiWebClient
                             .get()
                             .uri(
                                     uriBuilder ->

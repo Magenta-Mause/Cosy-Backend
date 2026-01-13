@@ -1,27 +1,35 @@
 package com.magentamause.cosybackend.controllers;
 
-import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
+import com.magentamause.cosybackend.services.gameserver.GameServerLogService;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import java.time.Duration;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/game-server/{gameServerUuid}/logs")
 public class GameServerLogController {
+
+    private final GameServerLogService gameServerLogService;
 
     @GetMapping
     @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_LOG)
     public ResponseEntity<List<GameServerLogMessageEntity>> getLogs(
-            @ResourceId @PathVariable String gameServerUuid) {
-        // TODO: Replace placeholder empty response with retrieval of log messages for the given
-        //       gameServerUuid (e.g. query the log storage or database and return the results).
-        return ResponseEntity.ok().body(List.of());
+            @ResourceId @PathVariable String gameServerUuid,
+            @RequestParam(defaultValue = "500", required = false) @Min(1) @Max(2000) int limit,
+            @RequestParam(defaultValue = "5", required = false) @Min(1) @Max(400) int sinceHours) {
+        return ResponseEntity.ok()
+                .body(
+                        gameServerLogService.getLogsForServer(
+                                gameServerUuid, limit, Duration.ofHours(sinceHours)));
     }
 }
