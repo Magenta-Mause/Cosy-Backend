@@ -2,7 +2,10 @@ package com.magentamause.cosybackend.configs;
 
 import com.magentamause.cosybackend.configs.properties.GamesApiProperties;
 import com.magentamause.cosybackend.configs.properties.LokiProperties;
+
 import java.util.Base64;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
+@Slf4j
 @Configuration
 @EnableConfigurationProperties({LokiProperties.class, GamesApiProperties.class})
 public class WebClientConfig {
@@ -25,6 +29,9 @@ public class WebClientConfig {
                         .encodeToString(
                                 (lokiProperties.username() + ":" + lokiProperties.password())
                                         .getBytes());
+
+        log.info("Building Loki Webclient with credentials: [user: {}, password: {}] base64: {}",
+                lokiProperties.username(), lokiProperties.password(), encodedAuthorization);
 
         return WebClient.builder()
                 .uriBuilderFactory(factory)
