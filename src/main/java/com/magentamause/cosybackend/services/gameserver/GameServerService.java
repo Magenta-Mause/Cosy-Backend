@@ -1,10 +1,10 @@
-package com.magentamause.cosybackend.services;
+package com.magentamause.cosybackend.services.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
@@ -16,7 +16,6 @@ import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
@@ -38,6 +37,7 @@ public class GameServerService {
     private final GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher;
     private final GameServerStatusPublisher statusPublisher;
     private final TransactionTemplate transactionTemplate;
+    private final GameServerLogService gameServerLogService;
 
     public GameServerService(
             EngineManager engineManager,
@@ -46,7 +46,8 @@ public class GameServerService {
             GameServerRepository gameServerRepository,
             GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher,
             GameServerStatusPublisher statusPublisher,
-            PlatformTransactionManager transactionManager) {
+            PlatformTransactionManager transactionManager, 
+            GameServerLogService gameServerLogService) {
 
         this.engineManager = engineManager;
         this.gameEntityService = gameEntityService;
@@ -57,6 +58,7 @@ public class GameServerService {
         this.transactionTemplate = new TransactionTemplate(transactionManager);
 
         log.info("GameServerService initialized with engine '{}'", engineType);
+        this.gameServerLogService = gameServerLogService;
     }
 
     public List<GameServerEntity> getAllGameServers() {
@@ -131,6 +133,13 @@ public class GameServerService {
                                 return entity;
                             });
 
+            enrichAndPublishLogMessage(
+                    config,
+                    GameServerLogMessageEntity.of(
+                            config.getUuid(),
+                            "Starting Game Server",
+                            GameServerLogMessageEntity.LogLevel.DEBUG));
+
             return engineManager.startAndAttachLogListener(
                     config,
                     (logMessage) -> {
@@ -146,10 +155,9 @@ public class GameServerService {
 
     public GameServerLogMessageEntity enrichAndPublishLogMessage(
             GameServerEntity gameServer, GameServerLogMessageEntity logMessage) {
-        String logMessageUuid = UUID.randomUUID().toString();
 
-        logMessage.setUuid(logMessageUuid);
         logMessage.setGameServerUuid(gameServer.getUuid());
+        gameServerLogService.saveGameServerLog(logMessage);
 
         gameServerLogWebsocketPublisher.publishLog(gameServer.getUuid(), logMessage);
         return logMessage;
@@ -164,7 +172,12 @@ public class GameServerService {
                                         new ResponseStatusException(
                                                 HttpStatus.NOT_FOUND,
                                                 "Server '" + serviceName + "' not found"));
-
+        enrichAndPublishLogMessage(
+                config,
+                GameServerLogMessageEntity.of(
+                        config.getUuid(),
+                        "Stopping Game Server",
+                        GameServerLogMessageEntity.LogLevel.DEBUG));
         try {
             engineManager.stop(config);
         } catch (ServerAlreadyStoppedException e) {
@@ -212,3 +225,4 @@ public class GameServerService {
                 .build();
     }
 }
+

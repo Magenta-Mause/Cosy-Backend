@@ -5,7 +5,7 @@ import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.*;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
@@ -16,7 +16,7 @@ import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @AllArgsConstructor
 @Slf4j
 public class DockerEngineManager implements EngineManager, Closeable {
@@ -108,43 +109,53 @@ public class DockerEngineManager implements EngineManager, Closeable {
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener) {
         String containerName = containerName(serviceConfig);
 
+        ResultCallback.Adapter<Frame> callback =
+                new ResultCallback.Adapter<>() {
+                    @Override
+                    public void onNext(Frame frame) {
+                        String message = new String(frame.getPayload(), StandardCharsets.UTF_8);
+
+                        GameServerLogMessageEntity logMessage =
+                                GameServerLogMessageEntity.builder()
+                                        .message(message)
+                                        .level(
+                                                frame.getStreamType() == StreamType.STDERR
+                                                        ? GameServerLogMessageEntity.LogLevel.ERROR
+                                                        : GameServerLogMessageEntity.LogLevel.INFO)
+                                        .timestamp(Instant.now())
+                                        .build();
+
+                        listener.accept(logMessage);
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        listener.accept(
+                                GameServerLogMessageEntity.builder()
+                                        .message(throwable.getMessage())
+                                        .level(GameServerLogMessageEntity.LogLevel.ERROR)
+                                        .timestamp(Instant.now())
+                                        .build());
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        log.debug("Log listener for container {} completed", containerName);
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+                        super.close();
+                        log.debug("Closing log listener for container {}", containerName);
+                    }
+                };
+
         client.logContainerCmd(containerName)
                 .withStdOut(true)
                 .withStdErr(true)
                 .withFollowStream(true)
-                .withTailAll()
-                .exec(
-                        new ResultCallback.Adapter<>() {
-                            @Override
-                            public void onNext(Frame frame) {
-                                String message =
-                                        new String(frame.getPayload(), StandardCharsets.UTF_8);
-
-                                GameServerLogMessageEntity logMessage =
-                                        GameServerLogMessageEntity.builder()
-                                                .message(message)
-                                                .level(
-                                                        frame.getStreamType() == StreamType.STDERR
-                                                                ? GameServerLogMessageEntity
-                                                                        .LogLevel.ERROR
-                                                                : GameServerLogMessageEntity
-                                                                        .LogLevel.INFO)
-                                                .timestamp(LocalDateTime.now())
-                                                .build();
-
-                                listener.accept(logMessage);
-                            }
-
-                            @Override
-                            public void onError(Throwable throwable) {
-                                listener.accept(
-                                        GameServerLogMessageEntity.builder()
-                                                .message(throwable.getMessage())
-                                                .level(GameServerLogMessageEntity.LogLevel.ERROR)
-                                                .timestamp(LocalDateTime.now())
-                                                .build());
-                            }
-                        });
+                .withTail(0)
+                .exec(callback);
     }
 
     private Optional<Container> findContainer(GameServerEntity serverConfig) {

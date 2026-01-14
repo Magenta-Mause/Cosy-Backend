@@ -2,8 +2,8 @@ package com.magentamause.cosybackend.security.websocket;
 
 import com.magentamause.cosybackend.configs.UtilConfig;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.services.SecurityContextService;
-import com.magentamause.cosybackend.services.UserEntityService;
+import com.magentamause.cosybackend.services.auth.SecurityContextService;
+import com.magentamause.cosybackend.services.user.UserEntityService;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;

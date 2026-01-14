@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services;
+package com.magentamause.cosybackend.services.technical;
 
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.jwtfilter.JwtTokenBody;

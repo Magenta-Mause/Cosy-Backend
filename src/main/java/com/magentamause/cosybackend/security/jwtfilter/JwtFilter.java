@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.security.jwtfilter;
 
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.services.UserEntityService;
+import com.magentamause.cosybackend.services.user.UserEntityService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

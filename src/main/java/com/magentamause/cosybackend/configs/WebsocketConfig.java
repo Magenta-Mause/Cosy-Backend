@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.configs;
 
+import com.magentamause.cosybackend.configs.properties.CorsProperties;
 import com.magentamause.cosybackend.security.websocket.JwtChannelInterceptor;
 import com.magentamause.cosybackend.security.websocket.JwtHandshakeInterceptor;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/v1/ws")
-                .setAllowedOrigins(corsProperties.getAllowedOrigins().toArray(new String[0]))
+                .setAllowedOrigins(corsProperties.allowedOrigins().toArray(new String[0]))
                 .addInterceptors(jwtHandshakeInterceptor)
                 .withSockJS();
     }

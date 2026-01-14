@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services;
+package com.magentamause.cosybackend.services.technical;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -83,7 +83,7 @@ public class FileStorageService {
      * @throws SecurityException if the resolved path is outside the allowed root path scope,
      *     indicating a potential path traversal attack attempt
      */
-    Path resolveAndValidatePath(Path rootPath, String relativePath) {
+    public Path resolveAndValidatePath(Path rootPath, String relativePath) {
         if (relativePath == null) {
             relativePath = "";
         }

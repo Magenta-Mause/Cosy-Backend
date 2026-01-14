@@ -3,7 +3,7 @@ package com.magentamause.cosybackend.security.accessmanagement.policies;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
-import com.magentamause.cosybackend.services.UserEntityService;
+import com.magentamause.cosybackend.services.user.UserEntityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

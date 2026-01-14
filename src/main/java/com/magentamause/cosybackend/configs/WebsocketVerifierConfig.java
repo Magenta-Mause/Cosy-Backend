@@ -4,8 +4,8 @@ import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.websocket.WebsocketVerifier;
 import com.magentamause.cosybackend.security.websocket.verifier.AccessManagementVerifier;
-import com.magentamause.cosybackend.services.SecurityContextService;
-import com.magentamause.cosybackend.services.UserEntityService;
+import com.magentamause.cosybackend.services.auth.SecurityContextService;
+import com.magentamause.cosybackend.services.user.UserEntityService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
