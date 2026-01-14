@@ -251,7 +251,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
         }
     }
 
-    private void updateStatus(GameServerEntity serverConfig, GameServerDto.GameServerStatus status) {
+    private void updateStatus(
+            GameServerEntity serverConfig, GameServerDto.GameServerStatus status) {
         serverConfig.setStatus(status);
         gameServerRepository.save(serverConfig);
         statusPublisher.publishStatus(serverConfig.getUuid(), status);

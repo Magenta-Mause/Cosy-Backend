@@ -56,7 +56,9 @@ public class DockerStatusMonitor implements Closeable {
                 String state = container.get().getState();
                 newStatus = mapDockerStateToGameServerStatus(state);
             } else {
-                newStatus = GameServerDto.GameServerStatus.STOPPED; // Or FAILED if it was supposed to be running?
+                newStatus =
+                        GameServerDto.GameServerStatus
+                                .STOPPED; // Or FAILED if it was supposed to be running?
             }
 
             // Do not overwrite PULLING_IMAGE with STOPPED if container is missing (it's expected)
@@ -135,7 +137,9 @@ public class DockerStatusMonitor implements Closeable {
                         newStatus = GameServerDto.GameServerStatus.STOPPED;
                     } else {
                         newStatus =
-                                exitCode != 0 ? GameServerDto.GameServerStatus.FAILED : GameServerDto.GameServerStatus.STOPPED;
+                                exitCode != 0
+                                        ? GameServerDto.GameServerStatus.FAILED
+                                        : GameServerDto.GameServerStatus.STOPPED;
                     }
                 } else {
                     newStatus = mapEventToStatus(eventName);

@@ -1,6 +1,5 @@
 package com.magentamause.cosybackend.services;
 
-
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;

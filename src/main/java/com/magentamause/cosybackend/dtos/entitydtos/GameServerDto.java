@@ -44,8 +44,10 @@ public class GameServerDto {
 
     @NotNull @Valid private List<VolumeMountConfiguration> volumeMounts;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     public enum GameServerStatus {
         RUNNING,
+        STARTING,
         STOPPED,
         FAILED,
         PULLING_IMAGE
