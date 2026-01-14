@@ -27,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @AllArgsConstructor
-@Slf4j
 public class DockerEngineManager implements EngineManager, Closeable {
 
     private final Docker config;
