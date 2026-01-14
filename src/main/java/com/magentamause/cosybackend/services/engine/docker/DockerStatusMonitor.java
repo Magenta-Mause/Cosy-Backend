@@ -145,7 +145,7 @@ public class DockerStatusMonitor implements Closeable {
                     server.setStatus(newStatus);
                     gameServerRepository.save(server);
                     statusPublisher.publishStatus(server.getUuid(), newStatus);
-                    log.info(
+                    log.debug(
                             "Event: {} -> Updated status for server {} to {}",
                             eventName,
                             server.getServerName(),
@@ -164,7 +164,7 @@ public class DockerStatusMonitor implements Closeable {
             // Mapping paused to STOPPED
             return GameServerDto.GameServerStatus.STOPPED;
         } else if ("restarting".equalsIgnoreCase(state)) {
-            return GameServerDto.GameServerStatus.RUNNING;
+            return GameServerDto.GameServerStatus.STARTING;
         } else {
             return GameServerDto.GameServerStatus.STOPPED;
         }
@@ -176,7 +176,7 @@ public class DockerStatusMonitor implements Closeable {
         }
         switch (eventName) {
             case "create":
-                return GameServerDto.GameServerStatus.STOPPED;
+                return GameServerDto.GameServerStatus.STARTING;
             case "start":
             case "unpause":
                 return GameServerDto.GameServerStatus.RUNNING;
