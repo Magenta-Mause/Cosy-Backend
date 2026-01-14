@@ -8,12 +8,14 @@ import com.influxdb.client.write.Point;
 import com.magentamause.cosybackend.configs.InfluxConfig;
 import com.magentamause.cosybackend.entities.Metrics;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MetricsService {
@@ -33,7 +35,10 @@ public class MetricsService {
 
         dockerClient.statsCmd(containerId).exec(new StatsCallback(builder, latch));
 
-        latch.await(2, TimeUnit.SECONDS);
+        boolean success = latch.await(3, TimeUnit.SECONDS);
+        if (!success) {
+            log.warn("Stats collection timed out for {}", containerId);
+        }
 
         return builder
                 .time(Instant.now())
