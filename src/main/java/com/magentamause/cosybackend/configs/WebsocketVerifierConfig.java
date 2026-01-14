@@ -21,6 +21,12 @@ public class WebsocketVerifierConfig {
                         new AccessManagementVerifier(
                                 "/topics/game-server-logs/creation/{serverId}",
                                 Action.READ,
-                                Resource.GAME_SERVER_LOG));
+                                Resource.GAME_SERVER_LOG))
+                .addVerifier(
+                        "/topics/game-servers/{serverId}/status",
+                        new AccessManagementVerifier(
+                                "/topics/game-servers/{serverId}/status",
+                                Action.READ,
+                                Resource.GAME_SERVER));
     }
 }

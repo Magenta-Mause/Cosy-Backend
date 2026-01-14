@@ -19,8 +19,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
@@ -34,6 +37,7 @@ public class GameServerService {
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
     private final GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher;
     private final GameServerStatusPublisher statusPublisher;
+    private final TransactionTemplate transactionTemplate;
 
     public GameServerService(
             EngineManager engineManager,
@@ -41,7 +45,8 @@ public class GameServerService {
             EngineProperties engineProperties,
             GameServerRepository gameServerRepository,
             GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher,
-            GameServerStatusPublisher statusPublisher) {
+            GameServerStatusPublisher statusPublisher,
+            PlatformTransactionManager transactionManager) {
 
         this.engineManager = engineManager;
         this.gameEntityService = gameEntityService;
@@ -49,6 +54,7 @@ public class GameServerService {
         this.gameServerRepository = gameServerRepository;
         this.gameServerLogWebsocketPublisher = gameServerLogWebsocketPublisher;
         this.statusPublisher = statusPublisher;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
 
         log.info("GameServerService initialized with engine '{}'", engineType);
     }
@@ -106,19 +112,33 @@ public class GameServerService {
 
         try {
             GameServerEntity config =
-                    gameServerRepository
-                            .findById(serviceName)
-                            .orElseThrow(
-                                    () ->
-                                            new ResponseStatusException(
-                                                    HttpStatus.NOT_FOUND,
-                                                    "Server '" + serviceName + "' not found"));
+                    transactionTemplate.execute(
+                            status -> {
+                                GameServerEntity entity =
+                                        gameServerRepository
+                                                .findById(serviceName)
+                                                .orElseThrow(
+                                                        () ->
+                                                                new ResponseStatusException(
+                                                                        HttpStatus.NOT_FOUND,
+                                                                        "Server '"
+                                                                                + serviceName
+                                                                                + "' not found"));
+                                Hibernate.initialize(entity.getDockerExecutionCommand());
+                                Hibernate.initialize(entity.getPortMappings());
+                                Hibernate.initialize(entity.getEnvironmentVariables());
+                                Hibernate.initialize(entity.getVolumeMounts());
+                                return entity;
+                            });
 
             return engineManager.startAndAttachLogListener(
                     config,
                     (logMessage) -> {
                         enrichAndPublishLogMessage(config, logMessage);
                     });
+        } catch (Exception e) {
+            log.error("Error starting server '{}'", serviceName, e);
+            throw e;
         } finally {
             startingServers.remove(serviceName);
         }
@@ -148,10 +168,13 @@ public class GameServerService {
         try {
             engineManager.stop(config);
         } catch (ServerAlreadyStoppedException e) {
+            log.info("Server '{}' was already stopped", serviceName);
             config.setStatus(GameServerEntity.GameServerStatus.STOPPED);
             gameServerRepository.save(config);
             statusPublisher.publishStatus(config.getUuid(), GameServerEntity.GameServerStatus.STOPPED);
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Error stopping server '{}'", serviceName, e);
+            throw e;
         }
     }
 

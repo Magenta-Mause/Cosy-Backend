@@ -128,7 +128,13 @@ public class DockerStatusMonitor implements Closeable {
                     } catch (NumberFormatException e) {
                         log.warn("Could not parse exitCode from Docker event: {}", exitCodeStr);
                     }
-                    newStatus = exitCode != 0 ? GameServerStatus.FAILED : GameServerStatus.STOPPED;
+                    // If the server is already STOPPED, we assume this die event is the result of a clean stop
+                    // and ignore non-zero exit codes (like 137 or 143) to avoid setting it to FAILED
+                    if (server.getStatus() == GameServerStatus.STOPPED) {
+                        newStatus = GameServerStatus.STOPPED;
+                    } else {
+                        newStatus = exitCode != 0 ? GameServerStatus.FAILED : GameServerStatus.STOPPED;
+                    }
                 } else {
                     newStatus = mapEventToStatus(eventName);
                 }
