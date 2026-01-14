@@ -36,9 +36,18 @@ public class MetricsController {
             log.info("Collecting metrics for {} containers", containerUuids.size());
 
             for (String containerUuid : containerUuids) {
-                Metrics metrics = metricsService.collectMetrics(containerUuid);
-                metricsService.writeMetrics(metrics);
+                try {
+                    Metrics metrics = metricsService.collectMetrics(containerUuid);
+                    metricsService.writeMetrics(metrics);
+                } catch (Exception e) {
+                    log.error(
+                            "Failed to collect metrics for container {}: {}",
+                            containerUuid,
+                            e.getMessage(),
+                            e);
+                }
             }
+
         } catch (Exception e) {
             log.error("Error during metrics collection: {}", e.getMessage(), e);
         }
