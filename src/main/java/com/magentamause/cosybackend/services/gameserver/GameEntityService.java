@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services;
+package com.magentamause.cosybackend.services.gameserver;
 
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.repositories.GameRepository;

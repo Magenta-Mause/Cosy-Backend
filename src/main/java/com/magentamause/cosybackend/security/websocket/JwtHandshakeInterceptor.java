@@ -3,7 +3,7 @@ package com.magentamause.cosybackend.security.websocket;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosybackend.security.jwtfilter.JwtUtils;
-import com.magentamause.cosybackend.services.UserEntityService;
+import com.magentamause.cosybackend.services.user.UserEntityService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;

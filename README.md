@@ -44,6 +44,22 @@ You can start the application using the Maven wrapper:
 
 The API will be available at http://localhost:8080/api.
 
+## 🛜 Dependencies
+
+Cosy uses a Postgres instance for data storage and Loki for Server Logs.
+The Postgres setup is straightforward and can be found in the `infrastructure` folder.
+The Loki setup is a bit more involved as Loki itself doesn't have any authorization mechanism, so we use an nginx
+reverse proxy in front of it to add basic auth. For this inside this Repository we have a `infrastructure/htpasswd` file checked in, which contains a development username/password: [user: `loki-user`, password: `loki-password`].
+This needs to be changed in prod. For this you can use this command to generate a password hashed htpasswd file:
+powershell:
+```powershell
+docker run --rm httpd:2.4-alpine htpasswd -nbB loki-user loki-password | Out-File -Encoding ASCII htpasswd
+```
+bash:
+```bash
+docker run --rm httpd:2.4-alpine htpasswd -nbB loki-user loki-password > infrastructure/htpasswd
+```
+
 ## **🧹 Code Style & Linting**
 
 We maintain a strict code style using **Spotless** and **Google Java Format (AOSP style)**.
@@ -106,13 +122,15 @@ docker exec -it cosy-postgres psql -U cosy -d cosy
 ```
 
 **Common Commands:**
+
 * `\d` - List all tables, views, and sequences
 * `SELECT * FROM <table_name>;` - Query data
 * `\q` - Exit psql
 
 ### **Reset Database**
 
-To avoid DB corruption or reset to a clean state (re-initialize dummy data), remove the volumes and restart the infrastructure:
+To avoid DB corruption or reset to a clean state (re-initialize dummy data), remove the volumes and restart the
+infrastructure:
 
 ```shell
 cd infrastructure
