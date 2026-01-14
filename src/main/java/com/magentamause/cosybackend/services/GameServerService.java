@@ -104,24 +104,33 @@ public class GameServerService {
             gameServer.setPortMappings(new ArrayList<>());
         }
         gameServer.getPortMappings().clear();
-        gameServer.getPortMappings().addAll(dto.getPortMappings());
+        List<?> dtoPortMappings = dto.getPortMappings();
+        if (dtoPortMappings != null) {
+            gameServer.getPortMappings().addAll(dto.getPortMappings());
+        }
 
         if (gameServer.getEnvironmentVariables() == null) {
             gameServer.setEnvironmentVariables(new ArrayList<>());
         }
         gameServer.getEnvironmentVariables().clear();
-        gameServer.getEnvironmentVariables().addAll(dto.getEnvironmentVariables());
+        List<?> dtoEnvironmentVariables = dto.getEnvironmentVariables();
+        if (dtoEnvironmentVariables != null) {
+            gameServer.getEnvironmentVariables().addAll(dto.getEnvironmentVariables());
+        }
 
         if (gameServer.getVolumeMounts() == null) {
             gameServer.setVolumeMounts(new ArrayList<>());
         }
         gameServer.getVolumeMounts().clear();
-        gameServer
-                .getVolumeMounts()
-                .addAll(
-                        dto.getVolumeMounts().stream()
-                                .map(VolumeMountConfiguration::fromDto)
-                                .toList());
+        List<?> dtoVolumeMounts = dto.getVolumeMounts();
+        if (dtoVolumeMounts != null) {
+            gameServer
+                    .getVolumeMounts()
+                    .addAll(
+                            dto.getVolumeMounts().stream()
+                                    .map(VolumeMountConfiguration::fromDto)
+                                    .toList());
+        }
 
         return gameServerRepository.save(gameServer);
     }
