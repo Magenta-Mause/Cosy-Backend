@@ -46,7 +46,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     @Override
-    public List<Integer> start(GameServerEntity serverConfig, Consumer<StartEventDto> progressListener) {
+    public List<Integer> start(
+            GameServerEntity serverConfig, Consumer<StartEventDto> progressListener) {
         log.info("Starting Docker container for server {}", serverConfig.getServerName());
         Optional<Container> container = findContainer(serverConfig);
 
@@ -229,7 +230,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
         return hostConfig;
     }
 
-    private void ensureImagePresent(GameServerEntity serverConfig, String image, Consumer<StartEventDto> progressListener) {
+    private void ensureImagePresent(
+            GameServerEntity serverConfig, String image, Consumer<StartEventDto> progressListener) {
         boolean exists =
                 client.listImagesCmd().withImageNameFilter(image).exec().stream()
                         .anyMatch(
@@ -241,23 +243,26 @@ public class DockerEngineManager implements EngineManager, Closeable {
         if (!exists) {
             updateStatus(serverConfig, GameServerDto.GameServerStatus.PULLING_IMAGE);
             try {
-                ResultCallback.Adapter<PullResponseItem> callback = new ResultCallback.Adapter<>() {
-                    @Override
-                    public void onNext(PullResponseItem item) {
-                        if (progressListener != null) {
-                            PullProgressDto.PullProgressDtoBuilder builder = PullProgressDto.builder()
-                                    .status(item.getStatus())
-                                    .id(item.getId());
-                            
-                            if (item.getProgressDetail() != null) {
-                                builder.current(item.getProgressDetail().getCurrent())
-                                       .total(item.getProgressDetail().getTotal());
+                ResultCallback.Adapter<PullResponseItem> callback =
+                        new ResultCallback.Adapter<>() {
+                            @Override
+                            public void onNext(PullResponseItem item) {
+                                if (progressListener != null) {
+                                    PullProgressDto.PullProgressDtoBuilder builder =
+                                            PullProgressDto.builder()
+                                                    .status(item.getStatus())
+                                                    .id(item.getId());
+
+                                    if (item.getProgressDetail() != null) {
+                                        builder.current(item.getProgressDetail().getCurrent())
+                                                .total(item.getProgressDetail().getTotal());
+                                    }
+
+                                    progressListener.accept(
+                                            StartEventDto.pullProgress(builder.build()));
+                                }
                             }
-                            
-                            progressListener.accept(StartEventDto.pullProgress(builder.build()));
-                        }
-                    }
-                };
+                        };
                 client.pullImageCmd(image).exec(callback).awaitCompletion();
             } catch (Exception e) {
                 updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);

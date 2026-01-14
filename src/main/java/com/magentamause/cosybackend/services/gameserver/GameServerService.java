@@ -1,8 +1,8 @@
 package com.magentamause.cosybackend.services.gameserver;
 
-import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
@@ -109,62 +109,70 @@ public class GameServerService {
 
     // @Transactional removed to allow immediate status updates (PULLING_IMAGE)
     public Flux<StartEventDto> startServer(String serviceName) {
-        return Flux.create(sink -> {
-            if (!startingServers.add(serviceName)) {
-                sink.error(new ResponseStatusException(
-                        HttpStatus.CONFLICT, "Server '" + serviceName + "' is already starting"));
-                return;
-            }
+        return Flux.create(
+                sink -> {
+                    if (!startingServers.add(serviceName)) {
+                        sink.error(
+                                new ResponseStatusException(
+                                        HttpStatus.CONFLICT,
+                                        "Server '" + serviceName + "' is already starting"));
+                        return;
+                    }
 
-            try {
-                GameServerEntity config =
-                        transactionTemplate.execute(
-                                status -> {
-                                    GameServerEntity entity =
-                                            gameServerRepository
-                                                    .findById(serviceName)
-                                                    .orElseThrow(
-                                                            () ->
-                                                                    new ResponseStatusException(
-                                                                            HttpStatus.NOT_FOUND,
-                                                                            "Server '"
-                                                                                    + serviceName
-                                                                                    + "' not found"));
-                                    Hibernate.initialize(entity.getDockerExecutionCommand());
-                                    Hibernate.initialize(entity.getPortMappings());
-                                    Hibernate.initialize(entity.getEnvironmentVariables());
-                                    Hibernate.initialize(entity.getVolumeMounts());
-                                    return entity;
-                                });
+                    try {
+                        GameServerEntity config =
+                                transactionTemplate.execute(
+                                        status -> {
+                                            GameServerEntity entity =
+                                                    gameServerRepository
+                                                            .findById(serviceName)
+                                                            .orElseThrow(
+                                                                    () ->
+                                                                            new ResponseStatusException(
+                                                                                    HttpStatus
+                                                                                            .NOT_FOUND,
+                                                                                    "Server '"
+                                                                                            + serviceName
+                                                                                            + "' not found"));
+                                            Hibernate.initialize(
+                                                    entity.getDockerExecutionCommand());
+                                            Hibernate.initialize(entity.getPortMappings());
+                                            Hibernate.initialize(entity.getEnvironmentVariables());
+                                            Hibernate.initialize(entity.getVolumeMounts());
+                                            return entity;
+                                        });
 
-                enrichAndPublishLogMessage(
-                        config,
-                        GameServerLogMessageEntity.of(
-                                config.getUuid(),
-                                "Starting Game Server",
-                                GameServerLogMessageEntity.LogLevel.DEBUG));
+                        enrichAndPublishLogMessage(
+                                config,
+                                GameServerLogMessageEntity.of(
+                                        config.getUuid(),
+                                        "Starting Game Server",
+                                        GameServerLogMessageEntity.LogLevel.DEBUG));
 
-                List<Integer> ports = engineManager.startAndAttachLogListener(
-                        config,
-                        (logMessage) -> {
-                            enrichAndPublishLogMessage(config, logMessage);
-                        },
-                        (startEvent) -> {
-                            if (startEvent.getType() == StartEventDto.Type.PULL_PROGRESS) {
-                                statusPublisher.publishPullProgress(config.getUuid(), startEvent.getProgress());
-                            }
-                            sink.next(startEvent);
-                        });
+                        List<Integer> ports =
+                                engineManager.startAndAttachLogListener(
+                                        config,
+                                        (logMessage) -> {
+                                            enrichAndPublishLogMessage(config, logMessage);
+                                        },
+                                        (startEvent) -> {
+                                            if (startEvent.getType()
+                                                    == StartEventDto.Type.PULL_PROGRESS) {
+                                                statusPublisher.publishPullProgress(
+                                                        config.getUuid(), startEvent.getProgress());
+                                            }
+                                            sink.next(startEvent);
+                                        });
 
-                sink.next(StartEventDto.done(ports));
-                sink.complete();
-            } catch (Exception e) {
-                log.error("Error starting server '{}'", serviceName, e);
-                sink.error(e);
-            } finally {
-                startingServers.remove(serviceName);
-            }
-        });
+                        sink.next(StartEventDto.done(ports));
+                        sink.complete();
+                    } catch (Exception e) {
+                        log.error("Error starting server '{}'", serviceName, e);
+                        sink.error(e);
+                    } finally {
+                        startingServers.remove(serviceName);
+                    }
+                });
     }
 
     public GameServerLogMessageEntity enrichAndPublishLogMessage(

@@ -15,7 +15,9 @@ public interface EngineManager {
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener);
 
     default List<Integer> startAndAttachLogListener(
-            GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> logListener, Consumer<StartEventDto> progressListener) {
+            GameServerEntity serviceConfig,
+            Consumer<GameServerLogMessageEntity> logListener,
+            Consumer<StartEventDto> progressListener) {
         List<Integer> exposedPorts = start(serviceConfig, progressListener);
         attachLogListener(serviceConfig, logListener);
         return exposedPorts;

@@ -80,7 +80,8 @@ public class GameServerController {
                 Flux.interval(Duration.ofSeconds(2)).map(tick -> StartEventDto.heartbeat());
 
         Flux<StartEventDto> work =
-                gameServerService.startServer(uuid)
+                gameServerService
+                        .startServer(uuid)
                         .subscribeOn(Schedulers.boundedElastic())
                         .onErrorResume(ex -> Mono.just(StartEventDto.error(ex.getMessage())));
 
