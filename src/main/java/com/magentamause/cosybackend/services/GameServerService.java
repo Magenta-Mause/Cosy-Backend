@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -80,54 +82,33 @@ public class GameServerService {
     }
 
     public GameServerEntity updateGameServerConfiguration(
-            String uuid, GameServerUpdateDto dto, UserEntity owner) {
+            String uuid, GameServerUpdateDto dto) {
 
-        GameServerEntity gameServer =
-                gameServerRepository
-                        .findById(uuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Game server with uuid " + uuid + " not found"));
+        GameServerEntity gameServer = gameServerRepository.findById(uuid)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Game server with uuid " + uuid + " not found"));
 
-        gameServer.setGame(gameEntityService.getGameFromUuid(dto.getGameUuid()).orElse(null));
+        GameEntity game = gameEntityService.getGameFromUuid(dto.getGameUuid())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Game with uuid " + dto.getGameUuid() + " not found"));
+        gameServer.setGame(game);
+
         gameServer.setServerName(dto.getServerName());
         gameServer.setDockerImageName(dto.getDockerImageName());
         gameServer.setDockerImageTag(dto.getDockerImageTag());
         gameServer.setDockerExecutionCommand(dto.getExecutionCommand());
 
-        if (gameServer.getPortMappings() == null) {
-            gameServer.setPortMappings(new ArrayList<>());
-        }
-        gameServer.getPortMappings().clear();
-        List<?> dtoPortMappings = dto.getPortMappings();
-        if (dtoPortMappings != null) {
-            gameServer.getPortMappings().addAll(dto.getPortMappings());
-        }
-
-        if (gameServer.getEnvironmentVariables() == null) {
-            gameServer.setEnvironmentVariables(new ArrayList<>());
-        }
-        gameServer.getEnvironmentVariables().clear();
-        List<?> dtoEnvironmentVariables = dto.getEnvironmentVariables();
-        if (dtoEnvironmentVariables != null) {
-            gameServer.getEnvironmentVariables().addAll(dto.getEnvironmentVariables());
-        }
-
-        if (gameServer.getVolumeMounts() == null) {
-            gameServer.setVolumeMounts(new ArrayList<>());
-        }
-        gameServer.getVolumeMounts().clear();
-        List<?> dtoVolumeMounts = dto.getVolumeMounts();
-        if (dtoVolumeMounts != null) {
-            gameServer
-                    .getVolumeMounts()
-                    .addAll(
-                            dto.getVolumeMounts().stream()
-                                    .map(VolumeMountConfiguration::fromDto)
-                                    .toList());
-        }
+        gameServer.setPortMappings(updateList(gameServer.getPortMappings(), dto.getPortMappings(), ArrayList::new));
+        gameServer.setEnvironmentVariables(updateList(gameServer.getEnvironmentVariables(), dto.getEnvironmentVariables(), ArrayList::new));
+        gameServer.setVolumeMounts(updateList(
+                gameServer.getVolumeMounts(),
+                dto.getVolumeMounts() != null
+                        ? dto.getVolumeMounts().stream()
+                        .map(VolumeMountConfiguration::fromDto)
+                        .toList()
+                        : null,
+                ArrayList::new
+        ));
 
         return gameServerRepository.save(gameServer);
     }
@@ -202,5 +183,16 @@ public class GameServerService {
                                 : List.of())
                 .portMappings(dto.getPortMappings() != null ? dto.getPortMappings() : List.of())
                 .build();
+    }
+    private <T> List<T> updateList(List<T> target, List<T> source, Supplier<List<T>> listSupplier) {
+        if (target == null) {
+            target = listSupplier.get();
+        } else {
+            target.clear();
+        }
+        if (source != null) {
+            target.addAll(source);
+        }
+        return target;
     }
 }
