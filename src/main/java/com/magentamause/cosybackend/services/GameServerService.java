@@ -91,15 +91,6 @@ public class GameServerService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Game server with uuid " + uuid + " not found"));
 
-        UserEntity gameOwner = gameServer.getOwner();
-        if (gameOwner == null
-                || gameOwner.getUuid() == null
-                || owner == null
-                || owner.getUuid() == null
-                || !gameOwner.getUuid().equals(owner.getUuid())) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Insufficient permissions to update this game server");
-        }
         gameServer.setGame(gameEntityService.getGameFromUuid(dto.getGameUuid()).orElse(null));
         gameServer.setServerName(dto.getServerName());
         gameServer.setDockerImageName(dto.getDockerImageName());
