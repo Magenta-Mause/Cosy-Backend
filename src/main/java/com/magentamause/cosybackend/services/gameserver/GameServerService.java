@@ -1,7 +1,6 @@
 package com.magentamause.cosybackend.services.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
@@ -192,7 +191,7 @@ public class GameServerService {
         }
     }
 
-    public GameServerStatusDto getStatus(String serviceName) {
+    public GameServerEntity.GameServerStatus getStatus(String serviceName) {
         GameServerEntity server =
                 gameServerRepository
                         .findById(serviceName)
@@ -202,7 +201,7 @@ public class GameServerService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Server '" + serviceName + "' not found"));
 
-        return GameServerStatusDto.builder().status(server.getStatus()).build();
+        return server.getStatus();
     }
 
     public GameServerEntity convertDtoToEntity(GameServerCreationDto dto) {

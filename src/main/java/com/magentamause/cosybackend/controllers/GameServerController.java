@@ -2,7 +2,6 @@ package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
@@ -70,7 +69,7 @@ public class GameServerController {
     }
 
     @GetMapping("/{uuid}/status")
-    public ResponseEntity<GameServerStatusDto> getServiceInfo(@PathVariable String uuid) {
+    public ResponseEntity<GameServerEntity.GameServerStatus> getServiceInfo(@PathVariable String uuid) {
         return ResponseEntity.ok(gameServerService.getStatus(uuid));
     }
 
