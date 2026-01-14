@@ -91,7 +91,12 @@ public class GameServerService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Game server with uuid " + uuid + " not found"));
 
-        if (!gameServer.getOwner().getUuid().equals(owner.getUuid())) {
+        UserEntity gameOwner = gameServer.getOwner();
+        if (gameOwner == null
+                || gameOwner.getUuid() == null
+                || owner == null
+                || owner.getUuid() == null
+                || !gameOwner.getUuid().equals(owner.getUuid())) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Insufficient permissions to update this game server");
         }
