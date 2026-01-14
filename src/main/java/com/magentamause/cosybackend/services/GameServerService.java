@@ -92,7 +92,8 @@ public class GameServerService {
                                                 "Game server with uuid " + uuid + " not found"));
 
         if (!gameServer.getOwner().getUuid().equals(owner.getUuid())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Insufficient permissions to update this game server");
         }
         gameServer.setGame(gameEntityService.getGameFromUuid(dto.getGameUuid()));
         gameServer.setServerName(dto.getServerName());
