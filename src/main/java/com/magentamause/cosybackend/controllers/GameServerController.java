@@ -79,10 +79,9 @@ public class GameServerController {
         Flux<StartEventDto> heartbeat =
                 Flux.interval(Duration.ofSeconds(2)).map(tick -> StartEventDto.heartbeat());
 
-        Mono<StartEventDto> work =
-                Mono.fromCallable(() -> gameServerService.startServer(uuid))
+        Flux<StartEventDto> work =
+                gameServerService.startServer(uuid)
                         .subscribeOn(Schedulers.boundedElastic())
-                        .map(StartEventDto::done)
                         .onErrorResume(ex -> Mono.just(StartEventDto.error(ex.getMessage())));
 
         return Flux.merge(heartbeat, work)

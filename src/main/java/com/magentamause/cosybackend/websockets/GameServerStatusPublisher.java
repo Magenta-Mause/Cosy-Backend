@@ -1,6 +1,8 @@
 package com.magentamause.cosybackend.websockets;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.dtos.entitydtos.PullProgressDto;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -17,6 +19,12 @@ public class GameServerStatusPublisher {
         String topic = String.format("/topics/game-servers/%s/status", serverUuid);
 
         log.debug("Publishing status update to {}: {}", topic, status);
-        messagingTemplate.convertAndSend(topic, status);
+        messagingTemplate.convertAndSend(topic, (Object) Map.of("status", status));
+    }
+
+    public void publishPullProgress(String serverUuid, PullProgressDto progress) {
+        String topic = String.format("/topics/game-servers/%s/docker-progress", serverUuid);
+        // log.debug("Publishing pull progress to {}", topic); // verbose
+        messagingTemplate.convertAndSend(topic, progress);
     }
 }

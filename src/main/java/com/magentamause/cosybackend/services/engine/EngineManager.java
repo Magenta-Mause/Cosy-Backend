@@ -1,12 +1,13 @@
 package com.magentamause.cosybackend.services.engine;
 
+import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import java.util.List;
 import java.util.function.Consumer;
 
 public interface EngineManager {
-    List<Integer> start(GameServerEntity serviceConfig);
+    List<Integer> start(GameServerEntity serviceConfig, Consumer<StartEventDto> progressListener);
 
     void stop(GameServerEntity serviceConfig);
 
@@ -14,9 +15,9 @@ public interface EngineManager {
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener);
 
     default List<Integer> startAndAttachLogListener(
-            GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener) {
-        List<Integer> exposedPorts = start(serviceConfig);
-        attachLogListener(serviceConfig, listener);
+            GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> logListener, Consumer<StartEventDto> progressListener) {
+        List<Integer> exposedPorts = start(serviceConfig, progressListener);
+        attachLogListener(serviceConfig, logListener);
         return exposedPorts;
     }
 }

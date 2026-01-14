@@ -27,6 +27,12 @@ public class WebsocketVerifierConfig {
                         new AccessManagementVerifier(
                                 "/topics/game-servers/{serverId}/status",
                                 Action.READ,
+                                Resource.GAME_SERVER))
+                .addVerifier(
+                        "/topics/game-servers/{serverId}/docker-progress",
+                        new AccessManagementVerifier(
+                                "/topics/game-servers/{serverId}/docker-progress",
+                                Action.READ,
                                 Resource.GAME_SERVER));
     }
 }

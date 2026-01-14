@@ -5,6 +5,8 @@ import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.*;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.dtos.entitydtos.PullProgressDto;
+import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
@@ -44,7 +46,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     @Override
-    public List<Integer> start(GameServerEntity serverConfig) {
+    public List<Integer> start(GameServerEntity serverConfig, Consumer<StartEventDto> progressListener) {
         log.info("Starting Docker container for server {}", serverConfig.getServerName());
         Optional<Container> container = findContainer(serverConfig);
 
@@ -58,7 +60,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         String image = buildImageName(serverConfig);
         String containerName = containerName(serverConfig);
 
-        ensureImagePresent(serverConfig, image);
+        ensureImagePresent(serverConfig, image, progressListener);
 
         List<String> cmd = serverConfig.getDockerExecutionCommand();
         if (cmd == null) {
@@ -227,7 +229,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         return hostConfig;
     }
 
-    private void ensureImagePresent(GameServerEntity serverConfig, String image) {
+    private void ensureImagePresent(GameServerEntity serverConfig, String image, Consumer<StartEventDto> progressListener) {
         boolean exists =
                 client.listImagesCmd().withImageNameFilter(image).exec().stream()
                         .anyMatch(
@@ -239,7 +241,24 @@ public class DockerEngineManager implements EngineManager, Closeable {
         if (!exists) {
             updateStatus(serverConfig, GameServerDto.GameServerStatus.PULLING_IMAGE);
             try {
-                client.pullImageCmd(image).start().awaitCompletion();
+                ResultCallback.Adapter<PullResponseItem> callback = new ResultCallback.Adapter<>() {
+                    @Override
+                    public void onNext(PullResponseItem item) {
+                        if (progressListener != null) {
+                            PullProgressDto.PullProgressDtoBuilder builder = PullProgressDto.builder()
+                                    .status(item.getStatus())
+                                    .id(item.getId());
+                            
+                            if (item.getProgressDetail() != null) {
+                                builder.current(item.getProgressDetail().getCurrent())
+                                       .total(item.getProgressDetail().getTotal());
+                            }
+                            
+                            progressListener.accept(StartEventDto.pullProgress(builder.build()));
+                        }
+                    }
+                };
+                client.pullImageCmd(image).exec(callback).awaitCompletion();
             } catch (Exception e) {
                 updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
                 if (e instanceof InterruptedException) {
