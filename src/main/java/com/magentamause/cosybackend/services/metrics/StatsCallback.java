@@ -3,11 +3,10 @@ package com.magentamause.cosybackend.services.metrics;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Statistics;
 import com.magentamause.cosybackend.entities.Metrics;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -17,23 +16,22 @@ public class StatsCallback extends ResultCallback.Adapter<Statistics> {
 
     @Override
     public void onNext(Statistics stats) {
-        if (stats.getCpuStats() == null ||
-                stats.getCpuStats().getCpuUsage() == null ||
-                stats.getCpuStats().getSystemCpuUsage() == null ||
-                stats.getPreCpuStats() == null ||
-                stats.getPreCpuStats().getCpuUsage() == null ||
-                stats.getPreCpuStats().getSystemCpuUsage() == null) {
+        if (stats.getCpuStats() == null
+                || stats.getCpuStats().getCpuUsage() == null
+                || stats.getCpuStats().getSystemCpuUsage() == null
+                || stats.getPreCpuStats() == null
+                || stats.getPreCpuStats().getCpuUsage() == null
+                || stats.getPreCpuStats().getSystemCpuUsage() == null) {
             return;
         }
 
         double cpuPercent = getCpuPercent(stats);
 
-        long memoryUsage = stats.getMemoryStats().getUsage() != null ?
-                stats.getMemoryStats().getUsage() : 0L;
-        long memoryLimit = stats.getMemoryStats().getLimit() != null ?
-                stats.getMemoryStats().getLimit() : 1L;
-        double memoryPercent = memoryLimit > 0 ?
-                (double) memoryUsage / memoryLimit * 100.0 : 0.0;
+        long memoryUsage =
+                stats.getMemoryStats().getUsage() != null ? stats.getMemoryStats().getUsage() : 0L;
+        long memoryLimit =
+                stats.getMemoryStats().getLimit() != null ? stats.getMemoryStats().getLimit() : 1L;
+        double memoryPercent = memoryLimit > 0 ? (double) memoryUsage / memoryLimit * 100.0 : 0.0;
 
         long networkInput = 0;
         long networkOutput = 0;
@@ -46,7 +44,8 @@ public class StatsCallback extends ResultCallback.Adapter<Statistics> {
 
         long blockRead = 0;
         long blockWrite = 0;
-        if (stats.getBlkioStats() != null && stats.getBlkioStats().getIoServiceBytesRecursive() != null) {
+        if (stats.getBlkioStats() != null
+                && stats.getBlkioStats().getIoServiceBytesRecursive() != null) {
             for (var stat : stats.getBlkioStats().getIoServiceBytesRecursive()) {
                 if ("Read".equals(stat.getOp())) {
                     blockRead += stat.getValue() != null ? stat.getValue() : 0L;
@@ -56,8 +55,7 @@ public class StatsCallback extends ResultCallback.Adapter<Statistics> {
             }
         }
 
-        builder
-                .cpuPercent(cpuPercent)
+        builder.cpuPercent(cpuPercent)
                 .memoryUsage(memoryUsage)
                 .memoryLimit(memoryLimit)
                 .memoryPercent(memoryPercent)
@@ -76,10 +74,12 @@ public class StatsCallback extends ResultCallback.Adapter<Statistics> {
     }
 
     private static double getCpuPercent(Statistics stats) {
-        double cpuDelta = stats.getCpuStats().getCpuUsage().getTotalUsage() -
-                stats.getPreCpuStats().getCpuUsage().getTotalUsage();
-        double systemDelta = stats.getCpuStats().getSystemCpuUsage() -
-                stats.getPreCpuStats().getSystemCpuUsage();
+        double cpuDelta =
+                stats.getCpuStats().getCpuUsage().getTotalUsage()
+                        - stats.getPreCpuStats().getCpuUsage().getTotalUsage();
+        double systemDelta =
+                stats.getCpuStats().getSystemCpuUsage()
+                        - stats.getPreCpuStats().getSystemCpuUsage();
         Long cpuCountLong = stats.getCpuStats().getOnlineCpus();
         long cpuCount = cpuCountLong != null ? cpuCountLong : 1L;
 
