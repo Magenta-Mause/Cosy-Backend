@@ -4,8 +4,8 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Event;
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.GameServerEntity.GameServerStatus;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
@@ -51,17 +51,17 @@ public class DockerStatusMonitor implements Closeable {
                                                     .contains(containerName))
                             .findFirst();
 
-            GameServerStatus newStatus;
+            GameServerDto.GameServerStatus newStatus;
             if (container.isPresent()) {
                 String state = container.get().getState();
                 newStatus = mapDockerStateToGameServerStatus(state);
             } else {
-                newStatus = GameServerStatus.STOPPED; // Or FAILED if it was supposed to be running?
+                newStatus = GameServerDto.GameServerStatus.STOPPED; // Or FAILED if it was supposed to be running?
             }
 
             // Do not overwrite PULLING_IMAGE with STOPPED if container is missing (it's expected)
-            if (server.getStatus() == GameServerStatus.PULLING_IMAGE
-                    && newStatus == GameServerStatus.STOPPED) {
+            if (server.getStatus() == GameServerDto.GameServerStatus.PULLING_IMAGE
+                    && newStatus == GameServerDto.GameServerStatus.STOPPED) {
                 continue;
             }
 
@@ -115,7 +115,7 @@ public class DockerStatusMonitor implements Closeable {
                 String eventName =
                         event.getAction() != null ? event.getAction() : event.getStatus();
 
-                GameServerStatus newStatus;
+                GameServerDto.GameServerStatus newStatus;
 
                 if ("die".equals(eventName)) {
                     String exitCodeStr = event.getActor().getAttributes().get("exitCode");
@@ -131,11 +131,11 @@ public class DockerStatusMonitor implements Closeable {
                     // clean stop
                     // and ignore non-zero exit codes (like 137 or 143) to avoid setting it to
                     // FAILED
-                    if (server.getStatus() == GameServerStatus.STOPPED) {
-                        newStatus = GameServerStatus.STOPPED;
+                    if (server.getStatus() == GameServerDto.GameServerStatus.STOPPED) {
+                        newStatus = GameServerDto.GameServerStatus.STOPPED;
                     } else {
                         newStatus =
-                                exitCode != 0 ? GameServerStatus.FAILED : GameServerStatus.STOPPED;
+                                exitCode != 0 ? GameServerDto.GameServerStatus.FAILED : GameServerDto.GameServerStatus.STOPPED;
                     }
                 } else {
                     newStatus = mapEventToStatus(eventName);
@@ -157,34 +157,34 @@ public class DockerStatusMonitor implements Closeable {
         }
     }
 
-    private GameServerStatus mapDockerStateToGameServerStatus(String state) {
+    private GameServerDto.GameServerStatus mapDockerStateToGameServerStatus(String state) {
         if ("running".equalsIgnoreCase(state)) {
-            return GameServerStatus.RUNNING;
+            return GameServerDto.GameServerStatus.RUNNING;
         } else if ("paused".equalsIgnoreCase(state)) {
             // Mapping paused to STOPPED
-            return GameServerStatus.STOPPED;
+            return GameServerDto.GameServerStatus.STOPPED;
         } else if ("restarting".equalsIgnoreCase(state)) {
-            return GameServerStatus.RUNNING;
+            return GameServerDto.GameServerStatus.RUNNING;
         } else {
-            return GameServerStatus.STOPPED;
+            return GameServerDto.GameServerStatus.STOPPED;
         }
     }
 
-    private GameServerStatus mapEventToStatus(String eventName) {
+    private GameServerDto.GameServerStatus mapEventToStatus(String eventName) {
         if (eventName == null) {
             return null;
         }
         switch (eventName) {
             case "create":
-                return GameServerStatus.STOPPED;
+                return GameServerDto.GameServerStatus.STOPPED;
             case "start":
             case "unpause":
-                return GameServerStatus.RUNNING;
+                return GameServerDto.GameServerStatus.RUNNING;
             case "stop":
             case "destroy":
-                return GameServerStatus.STOPPED;
+                return GameServerDto.GameServerStatus.STOPPED;
             case "pause":
-                return GameServerStatus.STOPPED;
+                return GameServerDto.GameServerStatus.STOPPED;
             default:
                 return null;
         }

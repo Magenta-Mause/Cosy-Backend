@@ -69,7 +69,8 @@ public class GameServerController {
     }
 
     @GetMapping("/{uuid}/status")
-    public ResponseEntity<GameServerEntity.GameServerStatus> getServiceInfo(@PathVariable String uuid) {
+    public ResponseEntity<GameServerDto.GameServerStatus> getServiceInfo(
+            @PathVariable String uuid) {
         return ResponseEntity.ok(gameServerService.getStatus(uuid));
     }
 

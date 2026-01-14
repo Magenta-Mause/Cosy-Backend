@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.services.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
@@ -76,7 +77,7 @@ public class GameServerService {
 
     public GameServerEntity saveGameServer(GameServerEntity entity) {
         entity.setUuid(null);
-        entity.setStatus(GameServerEntity.GameServerStatus.STOPPED);
+        entity.setStatus(GameServerDto.GameServerStatus.STOPPED);
         log.info("Saving game server {}", entity);
         return gameServerRepository.save(entity);
     }
@@ -181,17 +182,16 @@ public class GameServerService {
             engineManager.stop(config);
         } catch (ServerAlreadyStoppedException e) {
             log.info("Server '{}' was already stopped", serviceName);
-            config.setStatus(GameServerEntity.GameServerStatus.STOPPED);
+            config.setStatus(GameServerDto.GameServerStatus.STOPPED);
             gameServerRepository.save(config);
-            statusPublisher.publishStatus(
-                    config.getUuid(), GameServerEntity.GameServerStatus.STOPPED);
+            statusPublisher.publishStatus(config.getUuid(), GameServerDto.GameServerStatus.STOPPED);
         } catch (Exception e) {
             log.error("Error stopping server '{}'", serviceName, e);
             throw e;
         }
     }
 
-    public GameServerEntity.GameServerStatus getStatus(String serviceName) {
+    public GameServerDto.GameServerStatus getStatus(String serviceName) {
         GameServerEntity server =
                 gameServerRepository
                         .findById(serviceName)

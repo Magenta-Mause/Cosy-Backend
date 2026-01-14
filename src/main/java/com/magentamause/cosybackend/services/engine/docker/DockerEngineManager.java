@@ -4,6 +4,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.*;
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
@@ -236,11 +237,11 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                 });
 
         if (!exists) {
-            updateStatus(serverConfig, GameServerEntity.GameServerStatus.PULLING_IMAGE);
+            updateStatus(serverConfig, GameServerDto.GameServerStatus.PULLING_IMAGE);
             try {
                 client.pullImageCmd(image).start().awaitCompletion();
             } catch (Exception e) {
-                updateStatus(serverConfig, GameServerEntity.GameServerStatus.FAILED);
+                updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
                 if (e instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
                 }
@@ -250,8 +251,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         }
     }
 
-    private void updateStatus(
-            GameServerEntity serverConfig, GameServerEntity.GameServerStatus status) {
+    private void updateStatus(GameServerEntity serverConfig, GameServerDto.GameServerStatus status) {
         serverConfig.setStatus(status);
         gameServerRepository.save(serverConfig);
         statusPublisher.publishStatus(serverConfig.getUuid(), status);
