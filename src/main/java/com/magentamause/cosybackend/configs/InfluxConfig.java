@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Getter
 public class InfluxConfig {
-
     private InfluxDBClient influxDBClient;
 
     @Value("${influx.url}")
@@ -29,8 +28,6 @@ public class InfluxConfig {
     @PostConstruct
     public void init() {
         this.influxDBClient = InfluxDBClientFactory.create(url, token.toCharArray(), org, bucket);
-        System.out.println(influxDBClient.ping());
-        System.out.println(influxDBClient.health());
     }
 
     public InfluxDBClient getClient() {

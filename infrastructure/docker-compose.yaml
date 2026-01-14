@@ -49,7 +49,6 @@ services:
       DOCKER_INFLUXDB_INIT_PASSWORD: cosy-password
       DOCKER_INFLUXDB_INIT_ORG: cosy-org
       DOCKER_INFLUXDB_INIT_BUCKET: cosy-bucket
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: e8996bf24977ce5615015c717447911799207025d1998a01256b7b7717bac18e
 volumes:
   influx_data:
   influx_config:

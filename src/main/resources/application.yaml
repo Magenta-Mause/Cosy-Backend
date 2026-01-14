@@ -30,7 +30,7 @@ management:
         include: "health,readiness,liveness"
 influx:
   url: http://localhost:8086
-  token: YXRo-4B2NR8nMu9aCP0p8LD2mDmoCHx5kgjgCGJXh02LbFJ0TBZqW8VssQWq2gV3lpiJPYk_zXBQnhOUeVfWKQ==
+  token: ${COSY_INFLUX_TOKEN:YXRo-4B2NR8nMu9aCP0p8LD2mDmoCHx5kgjgCGJXh02LbFJ0TBZqW8VssQWq2gV3lpiJPYk_zXBQnhOUeVfWKQ==}
   org: cosy-org
   bucket: cosy-bucket
 cosy:

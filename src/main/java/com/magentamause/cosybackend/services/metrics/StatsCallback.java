@@ -23,7 +23,7 @@ public class StatsCallback extends ResultCallback.Adapter<Statistics> {
                 stats.getPreCpuStats() == null ||
                 stats.getPreCpuStats().getCpuUsage() == null ||
                 stats.getPreCpuStats().getSystemCpuUsage() == null) {
-            return; // Wait for next stats event
+            return;
         }
 
         double cpuPercent = getCpuPercent(stats);

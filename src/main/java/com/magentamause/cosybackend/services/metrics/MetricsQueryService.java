@@ -14,15 +14,15 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class MetricsQueryService {
-        private InfluxConfig influxConfig;
+        private final InfluxConfig influxConfig;
 
         public List<Map<String, Object>> queryMetrics(String containerId, String metricType, String timeRange) {
             String fieldName = getFieldName(metricType);
 
             String flux = String.format(
-                    "from(bucket: \"docker-metrics\") " +
+                    "from(bucket: \"cosy-bucket\") " +
                             "|> range(start: -%s) " +
-                            "|> filter(fn: (r) => r[\"_measurement\"] == \"docker_stats\") " +
+                            "|> filter(fn: (r) => r[\"_measurement\"] == \"metrics\") " +
                             "|> filter(fn: (r) => r[\"container_uuid\"] == \"%s\") " +
                             "|> filter(fn: (r) => r[\"_field\"] == \"%s\") " +
                             "|> aggregateWindow(every: 1m, fn: mean, createEmpty: false) " +

@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 public class MetricsService {
-
     private final InfluxConfig influxConfig;
     private final DockerClient dockerClient;
 
@@ -34,7 +33,7 @@ public class MetricsService {
 
         dockerClient.statsCmd(containerId).exec(new StatsCallback(builder, latch));
 
-        latch.await(5, TimeUnit.SECONDS);
+        latch.await(2, TimeUnit.SECONDS);
 
         return builder
                 .time(Instant.now())
@@ -42,7 +41,7 @@ public class MetricsService {
     }
 
     public void writeMetrics(Metrics metrics) {
-        Point point = Point.measurement("docker_stats")
+        Point point = Point.measurement("metrics")
                 .addTag("container_uuid", metrics.getUuid())
                 .addTag("container_name", metrics.getName())
                 .addField("cpu_percent", metrics.getCpuPercent())
