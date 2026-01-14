@@ -1,5 +1,7 @@
 package com.magentamause.cosybackend.entities;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.influxdb.annotations.Column;
 import com.influxdb.annotations.Measurement;
 import java.time.Instant;
@@ -11,7 +13,8 @@ import lombok.Setter;
 @Setter
 @Builder
 @Measurement(name = "metrics")
-public class Metrics {
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+public class Metric {
     @Column(tag = true)
     private String uuid;
 

@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.services.metrics;
 
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Statistics;
-import com.magentamause.cosybackend.entities.Metrics;
+import com.magentamause.cosybackend.entities.Metric;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class StatsCallback extends ResultCallback.Adapter<Statistics> {
-    private final Metrics.MetricsBuilder builder;
+    private final Metric.MetricBuilder builder;
     private final CountDownLatch latch;
 
     @Override

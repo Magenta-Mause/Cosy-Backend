@@ -2,42 +2,30 @@ package com.magentamause.cosybackend.configs;
 
 import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.InfluxDBClientFactory;
+import com.magentamause.cosybackend.configs.properties.CorsProperties;
+import com.magentamause.cosybackend.configs.properties.InfluxProperties;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@Getter
+@RequiredArgsConstructor
+@EnableConfigurationProperties(InfluxProperties.class)
 public class InfluxConfig {
-    private InfluxDBClient influxDBClient;
+    private final InfluxProperties influxProperties;
 
-    @Value("${influx.url}")
-    private String url;
-
-    @Value("${influx.token}")
-    private String token;
-
-    @Value("${influx.org}")
-    private String org;
-
-    @Value("${influx.bucket}")
-    private String bucket;
-
-    @PostConstruct
-    public void init() {
-        this.influxDBClient = InfluxDBClientFactory.create(url, token.toCharArray(), org, bucket);
-    }
-
-    public InfluxDBClient getClient() {
-        return influxDBClient;
-    }
-
-    @PreDestroy
-    public void close() {
-        if (influxDBClient != null) {
-            influxDBClient.close();
-        }
+    @Bean(destroyMethod = "close")
+    public InfluxDBClient influxDBClient() {
+        return InfluxDBClientFactory.create(
+                influxProperties.url(),
+                influxProperties.token().toCharArray(),
+                influxProperties.org(),
+                influxProperties.bucket()
+        );
     }
 }

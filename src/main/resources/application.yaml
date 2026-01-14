@@ -28,11 +28,7 @@ management:
     web:
       exposure:
         include: "health,readiness,liveness"
-influx:
-  url: http://localhost:8086
-  token: ${COSY_INFLUX_TOKEN:uw_P7OpF09lqu_k-ZgMhJ4ioC9fAczwjrxBrR5ypylErR70G1zNkRfZVB9QrFDPaxPo5OaGWnwYv9vPSYjV0Fw==}
-  org: cosy-org
-  bucket: cosy-bucket
+
 cosy:
   cors:
     allowed-origins:
@@ -47,6 +43,11 @@ cosy:
     password: ${COSY_LOKI_PASSWORD:loki-password}
     url: http://localhost:3100
     application-name: cosy-backend # Label to identify logs from this application
+  influx:
+    url: http://localhost:8086
+    token: ${COSY_INFLUX_TOKEN:uw_P7OpF09lqu_k-ZgMhJ4ioC9fAczwjrxBrR5ypylErR70G1zNkRfZVB9QrFDPaxPo5OaGWnwYv9vPSYjV0Fw==}
+    org: cosy-org
+    bucket: cosy-bucket
   engine:
     selected: DOCKER
 
