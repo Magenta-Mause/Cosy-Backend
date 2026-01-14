@@ -85,7 +85,6 @@ public class DockerStatusMonitor implements Closeable {
                     @Override
                     public void onError(Throwable throwable) {
                         log.error("Error in Docker event listener", throwable);
-                        // Reconnect logic could be added here
                     }
                 };
 
