@@ -70,6 +70,26 @@ public class KubernetesEngineManager implements EngineManager {
     }
 
     @Override
+    public List<String> getActiveContainerUuids() {
+        try {
+            V1PodList pods = api.listNamespacedPod(config.namespace())
+                    .labelSelector("cosy-server")
+                    .execute();
+
+            return pods.getItems().stream()
+                    .filter(pod -> "Running".equals(
+                            Optional.ofNullable(pod.getStatus())
+                                    .map(V1PodStatus::getPhase)
+                                    .orElse("")))
+                    .map(pod -> pod.getMetadata().getLabels().get("cosy-server"))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        } catch (ApiException e) {
+            throw new IllegalStateException("Failed to list active pods", e);
+        }
+    }
+
+    @Override
     public void attachLogListener(
             GameServerEntity server, Consumer<GameServerLogMessageEntity> listener) {
         V1Pod pod =

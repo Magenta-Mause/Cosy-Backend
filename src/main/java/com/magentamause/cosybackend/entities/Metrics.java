@@ -14,7 +14,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Builder
-@Measurement(name = "metrics")
+@Measurement(name = "docker_stats")
 public class Metrics {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

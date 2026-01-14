@@ -1,24 +1,25 @@
 package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.entities.Metrics;
+import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.metrics.MetricsQueryService;
 import com.magentamause.cosybackend.services.metrics.MetricsService;
-import com.magentamause.cosybackend.services.metrics.MetricsWriter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/metrics")
 @RequiredArgsConstructor
 public class MetricsController {
-    private MetricsQueryService queryService;
-    private MetricsService metricsService;
-    private MetricsWriter writer;
+    private final MetricsQueryService queryService;
+    private final MetricsService metricsService;
+    private final EngineManager engineManager;
 
     @GetMapping("/{containerId}")
     public List<Map<String, Object>> getMetrics(
@@ -31,15 +32,21 @@ public class MetricsController {
     @Scheduled(fixedRate = 30000)
     public void collectMetrics() {
         try {
-            // Replace with your actual container IDs
-            List<String> containerIds = Arrays.asList("container1", "container2");
+            List<String> containerUuids = engineManager.getActiveContainerUuids();
 
-            for (String containerId : containerIds) {
-                Metrics metrics = metricsService.collectMetrics(containerId);
-                writer.writeMetrics(metrics);
+            log.info("Collecting metrics for {} containers", containerUuids.size());
+
+            for (String containerUuid : containerUuids) {
+                try {
+                    Metrics metrics = metricsService.collectMetrics(containerUuid);
+                    metricsService.writeMetrics(metrics);
+                } catch (Exception e) {
+                    log.error("Failed to collect metrics for container {}: {}",
+                            containerUuid, e.getMessage());
+                }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error during metrics collection: {}", e.getMessage(), e);
         }
     }
 }

@@ -22,4 +22,6 @@ public interface EngineManager {
         attachLogListener(serviceConfig, listener);
         return exposedPorts;
     }
+
+    List<String> getActiveContainerUuids();
 }

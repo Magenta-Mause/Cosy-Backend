@@ -263,4 +263,16 @@ public class DockerEngineManager implements EngineManager, Closeable {
             }
         }
     }
+
+    public List<String> getActiveContainerUuids() {
+        return client.listContainersCmd()
+                .withShowAll(false)
+                .exec()
+                .stream()
+                .map(Container::getNames)
+                .flatMap(Arrays::stream)
+                .filter(name -> name.startsWith("/cosy-"))
+                .map(name -> name.substring(1))
+                .collect(Collectors.toList());
+    }
 }
