@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.dtos.entitydtos;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import lombok.Builder;
 import lombok.Data;
 import tools.jackson.databind.PropertyNamingStrategies;
@@ -11,15 +12,5 @@ import tools.jackson.databind.annotation.JsonNaming;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Builder
 public class GameServerStatusDto {
-    GameServerStatus status;
-
-    // low level status as reported by engine
-    String phase;
-
-    // Documents high-level engine-agnostic status
-    public enum GameServerStatus {
-        Found,
-        NotFound,
-        Unknown
-    }
+    GameServerEntity.GameServerStatus status;
 }

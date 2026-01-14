@@ -14,6 +14,7 @@ public class GameServerLogWebsocketPublisher {
     private final SimpMessagingTemplate messagingTemplate;
 
     public void publishLog(String serverUuid, GameServerLogMessageEntity logMessage) {
+        log.debug("Publishing log message to websocket for server {}: {}", serverUuid, logMessage);
         messagingTemplate.convertAndSend(
                 "/topics/game-server-logs/creation/" + serverUuid, logMessage);
     }

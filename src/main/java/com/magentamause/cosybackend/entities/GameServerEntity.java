@@ -67,10 +67,9 @@ public class GameServerEntity {
 
     public enum GameServerStatus {
         RUNNING,
-        STARTING,
-        SHUTTING_DOWN,
         STOPPED,
-        FAILED
+        FAILED,
+        PULLING_IMAGE
     }
 
     public GameServerDto toDto() {

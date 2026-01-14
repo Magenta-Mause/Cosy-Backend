@@ -4,14 +4,15 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.*;
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
+import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.config.EngineProperties.Docker;
+import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,12 +23,16 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor
+@Slf4j
 public class DockerEngineManager implements EngineManager, Closeable {
 
     private final Docker config;
     private final DockerClient client;
+    private final GameServerRepository gameServerRepository;
+    private final GameServerStatusPublisher statusPublisher;
 
     private static ExposedPort portMappingToExposedPort(PortMapping pm) {
         return switch (pm.getProtocol()) {
@@ -39,11 +44,12 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     @Override
     public List<Integer> start(GameServerEntity serverConfig) {
-        Optional<Container> existing = findContainer(serverConfig);
+        log.info("Starting Docker container for server {}", serverConfig.getServerName());
+        Optional<Container> container = findContainer(serverConfig);
 
-        if (existing.isPresent()) {
-            if (!existing.get().getState().equals("running")) {
-                client.startContainerCmd(existing.get().getId()).exec();
+        if (container.isPresent()) {
+            if (!container.get().getState().equals("running")) {
+                client.startContainerCmd(container.get().getId()).exec();
             }
             return getInstancePorts(serverConfig);
         }
@@ -51,7 +57,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         String image = buildImageName(serverConfig);
         String containerName = containerName(serverConfig);
 
-        ensureImagePresent(image);
+        ensureImagePresent(serverConfig, image);
 
         List<String> cmd = serverConfig.getDockerExecutionCommand();
         if (cmd == null) {
@@ -141,23 +147,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         });
     }
 
-    @Override
-    public GameServerStatusDto status(GameServerEntity serverConfig) {
-        Optional<Container> container = findContainer(serverConfig);
-        if (container.isEmpty()) {
-            return GameServerStatusDto.builder()
-                    .status(GameServerStatusDto.GameServerStatus.NotFound)
-                    .build();
-        }
-
-        String phase = container.get().getStatus();
-
-        return GameServerStatusDto.builder()
-                .status(GameServerStatusDto.GameServerStatus.Found)
-                .phase(phase)
-                .build();
-    }
-
     private Optional<Container> findContainer(GameServerEntity serverConfig) {
         String nameToMatch = String.format("/%s", containerName(serverConfig));
 
@@ -227,7 +216,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         return hostConfig;
     }
 
-    private void ensureImagePresent(String image) {
+    private void ensureImagePresent(GameServerEntity serverConfig, String image) {
         boolean exists =
                 client.listImagesCmd().withImageNameFilter(image).exec().stream()
                         .anyMatch(
@@ -237,14 +226,25 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                 });
 
         if (!exists) {
+            updateStatus(serverConfig, GameServerEntity.GameServerStatus.PULLING_IMAGE);
             try {
                 client.pullImageCmd(image).start().awaitCompletion();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                updateStatus(serverConfig, GameServerEntity.GameServerStatus.FAILED);
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
                 throw new IllegalStateException(
-                        String.format("Interrupted while pulling Docker image %s", image), e);
+                        String.format("Failed to pull Docker image %s", image), e);
             }
         }
+    }
+
+    private void updateStatus(
+            GameServerEntity serverConfig, GameServerEntity.GameServerStatus status) {
+        serverConfig.setStatus(status);
+        gameServerRepository.save(serverConfig);
+        statusPublisher.publishStatus(serverConfig.getUuid(), status);
     }
 
     private List<Integer> getInstancePorts(GameServerEntity serverConfig) {

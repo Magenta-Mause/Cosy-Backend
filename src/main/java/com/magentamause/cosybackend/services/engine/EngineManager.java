@@ -1,6 +1,5 @@
 package com.magentamause.cosybackend.services.engine;
 
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.GameServerLogMessageEntity;
 import java.util.List;
@@ -13,8 +12,6 @@ public interface EngineManager {
 
     void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener);
-
-    GameServerStatusDto status(GameServerEntity serviceConfig);
 
     default List<Integer> startAndAttachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener) {

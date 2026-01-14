@@ -12,7 +12,7 @@ import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.EngineType;
 import com.magentamause.cosybackend.services.engine.config.EngineProperties;
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
-import jakarta.transaction.Transactional;
+import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,19 +33,22 @@ public class GameServerService {
     private final EngineType engineType;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
     private final GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher;
+    private final GameServerStatusPublisher statusPublisher;
 
     public GameServerService(
             EngineManager engineManager,
             GameEntityService gameEntityService,
             EngineProperties engineProperties,
             GameServerRepository gameServerRepository,
-            GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher) {
+            GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher,
+            GameServerStatusPublisher statusPublisher) {
 
         this.engineManager = engineManager;
         this.gameEntityService = gameEntityService;
         this.engineType = engineProperties.selected();
         this.gameServerRepository = gameServerRepository;
         this.gameServerLogWebsocketPublisher = gameServerLogWebsocketPublisher;
+        this.statusPublisher = statusPublisher;
 
         log.info("GameServerService initialized with engine '{}'", engineType);
     }
@@ -94,7 +97,7 @@ public class GameServerService {
         return gameServerRepository.save(entity);
     }
 
-    @Transactional
+    // @Transactional removed to allow immediate status updates (PULLING_IMAGE)
     public List<Integer> startServer(String serviceName) {
         if (!startingServers.add(serviceName)) {
             throw new ResponseStatusException(
@@ -145,19 +148,24 @@ public class GameServerService {
         try {
             engineManager.stop(config);
         } catch (ServerAlreadyStoppedException e) {
+            config.setStatus(GameServerEntity.GameServerStatus.STOPPED);
+            gameServerRepository.save(config);
+            statusPublisher.publishStatus(config.getUuid(), GameServerEntity.GameServerStatus.STOPPED);
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage(), e);
         }
     }
 
     public GameServerStatusDto getStatus(String serviceName) {
-        return engineManager.status(
+        GameServerEntity server =
                 gameServerRepository
                         .findById(serviceName)
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(
                                                 HttpStatus.NOT_FOUND,
-                                                "Server '" + serviceName + "' not found")));
+                                                "Server '" + serviceName + "' not found"));
+
+        return GameServerStatusDto.builder().status(server.getStatus()).build();
     }
 
     public GameServerEntity convertDtoToEntity(GameServerCreationDto dto) {

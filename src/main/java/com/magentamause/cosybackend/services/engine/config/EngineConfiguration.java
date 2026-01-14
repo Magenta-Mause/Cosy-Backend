@@ -5,9 +5,10 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
+import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.docker.DockerEngineManager;
-import java.io.FileReader;
+import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import java.time.Duration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -50,9 +51,12 @@ public class EngineConfiguration {
     @Bean
     @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "DOCKER")
     public EngineManager dockerEngineManager(
-            DockerClient dockerClient, EngineProperties properties) {
+            DockerClient dockerClient,
+            EngineProperties properties,
+            GameServerRepository gameServerRepository,
+            GameServerStatusPublisher statusPublisher) {
 
-        return new DockerEngineManager(properties.docker(), dockerClient);
+        return new DockerEngineManager(
+                properties.docker(), dockerClient, gameServerRepository, statusPublisher);
     }
 }
-
