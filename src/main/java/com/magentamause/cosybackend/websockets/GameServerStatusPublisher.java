@@ -16,10 +16,8 @@ public class GameServerStatusPublisher {
 
     public void publishStatus(String serverUuid, GameServerEntity.GameServerStatus status) {
         String topic = String.format("/topics/game-servers/%s/status", serverUuid);
-        GameServerStatusDto payload = GameServerStatusDto.builder()
-                .status(status)
-                .build();
-        
+        GameServerStatusDto payload = GameServerStatusDto.builder().status(status).build();
+
         log.debug("Publishing status update to {}: {}", topic, status);
         messagingTemplate.convertAndSend(topic, payload);
     }

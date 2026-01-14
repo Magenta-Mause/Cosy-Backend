@@ -46,7 +46,7 @@ public class GameServerService {
             GameServerRepository gameServerRepository,
             GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher,
             GameServerStatusPublisher statusPublisher,
-            PlatformTransactionManager transactionManager, 
+            PlatformTransactionManager transactionManager,
             GameServerLogService gameServerLogService) {
 
         this.engineManager = engineManager;
@@ -184,7 +184,8 @@ public class GameServerService {
             log.info("Server '{}' was already stopped", serviceName);
             config.setStatus(GameServerEntity.GameServerStatus.STOPPED);
             gameServerRepository.save(config);
-            statusPublisher.publishStatus(config.getUuid(), GameServerEntity.GameServerStatus.STOPPED);
+            statusPublisher.publishStatus(
+                    config.getUuid(), GameServerEntity.GameServerStatus.STOPPED);
         } catch (Exception e) {
             log.error("Error stopping server '{}'", serviceName, e);
             throw e;
@@ -225,4 +226,3 @@ public class GameServerService {
                 .build();
     }
 }
-
