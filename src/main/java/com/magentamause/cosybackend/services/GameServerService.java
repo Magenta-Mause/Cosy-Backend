@@ -100,7 +100,7 @@ public class GameServerService {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Insufficient permissions to update this game server");
         }
-        gameServer.setGame(gameEntityService.getGameFromUuid(dto.getGameUuid()));
+        gameServer.setGame(gameEntityService.getGameFromUuid(dto.getGameUuid()).orElse(null));
         gameServer.setServerName(dto.getServerName());
         gameServer.setDockerImageName(dto.getDockerImageName());
         gameServer.setDockerImageTag(dto.getDockerImageTag());
@@ -193,8 +193,7 @@ public class GameServerService {
     }
 
     public GameServerEntity convertDtoToEntity(GameServerCreationDto dto) {
-        Optional<GameEntity> game =
-                Optional.ofNullable(gameEntityService.getGameFromUuid(dto.getGameUuid()));
+        Optional<GameEntity> game = (gameEntityService.getGameFromUuid(dto.getGameUuid()));
 
         return GameServerEntity.builder()
                 .game(game.orElse(null))

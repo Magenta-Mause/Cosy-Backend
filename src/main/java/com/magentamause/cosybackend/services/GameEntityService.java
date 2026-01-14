@@ -5,14 +5,15 @@ import com.magentamause.cosybackend.repositories.GameRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class GameEntityService {
 
     private final GameRepository gameRepository;
 
-    public GameEntity getGameFromUuid(String uuid) {
-        return gameRepository.findById(uuid)
-                .orElseThrow(() -> new IllegalArgumentException("Game not found for UUID: " + uuid));
+    public Optional<GameEntity> getGameFromUuid(String uuid) {
+        return gameRepository.findById(uuid);
     }
 }
