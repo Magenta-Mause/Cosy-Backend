@@ -38,7 +38,7 @@ cosy:
   games-api:
     url: https://cosy-game-api.jannekeipert.de
   loki:
-    username: ${COSY_LOKI_PASSWORD:loki-user}
+    username: ${COSY_LOKI_USER:loki-user}
     password: ${COSY_LOKI_PASSWORD:loki-password}
     url: http://localhost:3100
     application-name: cosy-backend # Label to identify logs from this application
