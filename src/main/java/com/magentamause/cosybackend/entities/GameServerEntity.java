@@ -70,7 +70,7 @@ public class GameServerEntity {
         return GameServerDto.builder()
                 .uuid(this.getUuid())
                 .serverName(this.getServerName())
-                .owner(Optional.ofNullable(this.getOwner()).map((UserEntity::toDto)).orElse(null))
+                .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
                 .status(this.getStatus())
                 .timestampLastStarted(this.getTimestampLastStarted())
                 .gameUuid(this.getGame() == null ? null : this.getGame().getUuid())
