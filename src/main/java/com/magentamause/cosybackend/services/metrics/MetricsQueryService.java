@@ -4,10 +4,9 @@ import com.influxdb.client.InfluxDBClient;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
+import com.magentamause.cosybackend.entities.metric.MetricType;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.magentamause.cosybackend.entities.metric.MetricType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -26,8 +26,7 @@ public class MetricsController {
         if (!range.matches("\\d+[mhd]")) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Invalid range format. Only minutes(m), hours(h), and days(d) are allowed."
-            );
+                    "Invalid range format. Only minutes(m), hours(h), and days(d) are allowed.");
         }
 
         return queryService.queryMetrics(gameServerUuid, type, range);
