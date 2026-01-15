@@ -227,7 +227,10 @@ public class GameServerService {
     }
 
     public GameServerEntity convertDtoToEntity(GameServerCreationDto dto) {
-        Optional<GameEntity> game = gameEntityService.getGameFromUuid(dto.getGameUuid());
+        Optional<GameEntity> game =
+                dto.getGameUuid() != null
+                        ? gameEntityService.getGameFromUuid(dto.getGameUuid())
+                        : Optional.empty();
 
         return GameServerEntity.builder()
                 .game(game.orElse(null))
