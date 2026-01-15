@@ -12,6 +12,8 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import static com.magentamause.cosybackend.configs.websockets.WebSocketDestinations.*;
+
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
@@ -24,13 +26,13 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topics");
-        config.setApplicationDestinationPrefixes("/v1/app");
+        config.enableSimpleBroker(BROKER_PREFIX);
+        config.setApplicationDestinationPrefixes(APP_PREFIX);
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/v1/ws")
+        registry.addEndpoint(ENDPOINT)
                 .setAllowedOrigins(corsProperties.allowedOrigins().toArray(new String[0]))
                 .addInterceptors(jwtHandshakeInterceptor)
                 .withSockJS();

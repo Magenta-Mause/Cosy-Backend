@@ -109,6 +109,17 @@ Once the application is running, you can explore the REST API via Swagger UI:
 
 * http://localhost:8080/api/swagger-ui/index.html
 
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+
+import static com.magentamause.cosybackend.configs.websockets.WebSocketDestinations.APP_PREFIX;
+import static com.magentamause.cosybackend.configs.websockets.WebSocketDestinations.BROKER_PREFIX;
+import static com.magentamause.cosybackend.configs.websockets.WebSocketDestinations.ENDPOINT;
+
+@Configuration
+@EnableWebSocketMessageBroker
+@RequiredArgsConstructor
+
 ## **🗄️ Database Management**
 
 ### **Access Database Console**

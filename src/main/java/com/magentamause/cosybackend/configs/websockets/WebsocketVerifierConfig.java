@@ -17,21 +17,21 @@ public class WebsocketVerifierConfig {
             SecurityContextService securityContextService, UserEntityService userEntityService) {
         return new WebsocketVerifier(securityContextService, userEntityService)
                 .addVerifier(
-                        "/topics/game-server-logs/creation/{serverId}",
+                        WebSocketDestinations.Topics.GAME_SERVER_LOGS_CREATION,
                         new AccessManagementVerifier(
-                                "/topics/game-server-logs/creation/{serverId}",
+                                WebSocketDestinations.Topics.GAME_SERVER_LOGS_CREATION,
                                 Action.READ,
                                 Resource.GAME_SERVER_LOG))
                 .addVerifier(
-                        "/topics/game-servers/status/{serverId}/",
+                        WebSocketDestinations.Topics.GAME_SERVER_STATUS,
                         new AccessManagementVerifier(
-                                "/topics/game-servers/status/{serverId}",
+                                WebSocketDestinations.Topics.GAME_SERVER_STATUS,
                                 Action.READ,
                                 Resource.GAME_SERVER))
                 .addVerifier(
-                        "/topics/game-servers/docker-progress/{serverId}",
+                        WebSocketDestinations.Topics.GAME_SERVER_DOCKER_PROGRESS,
                         new AccessManagementVerifier(
-                                "/topics/game-servers/docker-progress/{serverId}",
+                                WebSocketDestinations.Topics.GAME_SERVER_DOCKER_PROGRESS,
                                 Action.READ,
                                 Resource.GAME_SERVER));
     }
