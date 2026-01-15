@@ -2,8 +2,8 @@ package com.magentamause.cosybackend.services.engine;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.metric.Metric;
 import java.util.List;
 import java.util.function.Consumer;
 

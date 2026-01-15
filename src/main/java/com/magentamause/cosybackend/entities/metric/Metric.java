@@ -40,4 +40,3 @@ public class Metric {
     @Column(timestamp = true)
     private Instant time;
 }
-
