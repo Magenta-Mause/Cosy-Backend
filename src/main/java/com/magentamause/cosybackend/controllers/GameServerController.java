@@ -79,19 +79,19 @@ public class GameServerController {
     @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
     public Flux<StartEventDto> startServiceSse(@PathVariable @ResourceId String uuid) {
         Flux<StartEventDto> heartbeat =
-                Flux.interval(Duration.ofSeconds(2)).map(tick -> StartEventDto.heartbeat());
+                Flux.interval(Duration.ofSeconds(2)).map(tick -> new StartEventDto.Heartbeat());
 
         Flux<StartEventDto> work =
                 gameServerService
                         .startServer(uuid)
                         .subscribeOn(Schedulers.boundedElastic())
-                        .onErrorResume(ex -> Mono.just(StartEventDto.error(ex.getMessage())));
+                        .onErrorResume(ex -> Mono.just(new StartEventDto.Error(ex.getMessage())));
 
         return Flux.merge(heartbeat, work)
                 .takeUntil(
                         event ->
-                                event.getType().equals(StartEventDto.Type.DONE)
-                                        || event.getType().equals(StartEventDto.Type.ERROR));
+                                event instanceof StartEventDto.Done
+                                        || event instanceof StartEventDto.Error);
     }
 
     @PostMapping("/{uuid}/stop")

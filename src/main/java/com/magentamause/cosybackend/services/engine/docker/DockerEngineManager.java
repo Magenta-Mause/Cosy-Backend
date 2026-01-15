@@ -232,6 +232,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     private void ensureImagePresent(
             GameServerEntity serverConfig, String image, Consumer<StartEventDto> progressListener) {
+        // TODO: refactor
         boolean exists =
                 client.listImagesCmd().withImageNameFilter(image).exec().stream()
                         .anyMatch(
@@ -259,7 +260,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                     }
 
                                     progressListener.accept(
-                                            StartEventDto.pullProgress(builder.build()));
+                                            new StartEventDto.PullProgress(builder.build()));
                                 }
                             }
                         };

@@ -1,43 +1,65 @@
 package com.magentamause.cosybackend.dtos.entitydtos;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class StartEventDto {
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type",
+        visible = true)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = StartEventDto.Heartbeat.class, name = "HEARTBEAT"),
+    @JsonSubTypes.Type(value = StartEventDto.PullProgress.class, name = "PULL_PROGRESS"),
+    @JsonSubTypes.Type(value = StartEventDto.Done.class, name = "DONE"),
+    @JsonSubTypes.Type(value = StartEventDto.Error.class, name = "ERROR")
+})
+public sealed interface StartEventDto {
 
-    public enum Type {
+    Type getType();
+
+    enum Type {
         HEARTBEAT,
         PULL_PROGRESS,
         DONE,
         ERROR
     }
 
-    private Type type;
-    private GameServerInstanceDto gameServerInstance;
-    private String message; // for error info
-    private PullProgressDto progress;
-
-    public static StartEventDto heartbeat() {
-        return new StartEventDto(Type.HEARTBEAT, null, null, null);
+    @Getter
+    @NoArgsConstructor
+    final class Heartbeat implements StartEventDto {
+        private final Type type = Type.HEARTBEAT;
     }
 
-    public static StartEventDto pullProgress(PullProgressDto progress) {
-        return new StartEventDto(Type.PULL_PROGRESS, null, null, progress);
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    final class PullProgress implements StartEventDto {
+        private final Type type = Type.PULL_PROGRESS;
+        private PullProgressDto progress;
     }
 
-    public static StartEventDto done(List<Integer> ports) {
-        GameServerInstanceDto instance = new GameServerInstanceDto(ports);
-        return new StartEventDto(Type.DONE, instance, null, null);
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    final class Done implements StartEventDto {
+        private final Type type = Type.DONE;
+        private GameServerInstanceDto gameServerInstance;
+
+        public static Done fromPorts(List<Integer> ports) {
+            return new Done(new GameServerInstanceDto(ports));
+        }
     }
 
-    public static StartEventDto error(String message) {
-        return new StartEventDto(Type.ERROR, null, message, null);
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    final class Error implements StartEventDto {
+        private final Type type = Type.ERROR;
+        private String message;
     }
 }

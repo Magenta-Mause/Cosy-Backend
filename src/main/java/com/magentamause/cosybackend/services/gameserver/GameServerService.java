@@ -15,6 +15,10 @@ import com.magentamause.cosybackend.services.engine.config.EngineProperties;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
 import org.springframework.http.HttpStatus;
@@ -23,11 +27,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -161,15 +160,18 @@ public class GameServerService {
                                             enrichAndPublishLogMessage(config, logMessage);
                                         },
                                         (startEvent) -> {
-                                            if (startEvent.getType()
-                                                    == StartEventDto.Type.PULL_PROGRESS) {
+                                            if (startEvent
+                                                    instanceof
+                                                    StartEventDto.PullProgress
+                                                    pullProgress) {
                                                 dockerProgressPublisher.publishDockerProgress(
-                                                        config.getUuid(), startEvent.getProgress());
+                                                        config.getUuid(),
+                                                        pullProgress.getProgress());
                                             }
                                             sink.next(startEvent);
                                         });
 
-                        sink.next(StartEventDto.done(ports));
+                        sink.next(StartEventDto.Done.fromPorts(ports));
                         sink.complete();
                     } catch (Exception e) {
                         log.error("Error starting server '{}'", serviceName, e);
@@ -191,7 +193,7 @@ public class GameServerService {
     }
 
     public void stopServer(String serviceName) {
-        GameServerEntity config =
+        GameServerEntity gameServer =
                 gameServerRepository
                         .findById(serviceName)
                         .orElseThrow(
@@ -200,18 +202,19 @@ public class GameServerService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Server '" + serviceName + "' not found"));
         enrichAndPublishLogMessage(
-                config,
+                gameServer,
                 GameServerLogMessageEntity.of(
-                        config.getUuid(),
+                        gameServer.getUuid(),
                         "Stopping Game Server",
                         GameServerLogMessageEntity.LogLevel.DEBUG));
         try {
-            engineManager.stop(config);
+            engineManager.stop(gameServer);
         } catch (ServerAlreadyStoppedException e) {
             log.info("Server '{}' was already stopped", serviceName);
-            config.setStatus(GameServerDto.GameServerStatus.STOPPED);
-            gameServerRepository.save(config);
-            statusPublisher.publishStatus(config.getUuid(), GameServerDto.GameServerStatus.STOPPED);
+            gameServer.setStatus(GameServerDto.GameServerStatus.STOPPED);
+            gameServerRepository.save(gameServer);
+            statusPublisher.publishStatus(
+                    gameServer.getUuid(), GameServerDto.GameServerStatus.STOPPED);
         } catch (Exception e) {
             log.error("Error stopping server '{}'", serviceName, e);
             throw e;
