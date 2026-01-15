@@ -69,13 +69,15 @@ public class GameServerController {
     }
 
     @GetMapping("/{uuid}/status")
+    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
     public ResponseEntity<GameServerDto.GameServerStatus> getServiceInfo(
             @PathVariable String uuid) {
         return ResponseEntity.ok(gameServerService.getStatus(uuid));
     }
 
     @PostMapping(value = "/{uuid}/start", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<StartEventDto> startServiceSse(@PathVariable String uuid) {
+    @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
+    public Flux<StartEventDto> startServiceSse(@PathVariable @ResourceId String uuid) {
         Flux<StartEventDto> heartbeat =
                 Flux.interval(Duration.ofSeconds(2)).map(tick -> StartEventDto.heartbeat());
 
@@ -93,7 +95,8 @@ public class GameServerController {
     }
 
     @PostMapping("/{uuid}/stop")
-    public ResponseEntity<Void> stopService(@PathVariable String uuid) {
+    @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
+    public ResponseEntity<Void> stopService(@PathVariable @ResourceId String uuid) {
         gameServerService.stopServer(uuid);
         return ResponseEntity.ok().build();
     }
