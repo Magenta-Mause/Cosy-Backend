@@ -1,49 +1,31 @@
 package com.magentamause.cosybackend.services.metrics;
 
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.client.write.Point;
-import com.magentamause.cosybackend.configs.InfluxConfig;
 import com.magentamause.cosybackend.configs.properties.InfluxProperties;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.Metric;
-import java.time.Instant;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
+
+import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.services.engine.EngineManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MetricsService {
-    private final InfluxConfig influxConfig;
-    private final DockerClient dockerClient;
+    private final InfluxDBClient influxDBClient;
     private final InfluxProperties influxProperties;
+    private final EngineManager engineManager;
+    private final GameServerRepository gameServerRepository;
 
-    public Metric collectMetrics(String containerId) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-
-        InspectContainerResponse container = dockerClient.inspectContainerCmd(containerId).exec();
-
-        Metric.MetricBuilder builder =
-                Metric.builder().uuid(containerId).name(container.getName().replace("/", ""));
-
-        dockerClient.statsCmd(containerId).exec(new StatsCallback(builder, latch));
-
-        int TIMEOUT_DURATION = 3;
-        boolean success = latch.await(TIMEOUT_DURATION, TimeUnit.SECONDS);
-        if (!success) {
-            log.warn("Stats collection timed out for {}", containerId);
-        }
-
-        return builder.time(Instant.now()).build();
-    }
-
-    public void mapMetricToPoint(Metric metrics) {
-        Point point =
-                Point.measurement("metrics")
+    public Point convertMetricToPoint(Metric metrics) {
+                return Point.measurement("metrics")
                         .addTag("container_uuid", metrics.getUuid())
                         .addTag("container_name", metrics.getName())
                         .addField("cpu_percent", metrics.getCpuPercent())
@@ -55,12 +37,38 @@ public class MetricsService {
                         .addField("block_read", metrics.getBlockRead())
                         .addField("block_write", metrics.getBlockWrite())
                         .time(metrics.getTime(), WritePrecision.NS);
+    }
 
+    public void writeToInfluxDB(Point point) {
         try {
-            influxConfig.influxDBClient()
-                    .getWriteApiBlocking().writePoint(influxProperties.bucket(), influxProperties.org(), point);
+            influxDBClient.getWriteApiBlocking().writePoint(influxProperties.bucket(), influxProperties.org(), point);
         } catch (Exception e) {
-            log.error("Failed to write metric for container {}: {}", metrics.getName(), e.getMessage(), e);
+            log.error("Failed to write point for container {}: {}", point , e.getMessage(), e);
+        }
+    }
+
+    @Scheduled(fixedRateString = "1s")
+    public void collectMetrics() {
+        List<GameServerEntity> gameServers = gameServerRepository.findAll();
+        try {
+            for (GameServerEntity gameServer : gameServers) {
+                try {
+                    Metric metric = engineManager.collectMetric(gameServer);
+                    if (metric != null) {
+                        Point point = convertMetricToPoint(metric);
+                        writeToInfluxDB(point);
+                    }
+                } catch (Exception e) {
+                    log.error(
+                            "Failed to collect metrics for container {}: {}",
+                            gameServer,
+                            e.getMessage(),
+                            e);
+                }
+            }
+
+        } catch (Exception e) {
+            log.error("Error during metrics collection: {}", e.getMessage(), e);
         }
     }
 }
