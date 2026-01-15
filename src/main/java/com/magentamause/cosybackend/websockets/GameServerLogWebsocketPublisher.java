@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.websockets;
 
+import com.magentamause.cosybackend.configs.websockets.WebSocketDestinations;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,9 @@ public class GameServerLogWebsocketPublisher {
 
     public void publishLog(String serverUuid, GameServerLogMessageEntity logMessage) {
         log.debug("Publishing log message to websocket for server {}: {}", serverUuid, logMessage);
-        messagingTemplate.convertAndSend(
-                "/topics/game-server-logs/creation/" + serverUuid, logMessage);
+        String topic =
+                WebSocketDestinations.Topics.GAME_SERVER_LOGS_CREATION.replace(
+                        "{serverId}", serverUuid);
+        messagingTemplate.convertAndSend(topic, logMessage);
     }
 }

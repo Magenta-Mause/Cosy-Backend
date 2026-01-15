@@ -12,12 +12,9 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.EngineType;
 import com.magentamause.cosybackend.services.engine.config.EngineProperties;
+import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
 import org.springframework.http.HttpStatus;
@@ -26,6 +23,11 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -38,6 +40,7 @@ public class GameServerService {
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
     private final GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher;
     private final GameServerStatusPublisher statusPublisher;
+    private final GameServerDockerProgressPublisher dockerProgressPublisher;
     private final TransactionTemplate transactionTemplate;
     private final GameServerLogService gameServerLogService;
 
@@ -48,6 +51,7 @@ public class GameServerService {
             GameServerRepository gameServerRepository,
             GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher,
             GameServerStatusPublisher statusPublisher,
+            GameServerDockerProgressPublisher dockerProgressPublisher,
             PlatformTransactionManager transactionManager,
             GameServerLogService gameServerLogService) {
 
@@ -56,6 +60,7 @@ public class GameServerService {
         this.engineType = engineProperties.selected();
         this.gameServerRepository = gameServerRepository;
         this.gameServerLogWebsocketPublisher = gameServerLogWebsocketPublisher;
+        this.dockerProgressPublisher = dockerProgressPublisher;
         this.statusPublisher = statusPublisher;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
 
@@ -158,7 +163,7 @@ public class GameServerService {
                                         (startEvent) -> {
                                             if (startEvent.getType()
                                                     == StartEventDto.Type.PULL_PROGRESS) {
-                                                statusPublisher.publishPullProgress(
+                                                dockerProgressPublisher.publishDockerProgress(
                                                         config.getUuid(), startEvent.getProgress());
                                             }
                                             sink.next(startEvent);

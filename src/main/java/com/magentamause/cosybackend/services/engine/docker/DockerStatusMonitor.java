@@ -10,14 +10,15 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -168,8 +169,6 @@ public class DockerStatusMonitor implements Closeable {
         } else if ("paused".equalsIgnoreCase(state)) {
             // Mapping paused to STOPPED
             return GameServerDto.GameServerStatus.STOPPED;
-        } else if ("restarting".equalsIgnoreCase(state)) {
-            return GameServerDto.GameServerStatus.STARTING;
         } else {
             return GameServerDto.GameServerStatus.STOPPED;
         }
@@ -180,8 +179,6 @@ public class DockerStatusMonitor implements Closeable {
             return null;
         }
         switch (eventName) {
-            case "create":
-                return GameServerDto.GameServerStatus.STARTING;
             case "start":
             case "unpause":
                 return GameServerDto.GameServerStatus.RUNNING;

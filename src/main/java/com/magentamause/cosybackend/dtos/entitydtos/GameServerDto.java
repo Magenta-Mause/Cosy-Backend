@@ -10,10 +10,11 @@ import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
@@ -48,7 +49,6 @@ public class GameServerDto {
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     public enum GameServerStatus {
         RUNNING,
-        STARTING,
         STOPPED,
         FAILED,
         PULLING_IMAGE
