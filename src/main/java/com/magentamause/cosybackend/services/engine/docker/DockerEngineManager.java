@@ -12,10 +12,8 @@ import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
-import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.config.EngineProperties.Docker;
-import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -34,8 +32,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     private final Docker config;
     private final DockerClient client;
-    private final GameServerRepository gameServerRepository;
-    private final GameServerStatusPublisher statusPublisher;
 
     private static ExposedPort portMappingToExposedPort(PortMapping pm) {
         return switch (pm.getProtocol()) {
@@ -47,7 +43,9 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     @Override
     public List<Integer> start(
-            GameServerEntity serverConfig, Consumer<StartEventDto> progressListener) {
+            GameServerEntity serverConfig,
+            Consumer<StartEventDto> progressListener,
+            Consumer<GameServerDto.GameServerStatus> statusUpdater) {
         log.info("Starting Docker container for server {}", serverConfig.getServerName());
         Optional<Container> container = findContainer(serverConfig);
 
@@ -61,7 +59,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         String image = buildImageName(serverConfig);
         String containerName = containerName(serverConfig);
 
-        ensureImagePresent(serverConfig, image, progressListener);
+        ensureImagePresent(serverConfig, image, progressListener, statusUpdater);
 
         List<String> cmd = serverConfig.getDockerExecutionCommand();
         if (cmd == null) {
@@ -231,7 +229,10 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     private void ensureImagePresent(
-            GameServerEntity serverConfig, String image, Consumer<StartEventDto> progressListener) {
+            GameServerEntity serverConfig,
+            String image,
+            Consumer<StartEventDto> progressListener,
+            Consumer<GameServerDto.GameServerStatus> statusUpdater) {
         // TODO: refactor
         boolean exists =
                 client.listImagesCmd().withImageNameFilter(image).exec().stream()
@@ -242,7 +243,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                 });
 
         if (!exists) {
-            updateStatus(serverConfig, GameServerDto.GameServerStatus.PULLING_IMAGE);
+            statusUpdater.accept(GameServerDto.GameServerStatus.PULLING_IMAGE);
             try {
                 ResultCallback.Adapter<PullResponseItem> callback =
                         new ResultCallback.Adapter<>() {
@@ -266,7 +267,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         };
                 client.pullImageCmd(image).exec(callback).awaitCompletion();
             } catch (Exception e) {
-                updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
+                statusUpdater.accept(GameServerDto.GameServerStatus.FAILED);
                 if (e instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
                 }
@@ -274,13 +275,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         String.format("Failed to pull Docker image %s", image), e);
             }
         }
-    }
-
-    private void updateStatus(
-            GameServerEntity serverConfig, GameServerDto.GameServerStatus status) {
-        serverConfig.setStatus(status);
-        gameServerRepository.save(serverConfig);
-        statusPublisher.publishStatus(serverConfig.getUuid(), status);
     }
 
     private List<Integer> getInstancePorts(GameServerEntity serverConfig) {

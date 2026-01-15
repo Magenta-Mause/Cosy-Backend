@@ -169,7 +169,8 @@ public class GameServerService {
                                                         pullProgress.getProgress());
                                             }
                                             sink.next(startEvent);
-                                        });
+                                        },
+                                        (status) -> updateStatus(config, status));
 
                         sink.next(StartEventDto.Done.fromPorts(ports));
                         sink.complete();
@@ -219,6 +220,12 @@ public class GameServerService {
             log.error("Error stopping server '{}'", serviceName, e);
             throw e;
         }
+    }
+
+    public void updateStatus(GameServerEntity serverConfig, GameServerDto.GameServerStatus status) {
+        serverConfig.setStatus(status);
+        gameServerRepository.save(serverConfig);
+        statusPublisher.publishStatus(serverConfig.getUuid(), status);
     }
 
     public GameServerDto.GameServerStatus getStatus(String serviceName) {
