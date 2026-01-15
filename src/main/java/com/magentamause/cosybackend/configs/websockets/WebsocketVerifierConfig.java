@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.configs;
+package com.magentamause.cosybackend.configs.websockets;
 
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
@@ -23,15 +23,15 @@ public class WebsocketVerifierConfig {
                                 Action.READ,
                                 Resource.GAME_SERVER_LOG))
                 .addVerifier(
-                        "/topics/game-servers/{serverId}/status",
+                        "/topics/game-servers/status/{serverId}/",
                         new AccessManagementVerifier(
-                                "/topics/game-servers/{serverId}/status",
+                                "/topics/game-servers/status/{serverId}",
                                 Action.READ,
                                 Resource.GAME_SERVER))
                 .addVerifier(
-                        "/topics/game-servers/{serverId}/docker-progress",
+                        "/topics/game-servers/docker-progress/{serverId}",
                         new AccessManagementVerifier(
-                                "/topics/game-servers/{serverId}/docker-progress",
+                                "/topics/game-servers/docker-progress/{serverId}",
                                 Action.READ,
                                 Resource.GAME_SERVER));
     }

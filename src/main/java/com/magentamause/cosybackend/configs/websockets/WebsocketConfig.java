@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.configs;
+package com.magentamause.cosybackend.configs.websockets;
 
 import com.magentamause.cosybackend.configs.properties.CorsProperties;
 import com.magentamause.cosybackend.security.websocket.JwtChannelInterceptor;
