@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.services.metrics;
 
+import com.influxdb.client.InfluxDBClient;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import com.magentamause.cosybackend.configs.InfluxConfig;
@@ -13,11 +14,11 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class MetricsQueryService {
-    private final InfluxConfig influxConfig;
+    private final InfluxDBClient influxDBClient;
 
 
     public List<MetricPointDto> queryMetrics(
-            String containerId, String metricType, String timeRange) {
+            String gameServerUuid, String metricType, String timeRange) {
 
         String flux = String.format(
                 "from(bucket: \"cosy-bucket\") "
@@ -27,9 +28,9 @@ public class MetricsQueryService {
                         + "|> filter(fn: (r) => r[\"_field\"] == \"%s\") "
                         + "|> aggregateWindow(every: 10s, fn: mean, createEmpty: false) "
                         + "|> yield(name: \"mean\")",
-                timeRange, containerId, metricType);
+                timeRange, gameServerUuid, metricType);
 
-        List<FluxTable> tables = influxConfig.getClient().getQueryApi().query(flux);
+        List<FluxTable> tables = influxDBClient.getQueryApi().query(flux);
 
         List<MetricPointDto> results = new ArrayList<>();
 
@@ -48,6 +49,6 @@ public class MetricsQueryService {
     }
 
     public void close() {
-        influxConfig.close();
+        influxDBClient.close();
     }
 }
