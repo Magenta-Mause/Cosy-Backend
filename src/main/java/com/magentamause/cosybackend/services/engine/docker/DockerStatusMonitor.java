@@ -7,6 +7,7 @@ import com.github.dockerjava.api.model.Event;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.services.gameserver.GameServerService;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -27,6 +28,7 @@ public class DockerStatusMonitor implements Closeable {
     private final DockerClient dockerClient;
     private final GameServerRepository gameServerRepository;
     private final GameServerStatusPublisher statusPublisher;
+    private final GameServerService gameServerService;
     private ResultCallback<Event> eventCallback;
 
     @PostConstruct
@@ -69,9 +71,7 @@ public class DockerStatusMonitor implements Closeable {
             }
 
             if (server.getStatus() != newStatus) {
-                server.setStatus(newStatus);
-                gameServerRepository.save(server);
-                statusPublisher.publishStatus(server.getUuid(), newStatus);
+                gameServerService.updateStatus(server, newStatus);
                 log.info("Updated status for server {} to {}", server.getServerName(), newStatus);
             }
         }
