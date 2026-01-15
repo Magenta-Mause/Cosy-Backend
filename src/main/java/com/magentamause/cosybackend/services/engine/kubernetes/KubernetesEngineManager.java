@@ -11,7 +11,6 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.config.EngineProperties.Kubernetes;
 import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.custom.PodMetrics;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
@@ -75,7 +74,6 @@ public class KubernetesEngineManager implements EngineManager {
     public Metric collectMetric(GameServerEntity serverConfig) throws InterruptedException {
         return null;
     }
-
 
     @Override
     public void attachLogListener(

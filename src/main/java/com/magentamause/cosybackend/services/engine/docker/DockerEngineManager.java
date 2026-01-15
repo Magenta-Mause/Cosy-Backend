@@ -6,7 +6,6 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.*;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
-import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.Metric;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
@@ -15,6 +14,7 @@ import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.config.EngineProperties.Docker;
+import com.magentamause.cosybackend.services.metrics.StatsCallback;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -26,8 +26,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import com.magentamause.cosybackend.services.metrics.StatsCallback;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -285,8 +283,13 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     @Override
     public Metric collectMetric(GameServerEntity gameServer) throws InterruptedException {
-        Container containerRef = findContainer(gameServer).orElseThrow(() ->
-                new IllegalStateException("Container not found for server " + gameServer.getUuid()));
+        Container containerRef =
+                findContainer(gameServer)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "Container not found for server "
+                                                        + gameServer.getUuid()));
 
         String containerUuid = containerRef.getId();
 
