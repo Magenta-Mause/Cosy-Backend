@@ -45,7 +45,7 @@ cosy:
     application-name: cosy-backend # Label to identify logs from this application
   influx:
     url: http://localhost:8086
-    token: ${COSY_INFLUX_TOKEN:uw_P7OpF09lqu_k-ZgMhJ4ioC9fAczwjrxBrR5ypylErR70G1zNkRfZVB9QrFDPaxPo5OaGWnwYv9vPSYjV0Fw==}
+    token: ${COSY_INFLUX_TOKEN:cosy-admin-token}
     org: cosy-org
     bucket: cosy-bucket
   engine:

@@ -49,7 +49,7 @@ services:
       DOCKER_INFLUXDB_INIT_PASSWORD: cosy-password
       DOCKER_INFLUXDB_INIT_ORG: cosy-org
       DOCKER_INFLUXDB_INIT_BUCKET: cosy-bucket
-      DOCKER_INFLUXDB_ADMIN_TOKEN: cosy-test-token
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: cosy-admin-token
 volumes:
   influx_data:
   influx_config:
