@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.services.engine.kubernetes;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.Metric;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
@@ -10,6 +11,7 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.config.EngineProperties.Kubernetes;
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.PodMetrics;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
@@ -70,28 +72,10 @@ public class KubernetesEngineManager implements EngineManager {
     }
 
     @Override
-    public List<String> getActiveContainerUuids() {
-        try {
-            V1PodList pods =
-                    api.listNamespacedPod(config.namespace())
-                            .labelSelector("cosy-server")
-                            .execute();
-
-            return pods.getItems().stream()
-                    .filter(
-                            pod ->
-                                    "Running"
-                                            .equals(
-                                                    Optional.ofNullable(pod.getStatus())
-                                                            .map(V1PodStatus::getPhase)
-                                                            .orElse("")))
-                    .map(pod -> pod.getMetadata().getLabels().get("cosy-server"))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-        } catch (ApiException e) {
-            throw new IllegalStateException("Failed to list active pods", e);
-        }
+    public Metric collectMetric(GameServerEntity serverConfig) throws InterruptedException {
+        return null;
     }
+
 
     @Override
     public void attachLogListener(

@@ -3,9 +3,12 @@ package com.magentamause.cosybackend.services.engine.docker;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.*;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
+import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.Metric;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
@@ -19,8 +22,12 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import com.magentamause.cosybackend.services.metrics.StatsCallback;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -276,12 +283,30 @@ public class DockerEngineManager implements EngineManager, Closeable {
         }
     }
 
-    public List<String> getActiveContainerUuids() {
-        return client.listContainersCmd().withShowAll(false).exec().stream()
-                .map(Container::getNames)
-                .flatMap(Arrays::stream)
-                .filter(name -> name.startsWith("/cosy-"))
-                .map(name -> name.substring(1))
-                .collect(Collectors.toList());
+    @Override
+    public Metric collectMetric(GameServerEntity gameServer) throws InterruptedException {
+        Container containerRef = findContainer(gameServer).orElseThrow(() ->
+                new IllegalStateException("Container not found for server " + gameServer.getUuid()));
+
+        String containerUuid = containerRef.getId();
+
+        InspectContainerResponse container = client.inspectContainerCmd(containerUuid).exec();
+
+        if (Boolean.FALSE.equals(container.getState().getRunning())) {
+            return null;
+        }
+
+        Metric.MetricBuilder builder =
+                Metric.builder().uuid(containerUuid).name(container.getName().replace("/", ""));
+
+        CountDownLatch latch = new CountDownLatch(1);
+        client.statsCmd(containerUuid).exec(new StatsCallback(builder, latch));
+
+        int TIMEOUT_DURATION = 3;
+        if (!latch.await(TIMEOUT_DURATION, TimeUnit.SECONDS)) {
+            log.warn("Stats collection timed out for {}", containerUuid);
+        }
+
+        return builder.time(Instant.now()).build();
     }
 }
