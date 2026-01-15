@@ -5,7 +5,7 @@ import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.client.write.Point;
 import com.magentamause.cosybackend.configs.properties.InfluxProperties;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.Metric;
+import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import java.util.List;

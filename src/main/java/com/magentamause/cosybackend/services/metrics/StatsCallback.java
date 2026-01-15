@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.services.metrics;
 
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Statistics;
-import com.magentamause.cosybackend.entities.Metric;
+import com.magentamause.cosybackend.entities.metric.Metric;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import lombok.RequiredArgsConstructor;

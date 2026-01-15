@@ -2,11 +2,13 @@ package com.magentamause.cosybackend.dtos.actiondtos;
 
 import java.time.Instant;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 @AllArgsConstructor
 public class MetricPointDto {
-    Instant time;
-    Double value;
+    private Instant time;
+    private Double value;
 }

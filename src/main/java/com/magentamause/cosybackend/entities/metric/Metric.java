@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.entities;
+package com.magentamause.cosybackend.entities.metric;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -40,3 +40,4 @@ public class Metric {
     @Column(timestamp = true)
     private Instant time;
 }
+

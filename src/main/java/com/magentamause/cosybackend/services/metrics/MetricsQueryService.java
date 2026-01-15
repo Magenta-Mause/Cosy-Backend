@@ -6,6 +6,8 @@ import com.influxdb.query.FluxTable;
 import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.magentamause.cosybackend.entities.metric.MetricType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,38 +17,39 @@ public class MetricsQueryService {
     private final InfluxDBClient influxDBClient;
 
     public List<MetricPointDto> queryMetrics(
-            String gameServerUuid, String metricType, String timeRange) {
+            String gameServerUuid, MetricType metricType, String timeRange) {
 
         String flux =
                 String.format(
                         "from(bucket: \"cosy-bucket\") "
                                 + "|> range(start: -%s) "
                                 + "|> filter(fn: (r) => r[\"_measurement\"] == \"metrics\") "
-                                + "|> filter(fn: (r) => r[\"container_uuid\"] == \"%s\") "
+                                + "|> filter(fn: (r) => r[\"container_name\"] == \"%s\") "
                                 + "|> filter(fn: (r) => r[\"_field\"] == \"%s\") "
-                                + "|> aggregateWindow(every: 10s, fn: mean, createEmpty: false) "
+                                + "|> aggregateWindow(every: 1s, fn: mean, createEmpty: false) "
                                 + "|> yield(name: \"mean\")",
-                        timeRange, gameServerUuid, metricType);
+                        timeRange, gameServerUuid, metricType.getValue());
 
+        System.out.println(flux);
         List<FluxTable> tables = influxDBClient.getQueryApi().query(flux);
 
+        System.out.println(tables);
         List<MetricPointDto> results = new ArrayList<>();
 
         for (FluxTable table : tables) {
             for (FluxRecord record : table.getRecords()) {
                 results.add(
-                        new MetricPointDto(
-                                record.getTime(),
-                                record.getValue() != null
-                                        ? ((Number) record.getValue()).doubleValue()
-                                        : null));
+                        MetricPointDto.builder()
+                                .time(record.getTime())
+                                .value(
+                                        record.getValue() != null
+                                                ? ((Number) record.getValue()).doubleValue()
+                                                : null)
+                                .build());
             }
         }
 
+        System.out.println(results);
         return results;
-    }
-
-    public void close() {
-        influxDBClient.close();
     }
 }
