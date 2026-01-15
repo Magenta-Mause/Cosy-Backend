@@ -7,14 +7,14 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.*;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.config.EngineProperties.Docker;
-import com.magentamause.cosybackend.services.metrics.StatsCallback;
+import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,8 +22,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -35,6 +33,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     private final Docker config;
     private final DockerClient client;
+    private final StatsMapper statsMapper;
 
     private static ExposedPort portMappingToExposedPort(PortMapping pm) {
         return switch (pm.getProtocol()) {
@@ -302,13 +301,23 @@ public class DockerEngineManager implements EngineManager, Closeable {
         Metric.MetricBuilder builder =
                 Metric.builder().uuid(containerUuid).name(container.getName().replace("/", ""));
 
-        CountDownLatch latch = new CountDownLatch(1);
-        client.statsCmd(containerUuid).exec(new StatsCallback(builder, latch));
-
-        int TIMEOUT_DURATION = 3;
-        if (!latch.await(TIMEOUT_DURATION, TimeUnit.SECONDS)) {
-            log.warn("Stats collection timed out for {}", containerUuid);
-        }
+        client.statsCmd(containerUuid)
+                .exec(
+                        new ResultCallback.Adapter<Statistics>() {
+                            @Override
+                            public void onNext(Statistics statistics) {
+                                statsMapper.mapStats(statistics, builder);
+                                try {
+                                    close();
+                                } catch (Exception e) {
+                                    log.warn(
+                                            "Failed to close Docker stats callback for container {}",
+                                            containerUuid,
+                                            e);
+                                }
+                            }
+                        })
+                .awaitCompletion();
 
         return builder.time(Instant.now()).build();
     }

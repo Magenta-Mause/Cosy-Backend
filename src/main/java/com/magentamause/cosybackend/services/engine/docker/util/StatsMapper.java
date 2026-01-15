@@ -1,30 +1,12 @@
-package com.magentamause.cosybackend.services.metrics;
+package com.magentamause.cosybackend.services.engine.docker.util;
 
-import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Statistics;
 import com.magentamause.cosybackend.entities.metric.Metric;
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
-@Slf4j
-@RequiredArgsConstructor
-public class StatsCallback extends ResultCallback.Adapter<Statistics> {
-    private final Metric.MetricBuilder builder;
-    private final CountDownLatch latch;
-
-    @Override
-    public void onNext(Statistics stats) {
-        if (stats.getCpuStats() == null
-                || stats.getCpuStats().getCpuUsage() == null
-                || stats.getCpuStats().getSystemCpuUsage() == null
-                || stats.getPreCpuStats() == null
-                || stats.getPreCpuStats().getCpuUsage() == null
-                || stats.getPreCpuStats().getSystemCpuUsage() == null) {
-            return;
-        }
-
+@Component
+public class StatsMapper {
+    public void mapStats(Statistics stats, Metric.MetricBuilder builder) {
         double cpuPercent = getCpuPercent(stats);
 
         long memoryUsage =
@@ -63,30 +45,30 @@ public class StatsCallback extends ResultCallback.Adapter<Statistics> {
                 .networkOutput(networkOutput)
                 .blockRead(blockRead)
                 .blockWrite(blockWrite);
-
-        latch.countDown();
-
-        try {
-            close();
-        } catch (IOException e) {
-            // Ignore - we already got the stats
-        }
     }
 
-    private static double getCpuPercent(Statistics stats) {
-        double cpuDelta =
-                stats.getCpuStats().getCpuUsage().getTotalUsage()
-                        - stats.getPreCpuStats().getCpuUsage().getTotalUsage();
-        double systemDelta =
-                stats.getCpuStats().getSystemCpuUsage()
-                        - stats.getPreCpuStats().getSystemCpuUsage();
-        Long cpuCountLong = stats.getCpuStats().getOnlineCpus();
-        long cpuCount = cpuCountLong != null ? cpuCountLong : 1L;
+    private double getCpuPercent(Statistics stats) {
+        Long totalUsage = safeLong(stats.getCpuStats().getCpuUsage().getTotalUsage());
+        Long preTotalUsage = safeLong(stats.getPreCpuStats().getCpuUsage().getTotalUsage());
 
-        double cpuPercent = 0.0;
-        if (systemDelta > 0.0 && cpuDelta > 0.0) {
-            cpuPercent = (cpuDelta / systemDelta) * cpuCount * 100.0;
+        Long systemUsage = safeLong(stats.getCpuStats().getSystemCpuUsage());
+        Long preSystemUsage = safeLong(stats.getPreCpuStats().getSystemCpuUsage());
+
+        long cpuCount =
+                stats.getCpuStats().getOnlineCpus() != null
+                        ? stats.getCpuStats().getOnlineCpus()
+                        : 1L;
+
+        double cpuDelta = totalUsage - preTotalUsage;
+        double systemDelta = systemUsage - preSystemUsage;
+
+        if (systemDelta > 0 && cpuDelta > 0) {
+            return (cpuDelta / systemDelta) * cpuCount * 100.0;
         }
-        return cpuPercent;
+        return 0.0;
+    }
+
+    private Long safeLong(Long value) {
+        return value != null ? value : 0L;
     }
 }

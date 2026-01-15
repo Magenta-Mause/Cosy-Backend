@@ -7,6 +7,7 @@ import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.docker.DockerEngineManager;
+import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import com.magentamause.cosybackend.services.engine.kubernetes.KubernetesEngineManager;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
@@ -57,9 +58,8 @@ public class EngineConfiguration {
     @Bean
     @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "DOCKER")
     public EngineManager dockerEngineManager(
-            DockerClient dockerClient, EngineProperties properties) {
-
-        return new DockerEngineManager(properties.docker(), dockerClient);
+            DockerClient dockerClient, EngineProperties properties, StatsMapper statsMapper) {
+        return new DockerEngineManager(properties.docker(), dockerClient, statsMapper);
     }
 
     /* ---------------- Kubernetes ---------------- */
