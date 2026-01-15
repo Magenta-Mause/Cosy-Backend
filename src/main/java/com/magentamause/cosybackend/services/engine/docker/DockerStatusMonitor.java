@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
@@ -195,6 +196,7 @@ public class DockerStatusMonitor implements Closeable {
     }
 
     @Override
+    @PreDestroy
     public void close() throws IOException {
         if (eventCallback != null) {
             try {
