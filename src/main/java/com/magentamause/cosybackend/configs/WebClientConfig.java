@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.configs.websockets;
+package com.magentamause.cosybackend.configs;
 
 import com.magentamause.cosybackend.configs.properties.GamesApiProperties;
 import com.magentamause.cosybackend.configs.properties.LokiProperties;
