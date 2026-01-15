@@ -1,10 +1,12 @@
 package com.magentamause.cosybackend.controllers;
 
+import com.google.common.net.HttpHeaders;
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
-import com.magentamause.cosybackend.services.GamesApiService;
+import com.magentamause.cosybackend.services.external.gamesapi.GamesApiService;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +23,6 @@ public class GameApiController {
     @GetMapping
     public ResponseEntity<List<GameDto>> getGameInfo(@RequestParam @NotBlank String query) {
         List<GameDto> games = gamesApiService.query(query);
-        return ResponseEntity.ok(games);
+        return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.EXPIRES, "0").body(games);
     }
 }

@@ -37,14 +37,17 @@ cosy:
       - https://cosy-docker.pybay.de
   games-api:
     url: https://cosy-game-api.jannekeipert.de
-
+  loki:
+    username: ${COSY_LOKI_USER:loki-user}
+    password: ${COSY_LOKI_PASSWORD:loki-password}
+    url: http://localhost:3100
+    application-name: cosy-backend # Label to identify logs from this application
   engine:
     selected: DOCKER
 
     # Docker-specific configuration
     docker:
-      socket-path: ${COSY_DOCKER_SOCKER_PATH:unix:///var/run/docker.sock}  # Docker socket
-      api-version: "1.41"                       # Optional: API version
+      socket-path: ${COSY_DOCKER_SOCKET_PATH:unix:///var/run/docker.sock}  # Docker socket
       tls: false                                # Whether to use TLS
       cert-path: ""                             # Path to TLS certs if enabled
 

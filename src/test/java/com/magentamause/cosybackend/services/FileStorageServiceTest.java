@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.services;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.magentamause.cosybackend.services.technical.FileStorageService;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
