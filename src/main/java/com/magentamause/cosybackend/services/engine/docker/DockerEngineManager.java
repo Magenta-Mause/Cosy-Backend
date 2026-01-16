@@ -46,6 +46,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     private final List<Consumer<String>> startListeners = new ArrayList<>();
     private final List<Consumer<String>> stopListeners = new ArrayList<>();
+    private final List<Consumer<String>> failListeners = new ArrayList<>();
 
     @PostConstruct
     public void init() {
@@ -58,6 +59,10 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     public void attachStopListener(Consumer<String> listener) {
         stopListeners.add(listener);
+    }
+
+    public void attachFailListener(Consumer<String> listener) {
+        failListeners.add(listener);
     }
 
     public static ExposedPort portMappingToExposedPort(PortMapping pm) {
@@ -156,10 +161,12 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         newStatus = GameServerDto.GameServerStatus.STOPPED;
                         stopListeners.forEach(l -> l.accept(uuid));
                     } else {
-                        newStatus =
-                                exitCode != 0
-                                        ? GameServerDto.GameServerStatus.FAILED
-                                        : GameServerDto.GameServerStatus.STOPPED;
+                        if (exitCode != 0) {
+                            newStatus = GameServerDto.GameServerStatus.FAILED;
+                            failListeners.forEach(l -> l.accept(uuid));
+                        } else {
+                            newStatus = GameServerDto.GameServerStatus.RUNNING;
+                        }
                     }
                 } else {
                     newStatus = dockerMappingUtils.mapEventToStatus(eventName);

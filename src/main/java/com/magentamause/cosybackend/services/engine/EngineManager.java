@@ -33,6 +33,8 @@ public interface EngineManager {
 
     void attachStopListener(Consumer<String> listener);
 
+    void attachFailListener(Consumer<String> listener);
+
     default void startAndAttachLogListener(
             GameServerEntity serviceConfig,
             Consumer<GameServerLogMessageEntity> logListener,

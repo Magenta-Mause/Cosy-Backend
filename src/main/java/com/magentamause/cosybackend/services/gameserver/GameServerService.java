@@ -59,6 +59,7 @@ public class GameServerService {
                                         (status) -> updateStatus(server, status)));
         engineManager.attachStartListener(this::handleGameServerEngineStartEvent);
         engineManager.attachStopListener(this::handleGameServerEngineStopEvent);
+        engineManager.attachFailListener(this::handleGameServerEngineFailEvent);
     }
 
     private void handleGameServerEngineStartEvent(String gameServerUuid) {
@@ -89,6 +90,18 @@ public class GameServerService {
                         GameServerLogMessageEntity.of(
                                 gameServerEntity.getUuid(),
                                 "Docker game server stop event received",
+                                GameServerLogMessageEntity.LogLevel.COSY_DEBUG
+                        )
+                ));
+    }
+
+    private void handleGameServerEngineFailEvent(String gameServerUuid) {
+        Optional<GameServerEntity> server = gameServerRepository.findById(gameServerUuid);
+        server.ifPresent(gameServerEntity ->
+                enrichAndPublishLogMessage(gameServerEntity,
+                        GameServerLogMessageEntity.of(
+                                gameServerEntity.getUuid(),
+                                "Docker game server failure event received",
                                 GameServerLogMessageEntity.LogLevel.COSY_DEBUG
                         )
                 ));
