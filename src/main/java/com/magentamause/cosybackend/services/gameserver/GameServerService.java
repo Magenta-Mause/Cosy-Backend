@@ -161,6 +161,13 @@ public class GameServerService {
 
                         sink.next(StartEventDto.Done.fromPorts(ports));
                         sink.complete();
+                        enrichAndPublishLogMessage(
+                                config,
+                                GameServerLogMessageEntity.of(
+                                        config.getUuid(),
+                                        "Started Game Server",
+                                        GameServerLogMessageEntity.LogLevel.DEBUG));
+
                     } catch (Exception e) {
                         log.error("Error starting server '{}'", serviceName, e);
                         sink.error(e);
@@ -197,6 +204,12 @@ public class GameServerService {
                         GameServerLogMessageEntity.LogLevel.DEBUG));
         try {
             engineManager.stop(gameServer);
+            enrichAndPublishLogMessage(
+                    gameServer,
+                    GameServerLogMessageEntity.of(
+                            gameServer.getUuid(),
+                            "Game Server Stopped",
+                            GameServerLogMessageEntity.LogLevel.DEBUG));
         } catch (ServerAlreadyStoppedException e) {
             log.info("Server '{}' was already stopped", serviceName);
             gameServer.setStatus(GameServerDto.GameServerStatus.STOPPED);
