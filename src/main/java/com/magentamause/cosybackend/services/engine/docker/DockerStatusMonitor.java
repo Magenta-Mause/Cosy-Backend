@@ -7,6 +7,7 @@ import com.github.dockerjava.api.model.Event;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import com.magentamause.cosybackend.services.gameserver.GameServerService;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
@@ -29,6 +30,7 @@ public class DockerStatusMonitor implements Closeable {
     private final GameServerRepository gameServerRepository;
     private final GameServerStatusPublisher statusPublisher;
     private final GameServerService gameServerService;
+    private final DockerMappingUtils dockerMappingUtils;
     private ResultCallback<Event> eventCallback;
 
     @PostConstruct
@@ -57,7 +59,7 @@ public class DockerStatusMonitor implements Closeable {
             GameServerDto.GameServerStatus newStatus;
             if (container.isPresent()) {
                 String state = container.get().getState();
-                newStatus = mapDockerStateToGameServerStatus(state);
+                newStatus = dockerMappingUtils.mapDockerStateToGameServerStatus(state);
             } else {
                 newStatus =
                         GameServerDto.GameServerStatus
@@ -71,6 +73,7 @@ public class DockerStatusMonitor implements Closeable {
             }
 
             if (server.getStatus() != newStatus) {
+                // TODO:
                 gameServerService.updateStatus(server, newStatus);
                 log.info("Updated status for server {} to {}", server.getServerName(), newStatus);
             }
@@ -143,7 +146,7 @@ public class DockerStatusMonitor implements Closeable {
                                         : GameServerDto.GameServerStatus.STOPPED;
                     }
                 } else {
-                    newStatus = mapEventToStatus(eventName);
+                    newStatus = dockerMappingUtils.mapEventToStatus(eventName);
                 }
 
                 if (newStatus != null && server.getStatus() != newStatus) {
@@ -159,35 +162,6 @@ public class DockerStatusMonitor implements Closeable {
             }
         } catch (Exception e) {
             log.error("Error handling Docker event: {}", event, e);
-        }
-    }
-
-    private GameServerDto.GameServerStatus mapDockerStateToGameServerStatus(String state) {
-        if ("running".equalsIgnoreCase(state)) {
-            return GameServerDto.GameServerStatus.RUNNING;
-        } else if ("paused".equalsIgnoreCase(state)) {
-            // Mapping paused to STOPPED
-            return GameServerDto.GameServerStatus.STOPPED;
-        } else {
-            return GameServerDto.GameServerStatus.STOPPED;
-        }
-    }
-
-    private GameServerDto.GameServerStatus mapEventToStatus(String eventName) {
-        if (eventName == null) {
-            return null;
-        }
-        switch (eventName) {
-            case "start":
-            case "unpause":
-                return GameServerDto.GameServerStatus.RUNNING;
-            case "stop":
-            case "destroy":
-                return GameServerDto.GameServerStatus.STOPPED;
-            case "pause":
-                return GameServerDto.GameServerStatus.STOPPED;
-            default:
-                return null;
         }
     }
 

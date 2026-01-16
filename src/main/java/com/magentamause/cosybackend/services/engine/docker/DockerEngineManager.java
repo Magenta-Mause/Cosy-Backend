@@ -13,7 +13,6 @@ import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfigur
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.services.engine.EngineManager;
-import com.magentamause.cosybackend.services.engine.config.EngineProperties.Docker;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,17 +22,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class DockerEngineManager implements EngineManager, Closeable {
 
-    private final Docker config;
     private final DockerClient client;
 
-    private static ExposedPort portMappingToExposedPort(PortMapping pm) {
+    public static ExposedPort portMappingToExposedPort(PortMapping pm) {
         return switch (pm.getProtocol()) {
             case TCP -> ExposedPort.tcp(pm.getContainerPort());
             case UDP -> ExposedPort.udp(pm.getContainerPort());

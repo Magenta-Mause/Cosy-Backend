@@ -48,9 +48,7 @@ public class EngineConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "DOCKER")
-    public EngineManager dockerEngineManager(
-            DockerClient dockerClient, EngineProperties properties) {
-
-        return new DockerEngineManager(properties.docker(), dockerClient);
+    public EngineManager dockerEngineManager(DockerClient dockerClient) {
+        return new DockerEngineManager(dockerClient);
     }
 }
