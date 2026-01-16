@@ -6,6 +6,7 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public interface EngineManager {
     List<Integer> start(
@@ -17,6 +18,11 @@ public interface EngineManager {
 
     void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener);
+
+    void attachStatusListener(
+            GameServerEntity serviceConfig,
+            Supplier<GameServerDto.GameServerStatus> currentStatusSupplier,
+            Consumer<GameServerDto.GameServerStatus> listener);
 
     default List<Integer> startAndAttachLogListener(
             GameServerEntity serviceConfig,

@@ -13,6 +13,7 @@ import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +41,18 @@ public class GameServerService {
     private final GameServerDockerProgressPublisher dockerProgressPublisher;
     private final TransactionTemplate transactionTemplate;
     private final GameServerLogService gameServerLogService;
+
+    @PostConstruct
+    public void init() {
+        gameServerRepository
+                .findAll()
+                .forEach(
+                        server ->
+                                engineManager.attachStatusListener(
+                                        server,
+                                        () -> getStatus(server.getUuid()),
+                                        (status) -> updateStatus(server, status)));
+    }
 
     public List<GameServerEntity> getAllGameServers() {
         return gameServerRepository.findAll();
