@@ -160,13 +160,13 @@ public class GameServerService {
                                         (status) -> updateStatus(config, status));
 
                         sink.next(StartEventDto.Done.fromPorts(ports));
-                        sink.complete();
                         enrichAndPublishLogMessage(
                                 config,
                                 GameServerLogMessageEntity.of(
                                         config.getUuid(),
                                         "Started Game Server",
                                         GameServerLogMessageEntity.LogLevel.DEBUG));
+                        sink.complete();
 
                     } catch (Exception e) {
                         log.error("Error starting server '{}'", serviceName, e);
