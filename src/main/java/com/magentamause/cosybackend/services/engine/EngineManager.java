@@ -5,7 +5,6 @@ import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
-
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -15,7 +14,8 @@ public interface EngineManager {
             Consumer<StartEventDto> progressListener,
             Consumer<GameServerDto.GameServerStatus> statusUpdater,
             Consumer<Void> imagePullStartCallback,
-            Consumer<Void> imagePullEndCallback) throws InternalServiceStartException;
+            Consumer<Void> imagePullEndCallback)
+            throws InternalServiceStartException;
 
     void stop(GameServerEntity serviceConfig);
 
@@ -41,8 +41,14 @@ public interface EngineManager {
             Consumer<StartEventDto> progressListener,
             Consumer<GameServerDto.GameServerStatus> statusUpdater,
             Consumer<Void> imagePullStartCallback,
-            Consumer<Void> imagePullEndCallback) throws InternalServiceStartException {
-        start(serviceConfig, progressListener, statusUpdater, imagePullStartCallback, imagePullEndCallback);
+            Consumer<Void> imagePullEndCallback)
+            throws InternalServiceStartException {
+        start(
+                serviceConfig,
+                progressListener,
+                statusUpdater,
+                imagePullStartCallback,
+                imagePullEndCallback);
         attachLogListener(serviceConfig, logListener);
     }
 }

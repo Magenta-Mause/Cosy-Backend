@@ -7,11 +7,9 @@ import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfigur
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
 import lombok.*;
 
 @Getter
@@ -28,8 +26,7 @@ public class GameServerEntity {
 
     private String serverName;
 
-    @ManyToOne
-    private UserEntity owner;
+    @ManyToOne private UserEntity owner;
 
     @Enumerated(EnumType.STRING)
     private GameServerDto.GameServerStatus status;
@@ -37,8 +34,7 @@ public class GameServerEntity {
     private LocalDateTime timestampLastStarted;
 
     // No cascading or orphanRemoval, because GameEntities without a server can exist
-    @ManyToOne
-    private GameEntity game;
+    @ManyToOne private GameEntity game;
 
     @Column(nullable = false)
     private String dockerImageName;

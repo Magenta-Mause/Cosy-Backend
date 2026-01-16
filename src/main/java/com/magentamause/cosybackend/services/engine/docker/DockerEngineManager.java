@@ -195,7 +195,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
             Consumer<StartEventDto> progressListener,
             Consumer<GameServerDto.GameServerStatus> statusUpdater,
             Consumer<Void> imagePullStartCallback,
-            Consumer<Void> imagePullEndCallback) throws InternalServiceStartException {
+            Consumer<Void> imagePullEndCallback)
+            throws InternalServiceStartException {
         log.info("Starting Docker container for server {}", serverConfig.getServerName());
         Optional<Container> container = findContainer(serverConfig);
 
@@ -209,7 +210,13 @@ public class DockerEngineManager implements EngineManager, Closeable {
         String image = buildImageName(serverConfig);
         String containerName = containerName(serverConfig);
 
-        ensureImagePresent(serverConfig, image, progressListener, statusUpdater, imagePullStartCallback, imagePullEndCallback);
+        ensureImagePresent(
+                serverConfig,
+                image,
+                progressListener,
+                statusUpdater,
+                imagePullStartCallback,
+                imagePullEndCallback);
 
         List<String> cmd = serverConfig.getDockerExecutionCommand();
         if (cmd == null) {
@@ -261,9 +268,11 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     @Override
     public void remove(GameServerEntity serverConfig) {
-        findContainer(serverConfig).ifPresent(container -> {
-            client.removeContainerCmd(container.getId()).withForce(true).exec();
-        });
+        findContainer(serverConfig)
+                .ifPresent(
+                        container -> {
+                            client.removeContainerCmd(container.getId()).withForce(true).exec();
+                        });
     }
 
     @Override

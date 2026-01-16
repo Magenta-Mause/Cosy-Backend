@@ -16,7 +16,7 @@ import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
-
+import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -24,8 +24,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
@@ -34,8 +32,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
-import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
-
 
 @Slf4j
 @Service
@@ -69,47 +65,50 @@ public class GameServerService {
 
     private void handleGameServerEngineStartEvent(String gameServerUuid) {
         Optional<GameServerEntity> server = gameServerRepository.findById(gameServerUuid);
-        server.ifPresent(gameServerEntity -> {
-            enrichAndPublishLogMessage(gameServerEntity,
-                    GameServerLogMessageEntity.of(
-                            gameServerEntity.getUuid(),
-                            "Docker game server start event received",
-                            GameServerLogMessageEntity.LogLevel.COSY_DEBUG
-                    )
-            );
-            String exposedPorts = gameServerEntity.getPortMappings().stream().map(PortMapping::getInstancePort).map(Object::toString).collect(Collectors.joining(", "));
-            enrichAndPublishLogMessage(gameServerEntity,
-                    GameServerLogMessageEntity.of(
-                            gameServerEntity.getUuid(),
-                            "Exposed ports: " + exposedPorts,
-                            GameServerLogMessageEntity.LogLevel.COSY_DEBUG
-                    )
-            );
-        });
+        server.ifPresent(
+                gameServerEntity -> {
+                    enrichAndPublishLogMessage(
+                            gameServerEntity,
+                            GameServerLogMessageEntity.of(
+                                    gameServerEntity.getUuid(),
+                                    "Docker game server start event received",
+                                    GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
+                    String exposedPorts =
+                            gameServerEntity.getPortMappings().stream()
+                                    .map(PortMapping::getInstancePort)
+                                    .map(Object::toString)
+                                    .collect(Collectors.joining(", "));
+                    enrichAndPublishLogMessage(
+                            gameServerEntity,
+                            GameServerLogMessageEntity.of(
+                                    gameServerEntity.getUuid(),
+                                    "Exposed ports: " + exposedPorts,
+                                    GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
+                });
     }
 
     private void handleGameServerEngineStopEvent(String gameServerUuid) {
         Optional<GameServerEntity> server = gameServerRepository.findById(gameServerUuid);
-        server.ifPresent(gameServerEntity ->
-                enrichAndPublishLogMessage(gameServerEntity,
-                        GameServerLogMessageEntity.of(
-                                gameServerEntity.getUuid(),
-                                "Docker game server stop event received",
-                                GameServerLogMessageEntity.LogLevel.COSY_DEBUG
-                        )
-                ));
+        server.ifPresent(
+                gameServerEntity ->
+                        enrichAndPublishLogMessage(
+                                gameServerEntity,
+                                GameServerLogMessageEntity.of(
+                                        gameServerEntity.getUuid(),
+                                        "Docker game server stop event received",
+                                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG)));
     }
 
     private void handleGameServerEngineFailEvent(String gameServerUuid) {
         Optional<GameServerEntity> server = gameServerRepository.findById(gameServerUuid);
-        server.ifPresent(gameServerEntity ->
-                enrichAndPublishLogMessage(gameServerEntity,
-                        GameServerLogMessageEntity.of(
-                                gameServerEntity.getUuid(),
-                                "Docker game server failure event received",
-                                GameServerLogMessageEntity.LogLevel.COSY_DEBUG
-                        )
-                ));
+        server.ifPresent(
+                gameServerEntity ->
+                        enrichAndPublishLogMessage(
+                                gameServerEntity,
+                                GameServerLogMessageEntity.of(
+                                        gameServerEntity.getUuid(),
+                                        "Docker game server failure event received",
+                                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG)));
     }
 
     public List<GameServerEntity> getAllGameServers() {
@@ -154,16 +153,18 @@ public class GameServerService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Game server with uuid " + uuid + " not found"));
 
-        GameEntity game = dto.getGameUuid() == null ? null :
-                gameEntityService
-                        .getGameFromUuid(dto.getGameUuid())
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Game with uuid "
-                                                        + dto.getGameUuid()
-                                                        + " not found"));
+        GameEntity game =
+                dto.getGameUuid() == null
+                        ? null
+                        : gameEntityService
+                                .getGameFromUuid(dto.getGameUuid())
+                                .orElseThrow(
+                                        () ->
+                                                new ResponseStatusException(
+                                                        HttpStatus.NOT_FOUND,
+                                                        "Game with uuid "
+                                                                + dto.getGameUuid()
+                                                                + " not found"));
         gameServer.setGame(game);
 
         gameServer.setServerName(dto.getServerName());
@@ -183,8 +184,8 @@ public class GameServerService {
                         gameServer.getVolumeMounts(),
                         dto.getVolumeMounts() != null
                                 ? dto.getVolumeMounts().stream()
-                                .map(VolumeMountConfiguration::fromDto)
-                                .toList()
+                                        .map(VolumeMountConfiguration::fromDto)
+                                        .toList()
                                 : null,
                         ArrayList::new));
 
@@ -198,17 +199,17 @@ public class GameServerService {
         }
         log.info("Starting server {}", gameServerUuid);
         try {
-            GameServerEntity serverConfig = transactionTemplate.execute(
-                    status -> {
-                        GameServerEntity entity = getGameServerById(gameServerUuid);
+            GameServerEntity serverConfig =
+                    transactionTemplate.execute(
+                            status -> {
+                                GameServerEntity entity = getGameServerById(gameServerUuid);
 
-                        Hibernate.initialize(
-                                entity.getDockerExecutionCommand());
-                        Hibernate.initialize(entity.getPortMappings());
-                        Hibernate.initialize(entity.getEnvironmentVariables());
-                        Hibernate.initialize(entity.getVolumeMounts());
-                        return entity;
-                    });
+                                Hibernate.initialize(entity.getDockerExecutionCommand());
+                                Hibernate.initialize(entity.getPortMappings());
+                                Hibernate.initialize(entity.getEnvironmentVariables());
+                                Hibernate.initialize(entity.getVolumeMounts());
+                                return entity;
+                            });
 
             enrichAndPublishLogMessage(
                     serverConfig,
@@ -226,46 +227,45 @@ public class GameServerService {
                             enrichAndPublishLogMessage(serverConfig, logMessage);
                         },
                         (startEvent) -> {
-                            if (startEvent
-                                    instanceof
-                                    StartEventDto.PullProgress
-                                            pullProgress) {
+                            if (startEvent instanceof StartEventDto.PullProgress pullProgress) {
                                 dockerProgressPublisher.publishDockerProgress(
-                                        serverConfig.getUuid(),
-                                        pullProgress.getProgress());
+                                        serverConfig.getUuid(), pullProgress.getProgress());
                             }
                         },
                         (status) -> updateStatus(serverConfig, status),
-                        (a) -> enrichAndPublishLogMessage(
-                                serverConfig,
-                                GameServerLogMessageEntity.of(
-                                        serverConfig.getUuid(),
-                                        "Starting to pull Docker Image",
-                                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG)),
-                        (a) -> enrichAndPublishLogMessage(
-                                serverConfig,
-                                GameServerLogMessageEntity.of(
-                                        serverConfig.getUuid(),
-                                        "Docker Image pulled successfully",
-                                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG))
-                );
+                        (a) ->
+                                enrichAndPublishLogMessage(
+                                        serverConfig,
+                                        GameServerLogMessageEntity.of(
+                                                serverConfig.getUuid(),
+                                                "Starting to pull Docker Image",
+                                                GameServerLogMessageEntity.LogLevel.COSY_DEBUG)),
+                        (a) ->
+                                enrichAndPublishLogMessage(
+                                        serverConfig,
+                                        GameServerLogMessageEntity.of(
+                                                serverConfig.getUuid(),
+                                                "Docker Image pulled successfully",
+                                                GameServerLogMessageEntity.LogLevel.COSY_DEBUG)));
             } catch (InternalServiceStartException e) {
                 log.error("Docker error while starting server '{}'", gameServerUuid, e);
-                enrichAndPublishLogMessage(serverConfig, GameServerLogMessageEntity
-                        .of(
+                enrichAndPublishLogMessage(
+                        serverConfig,
+                        GameServerLogMessageEntity.of(
                                 serverConfig.getUuid(),
                                 e.getOriginalException().toString(),
-                                GameServerLogMessageEntity.LogLevel.COSY_DEBUG
-                        ));
+                                GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
                 updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
             } catch (Exception e) {
                 updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
                 log.error("Error starting server '{}'", gameServerUuid, e);
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error while starting docker container");
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "Error while starting docker container");
             }
         } catch (Exception e) {
             log.error("Error starting server '{}'", gameServerUuid, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error while starting docker container");
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Error while starting docker container");
         } finally {
             startingServers.remove(gameServerUuid);
         }
@@ -345,8 +345,8 @@ public class GameServerService {
                 .volumeMounts(
                         dto.getVolumeMounts() != null
                                 ? dto.getVolumeMounts().stream()
-                                .map(VolumeMountConfiguration::fromDto)
-                                .toList()
+                                        .map(VolumeMountConfiguration::fromDto)
+                                        .toList()
                                 : List.of())
                 .portMappings(dto.getPortMappings() != null ? dto.getPortMappings() : List.of())
                 .build();

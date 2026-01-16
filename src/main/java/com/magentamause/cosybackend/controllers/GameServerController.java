@@ -12,9 +12,7 @@ import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.gameserver.GameServerService;
 import jakarta.validation.Valid;
-
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -91,8 +89,7 @@ public class GameServerController {
     @PostMapping(value = "/{uuid}/start", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
     public ResponseEntity<Void> startService(@PathVariable @ResourceId String uuid) {
-        gameServerService
-                .startServer(uuid);
+        gameServerService.startServer(uuid);
 
         return ResponseEntity.accepted().build();
     }
