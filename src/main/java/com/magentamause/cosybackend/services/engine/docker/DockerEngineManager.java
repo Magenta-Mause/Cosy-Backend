@@ -39,7 +39,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DockerEngineManager implements EngineManager, Closeable {
 
-    private final Docker config;
     private final DockerClient client;
     private final StatsMapper statsMapper;
     private final DockerMappingUtils dockerMappingUtils;
@@ -437,15 +436,12 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     @Override
     public Metric collectMetric(GameServerEntity gameServer) throws InterruptedException {
-        Container containerRef =
-                findContainer(gameServer)
-                        .orElseThrow(
-                                () ->
-                                        new IllegalStateException(
-                                                "Container not found for server "
-                                                        + gameServer.getUuid()));
+        Optional<Container> containerOpt = findContainer(gameServer);
+        if (containerOpt.isEmpty()) {
+            return null;
+        }
 
-        String containerUuid = containerRef.getId();
+        String containerUuid = containerOpt.get().getId();
 
         InspectContainerResponse container = client.inspectContainerCmd(containerUuid).exec();
 

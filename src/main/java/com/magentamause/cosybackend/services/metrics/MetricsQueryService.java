@@ -29,10 +29,8 @@ public class MetricsQueryService {
                                 + "|> yield(name: \"mean\")",
                         timeRange, gameServerUuid, metricType.getValue());
 
-        System.out.println(flux);
         List<FluxTable> tables = influxDBClient.getQueryApi().query(flux);
 
-        System.out.println(tables);
         List<MetricPointDto> results = new ArrayList<>();
 
         for (FluxTable table : tables) {
@@ -48,7 +46,6 @@ public class MetricsQueryService {
             }
         }
 
-        System.out.println(results);
         return results;
     }
 }

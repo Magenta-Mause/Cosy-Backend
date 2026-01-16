@@ -8,14 +8,9 @@ import com.github.dockerjava.transport.DockerHttpClient;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.docker.DockerEngineManager;
 import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
-import com.magentamause.cosybackend.services.engine.kubernetes.KubernetesEngineManager;
-import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.util.Config;
-import io.kubernetes.client.util.KubeConfig;
-import java.io.FileReader;
 import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import java.time.Duration;
+
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -54,7 +49,7 @@ public class EngineConfiguration {
 
     @Bean
     public EngineManager dockerEngineManager(
-            DockerClient dockerClient, DockerMappingUtils dockerMappingUtils) {
-        return new DockerEngineManager(dockerClient, dockerMappingUtils);
+            DockerClient dockerClient, DockerMappingUtils dockerMappingUtils,  StatsMapper statsMapper) {
+        return new DockerEngineManager(dockerClient, statsMapper, dockerMappingUtils);
     }
 }
