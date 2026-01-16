@@ -1,10 +1,10 @@
 package com.magentamause.cosybackend.entities.utility;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.actiondtos.VolumeMountConfigurationCreationDto;
 import jakarta.persistence.*;
 import lombok.*;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 @Getter
 @Setter

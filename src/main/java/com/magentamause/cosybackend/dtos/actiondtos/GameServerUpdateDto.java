@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.annotations.uniqueElements.UniqueElementsBy;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
-import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;

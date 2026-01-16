@@ -81,8 +81,7 @@ public class GameServerController {
 
         UserEntity user = securityContextService.getUser();
 
-        GameServerEntity updated =
-                gameServerService.updateGameServerConfiguration(uuid, updateDto);
+        GameServerEntity updated = gameServerService.updateGameServerConfiguration(uuid, updateDto);
 
         return ResponseEntity.ok(updated.toDto());
     }
