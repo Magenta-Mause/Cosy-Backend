@@ -12,8 +12,10 @@ import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.gameserver.GameServerService;
 import jakarta.validation.Valid;
+
 import java.time.Duration;
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -77,21 +79,12 @@ public class GameServerController {
 
     @PostMapping(value = "/{uuid}/start", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
-    public Flux<StartEventDto> startServiceSse(@PathVariable @ResourceId String uuid) {
-        Flux<StartEventDto> heartbeat =
-                Flux.interval(Duration.ofSeconds(2)).map(tick -> new StartEventDto.Heartbeat());
+    public ResponseEntity<Void> startServiceSse(@PathVariable @ResourceId String uuid) {
 
-        Flux<StartEventDto> work =
-                gameServerService
-                        .startServer(uuid)
-                        .subscribeOn(Schedulers.boundedElastic())
-                        .onErrorResume(ex -> Mono.just(new StartEventDto.Error(ex.getMessage())));
+        gameServerService
+                .startServer(uuid);
 
-        return Flux.merge(heartbeat, work)
-                .takeUntil(
-                        event ->
-                                event instanceof StartEventDto.Done
-                                        || event instanceof StartEventDto.Error);
+        return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/{uuid}/stop")

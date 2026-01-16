@@ -4,17 +4,22 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
-import java.util.List;
+import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
+
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public interface EngineManager {
-    List<Integer> start(
+    void start(
             GameServerEntity serviceConfig,
             Consumer<StartEventDto> progressListener,
-            Consumer<GameServerDto.GameServerStatus> statusUpdater);
+            Consumer<GameServerDto.GameServerStatus> statusUpdater,
+            Consumer<Void> imagePullStartCallback,
+            Consumer<Void> imagePullEndCallback) throws InternalServiceStartException;
 
     void stop(GameServerEntity serviceConfig);
+
+    void remove(GameServerEntity serviceConfig);
 
     void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener);
@@ -24,13 +29,18 @@ public interface EngineManager {
             Supplier<GameServerDto.GameServerStatus> currentStatusSupplier,
             Consumer<GameServerDto.GameServerStatus> listener);
 
-    default List<Integer> startAndAttachLogListener(
+    void attachStartListener(Consumer<String> listener);
+
+    void attachStopListener(Consumer<String> listener);
+
+    default void startAndAttachLogListener(
             GameServerEntity serviceConfig,
             Consumer<GameServerLogMessageEntity> logListener,
             Consumer<StartEventDto> progressListener,
-            Consumer<GameServerDto.GameServerStatus> statusUpdater) {
-        List<Integer> exposedPorts = start(serviceConfig, progressListener, statusUpdater);
+            Consumer<GameServerDto.GameServerStatus> statusUpdater,
+            Consumer<Void> imagePullStartCallback,
+            Consumer<Void> imagePullEndCallback) throws InternalServiceStartException {
+        start(serviceConfig, progressListener, statusUpdater, imagePullStartCallback, imagePullEndCallback);
         attachLogListener(serviceConfig, logListener);
-        return exposedPorts;
     }
 }
