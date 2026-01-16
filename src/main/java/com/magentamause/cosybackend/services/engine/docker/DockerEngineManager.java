@@ -434,10 +434,10 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     @Override
-    public Metric collectMetric(GameServerEntity gameServer) throws InterruptedException {
+    public Optional<Metric> collectMetric(GameServerEntity gameServer) throws InterruptedException {
         Optional<Container> containerOpt = findContainer(gameServer);
         if (containerOpt.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
 
         String containerUuid = containerOpt.get().getId();
@@ -445,7 +445,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         InspectContainerResponse container = client.inspectContainerCmd(containerUuid).exec();
 
         if (Boolean.FALSE.equals(container.getState().getRunning())) {
-            return null;
+            return Optional.empty();
         }
 
         Metric.MetricBuilder builder =
@@ -469,6 +469,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         })
                 .awaitCompletion();
 
-        return builder.time(Instant.now()).build();
+        return Optional.of(builder.time(Instant.now()).build());
     }
 }

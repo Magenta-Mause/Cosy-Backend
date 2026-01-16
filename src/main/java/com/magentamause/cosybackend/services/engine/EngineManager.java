@@ -6,6 +6,7 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.metric.Metric;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -35,5 +36,5 @@ public interface EngineManager {
         return exposedPorts;
     }
 
-    Metric collectMetric(GameServerEntity serviceConfig) throws InterruptedException;
+    Optional<Metric> collectMetric(GameServerEntity serviceConfig) throws InterruptedException;
 }

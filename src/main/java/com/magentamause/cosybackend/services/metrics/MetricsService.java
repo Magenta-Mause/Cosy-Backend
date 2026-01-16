@@ -9,6 +9,8 @@ import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import java.util.List;
+import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -54,9 +56,9 @@ public class MetricsService {
         try {
             for (GameServerEntity gameServer : gameServers) {
                 try {
-                    Metric metric = engineManager.collectMetric(gameServer);
-                    if (metric != null) {
-                        Point point = convertMetricToPoint(metric);
+                    Optional<Metric> metric = engineManager.collectMetric(gameServer);
+                    if (metric.isPresent()) {
+                        Point point = convertMetricToPoint(metric.get());
                         writeToInfluxDB(point);
                     }
                 } catch (Exception e) {
