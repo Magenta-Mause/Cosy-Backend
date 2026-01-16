@@ -5,11 +5,14 @@ import com.magentamause.cosybackend.dtos.loki.LokiStreamResult;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import java.time.Instant;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class LokiMapper {
+
+    private static final Pattern ERROR_DETECTION_REGEX = Pattern.compile("\\[error]", Pattern.CASE_INSENSITIVE);
 
     public static List<GameServerLogMessageEntity> toEntities(LokiQueryResponse response) {
 
@@ -30,8 +33,9 @@ public class LokiMapper {
             LokiStreamResult result, List<String> value) {
         String level = result.stream().get("level");
         String serverUuid = result.stream().get("server_uuid");
+        String message = value.get(1);
         return GameServerLogMessageEntity.builder()
-                .message(value.get(1))
+                .message(message)
                 .gameServerUuid(serverUuid)
                 .timestamp(parseTimestamp(value.get(0)))
                 .level(

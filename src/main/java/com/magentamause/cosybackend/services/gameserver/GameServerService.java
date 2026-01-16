@@ -233,11 +233,8 @@ public class GameServerService {
 
     public GameServerLogMessageEntity enrichAndPublishLogMessage(
             GameServerEntity gameServer, GameServerLogMessageEntity logMessage) {
-
         logMessage.setGameServerUuid(gameServer.getUuid());
         gameServerLogService.saveGameServerLog(logMessage);
-
-        gameServerLogWebsocketPublisher.publishLog(gameServer.getUuid(), logMessage);
         return logMessage;
     }
 
