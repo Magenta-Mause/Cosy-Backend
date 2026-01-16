@@ -1,7 +1,6 @@
 package com.magentamause.cosybackend.services;
 
-import static com.magentamause.cosybackend.entities.GameServerEntity.GameServerStatus.STOPPED;
-
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
@@ -57,7 +56,7 @@ public class DummyDataService {
                                 .uuid(UUID.randomUUID().toString())
                                 .serverName("TOSIOS")
                                 .owner(adminUser)
-                                .status(STOPPED)
+                                .status(GameServerDto.GameServerStatus.STOPPED)
                                 .timestampLastStarted(LocalDateTime.now().minusHours(2))
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")

@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import lombok.*;
 
 @Getter
@@ -28,7 +29,7 @@ public class GameServerEntity {
     @ManyToOne private UserEntity owner;
 
     @Enumerated(EnumType.STRING)
-    private GameServerStatus status;
+    private GameServerDto.GameServerStatus status;
 
     private LocalDateTime timestampLastStarted;
 
@@ -65,19 +66,11 @@ public class GameServerEntity {
     @JoinColumn(name = "game_server_configuration_uuid")
     private List<VolumeMountConfiguration> volumeMounts;
 
-    public enum GameServerStatus {
-        RUNNING,
-        STARTING,
-        SHUTTING_DOWN,
-        STOPPED,
-        FAILED
-    }
-
     public GameServerDto toDto() {
         return GameServerDto.builder()
                 .uuid(this.getUuid())
                 .serverName(this.getServerName())
-                .owner(this.getOwner().toDto())
+                .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
                 .status(this.getStatus())
                 .timestampLastStarted(this.getTimestampLastStarted())
                 .gameUuid(this.getGame() == null ? null : this.getGame().getUuid())

@@ -3,7 +3,6 @@ package com.magentamause.cosybackend.controllers;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerStatusDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
@@ -89,30 +88,34 @@ public class GameServerController {
     }
 
     @GetMapping("/{uuid}/status")
-    public ResponseEntity<GameServerStatusDto> getServiceInfo(@PathVariable String uuid) {
+    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
+    public ResponseEntity<GameServerDto.GameServerStatus> getServiceInfo(
+            @PathVariable String uuid) {
         return ResponseEntity.ok(gameServerService.getStatus(uuid));
     }
 
     @PostMapping(value = "/{uuid}/start", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<StartEventDto> startServiceSse(@PathVariable String uuid) {
+    @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
+    public Flux<StartEventDto> startServiceSse(@PathVariable @ResourceId String uuid) {
         Flux<StartEventDto> heartbeat =
-                Flux.interval(Duration.ofSeconds(2)).map(tick -> StartEventDto.heartbeat());
+                Flux.interval(Duration.ofSeconds(2)).map(tick -> new StartEventDto.Heartbeat());
 
-        Mono<StartEventDto> work =
-                Mono.fromCallable(() -> gameServerService.startServer(uuid))
+        Flux<StartEventDto> work =
+                gameServerService
+                        .startServer(uuid)
                         .subscribeOn(Schedulers.boundedElastic())
-                        .map(StartEventDto::done)
-                        .onErrorResume(ex -> Mono.just(StartEventDto.error(ex.getMessage())));
+                        .onErrorResume(ex -> Mono.just(new StartEventDto.Error(ex.getMessage())));
 
         return Flux.merge(heartbeat, work)
                 .takeUntil(
                         event ->
-                                event.getType().equals(StartEventDto.Type.DONE)
-                                        || event.getType().equals(StartEventDto.Type.ERROR));
+                                event instanceof StartEventDto.Done
+                                        || event instanceof StartEventDto.Error);
     }
 
     @PostMapping("/{uuid}/stop")
-    public ResponseEntity<Void> stopService(@PathVariable String uuid) {
+    @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
+    public ResponseEntity<Void> stopService(@PathVariable @ResourceId String uuid) {
         gameServerService.stopServer(uuid);
         return ResponseEntity.ok().build();
     }

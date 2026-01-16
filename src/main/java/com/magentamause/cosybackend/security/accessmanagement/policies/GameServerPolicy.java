@@ -49,7 +49,7 @@ public class GameServerPolicy implements AccessPolicy {
                                                         + " not found"));
 
         return switch (action) {
-            case READ, DELETE, UPDATE -> gameServerEntity
+            case READ, DELETE, UPDATE, START_STOP -> gameServerEntity
                     .getOwner()
                     .getUuid()
                     .equals(user.getUuid());

@@ -35,7 +35,7 @@ public class UserPolicy implements AccessPolicy {
 
         return switch (action) {
             case READ, DELETE -> user.getUuid().equals(referenceId);
-            case UPDATE, CREATE -> false;
+            default -> false;
         };
     }
 }

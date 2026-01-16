@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.configs;
+package com.magentamause.cosybackend.configs.websockets;
 
 import com.magentamause.cosybackend.configs.properties.CorsProperties;
 import com.magentamause.cosybackend.security.websocket.JwtChannelInterceptor;
@@ -24,13 +24,13 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topics");
-        config.setApplicationDestinationPrefixes("/v1/app");
+        config.enableSimpleBroker(WebSocketDestinations.BROKER_PREFIX);
+        config.setApplicationDestinationPrefixes(WebSocketDestinations.APP_PREFIX);
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/v1/ws")
+        registry.addEndpoint(WebSocketDestinations.ENDPOINT)
                 .setAllowedOrigins(corsProperties.allowedOrigins().toArray(new String[0]))
                 .addInterceptors(jwtHandshakeInterceptor)
                 .withSockJS();
