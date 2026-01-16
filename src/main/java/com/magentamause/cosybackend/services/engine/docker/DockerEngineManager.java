@@ -15,11 +15,10 @@ import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfigur
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import com.magentamause.cosybackend.services.engine.config.EngineProperties.Docker;
-import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

@@ -10,7 +10,6 @@ import com.magentamause.cosybackend.services.engine.docker.DockerEngineManager;
 import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import java.time.Duration;
-
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,7 +48,9 @@ public class EngineConfiguration {
 
     @Bean
     public EngineManager dockerEngineManager(
-            DockerClient dockerClient, DockerMappingUtils dockerMappingUtils,  StatsMapper statsMapper) {
+            DockerClient dockerClient,
+            DockerMappingUtils dockerMappingUtils,
+            StatsMapper statsMapper) {
         return new DockerEngineManager(dockerClient, statsMapper, dockerMappingUtils);
     }
 }
