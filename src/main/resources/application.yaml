@@ -43,8 +43,6 @@ cosy:
     url: http://localhost:3100
     application-name: cosy-backend # Label to identify logs from this application
   engine:
-    selected: DOCKER
-
     # Docker-specific configuration
     docker:
       socket-path: ${COSY_DOCKER_SOCKET_PATH:unix:///var/run/docker.sock}  # Docker socket

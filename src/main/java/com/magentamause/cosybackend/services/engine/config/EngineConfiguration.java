@@ -9,7 +9,6 @@ import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.docker.DockerEngineManager;
 import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import java.time.Duration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,7 +18,6 @@ import org.springframework.context.annotation.Configuration;
 public class EngineConfiguration {
 
     @Bean
-    @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "DOCKER")
     public DockerClient dockerClient(EngineProperties properties) {
 
         EngineProperties.Docker cfg = properties.docker();
@@ -48,7 +46,6 @@ public class EngineConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "DOCKER")
     public EngineManager dockerEngineManager(
             DockerClient dockerClient, DockerMappingUtils dockerMappingUtils) {
         return new DockerEngineManager(dockerClient, dockerMappingUtils);
