@@ -10,8 +10,6 @@ import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
-import com.magentamause.cosybackend.services.engine.EngineType;
-import com.magentamause.cosybackend.services.engine.config.EngineProperties;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
@@ -19,53 +17,29 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class GameServerService {
 
     private final GameServerRepository gameServerRepository;
     private final GameEntityService gameEntityService;
     private final EngineManager engineManager;
-    private final EngineType engineType;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
     private final GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher;
     private final GameServerStatusPublisher statusPublisher;
     private final GameServerDockerProgressPublisher dockerProgressPublisher;
     private final TransactionTemplate transactionTemplate;
     private final GameServerLogService gameServerLogService;
-
-    public GameServerService(
-            EngineManager engineManager,
-            GameEntityService gameEntityService,
-            EngineProperties engineProperties,
-            GameServerRepository gameServerRepository,
-            GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher,
-            GameServerStatusPublisher statusPublisher,
-            GameServerDockerProgressPublisher dockerProgressPublisher,
-            PlatformTransactionManager transactionManager,
-            GameServerLogService gameServerLogService) {
-
-        this.engineManager = engineManager;
-        this.gameEntityService = gameEntityService;
-        this.engineType = engineProperties.selected();
-        this.gameServerRepository = gameServerRepository;
-        this.gameServerLogWebsocketPublisher = gameServerLogWebsocketPublisher;
-        this.dockerProgressPublisher = dockerProgressPublisher;
-        this.statusPublisher = statusPublisher;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
-
-        log.info("GameServerService initialized with engine '{}'", engineType);
-        this.gameServerLogService = gameServerLogService;
-    }
 
     public List<GameServerEntity> getAllGameServers() {
         return gameServerRepository.findAll();
