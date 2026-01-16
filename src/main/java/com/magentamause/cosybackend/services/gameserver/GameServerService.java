@@ -208,7 +208,7 @@ public class GameServerService {
                     gameServer,
                     GameServerLogMessageEntity.of(
                             gameServer.getUuid(),
-                            "Game Server Stopped",
+                            "Stopped Game Server",
                             GameServerLogMessageEntity.LogLevel.DEBUG));
         } catch (ServerAlreadyStoppedException e) {
             log.info("Server '{}' was already stopped", serviceName);
