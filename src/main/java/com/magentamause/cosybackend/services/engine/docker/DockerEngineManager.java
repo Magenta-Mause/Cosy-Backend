@@ -53,14 +53,17 @@ public class DockerEngineManager implements EngineManager, Closeable {
         startEventListener();
     }
 
+    @Override
     public void attachStartListener(Consumer<String> listener) {
         startListeners.add(listener);
     }
 
+    @Override
     public void attachStopListener(Consumer<String> listener) {
         stopListeners.add(listener);
     }
 
+    @Override
     public void attachFailListener(Consumer<String> listener) {
         failListeners.add(listener);
     }
