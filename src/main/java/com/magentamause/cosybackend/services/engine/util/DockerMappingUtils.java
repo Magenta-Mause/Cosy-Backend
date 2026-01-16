@@ -6,15 +6,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class DockerMappingUtils {
 
-    public GameServerDto.GameServerStatus mapDockerStateToGameServerStatus(String state) {
-        if ("running".equalsIgnoreCase(state)) {
-            return GameServerDto.GameServerStatus.RUNNING;
-        } else if ("paused".equalsIgnoreCase(state)) {
-            // Mapping paused to STOPPED
-            return GameServerDto.GameServerStatus.STOPPED;
-        } else {
-            return GameServerDto.GameServerStatus.STOPPED;
-        }
+    public GameServerDto.GameServerStatus mapDockerStateToGameServerStatus(String dockerState) {
+        return switch (dockerState != null ? dockerState.toLowerCase() : "") {
+            case "running" -> GameServerDto.GameServerStatus.RUNNING;
+            default -> GameServerDto.GameServerStatus.STOPPED;
+        };
     }
 
     public GameServerDto.GameServerStatus mapEventToStatus(String eventName) {
