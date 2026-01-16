@@ -11,7 +11,6 @@ import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,8 +27,7 @@ public class MetricsController {
             @PathVariable String gameServerUuid,
             @RequestParam MetricType type,
             @RequestParam(required = false) Instant end,
-            @RequestParam(required = false) Instant start
-    ) {
+            @RequestParam(required = false) Instant start) {
         Instant now = Instant.now();
         Instant defaultEnd = (end != null) ? end : now;
         Instant defaultStart = (start != null) ? start : now.minus(Duration.ofHours(1));
@@ -44,6 +42,7 @@ public class MetricsController {
             return ResponseEntity.badRequest().body(null);
         }
 
-        return ResponseEntity.ok(queryService.queryMetrics(gameServerUuid, type, defaultStart, defaultEnd));
+        return ResponseEntity.ok(
+                queryService.queryMetrics(gameServerUuid, type, defaultStart, defaultEnd));
     }
 }

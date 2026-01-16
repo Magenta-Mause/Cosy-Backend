@@ -5,7 +5,6 @@ import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
 import com.magentamause.cosybackend.entities.metric.MetricType;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
