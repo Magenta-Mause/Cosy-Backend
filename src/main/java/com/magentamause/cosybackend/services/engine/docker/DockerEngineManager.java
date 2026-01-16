@@ -124,9 +124,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
             StatusListenerContext context = statusListeners.get(uuid);
 
             if (context != null) {
-                // Prefer getAction(), fallback to getStatus()
-                String eventName =
-                        event.getAction() != null ? event.getAction() : event.getStatus();
+                String eventName = event.getAction();
 
                 GameServerDto.GameServerStatus newStatus;
 
