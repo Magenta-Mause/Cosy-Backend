@@ -14,8 +14,8 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.util.Config;
 import io.kubernetes.client.util.KubeConfig;
 import java.io.FileReader;
+import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import java.time.Duration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,10 +24,7 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(EngineProperties.class)
 public class EngineConfiguration {
 
-    /* ---------------- Docker ---------------- */
-
     @Bean
-    @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "DOCKER")
     public DockerClient dockerClient(EngineProperties properties) {
 
         EngineProperties.Docker cfg = properties.docker();
@@ -56,54 +53,8 @@ public class EngineConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "DOCKER")
     public EngineManager dockerEngineManager(
-            DockerClient dockerClient, EngineProperties properties, StatsMapper statsMapper) {
-        return new DockerEngineManager(properties.docker(), dockerClient, statsMapper);
-    }
-
-    /* ---------------- Kubernetes ---------------- */
-
-    @Bean
-    @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "KUBERNETES")
-    public ApiClient kubernetesApiClient(EngineProperties properties) throws Exception {
-
-        EngineProperties.Kubernetes cfg = properties.kubernetes();
-        if (cfg == null) {
-            throw new IllegalStateException(
-                    "Kubernetes engine selected but kubernetes config missing");
-        }
-
-        ApiClient client;
-
-        if (cfg.inCluster()) {
-            client = Config.fromCluster();
-        } else {
-            try (FileReader reader = new FileReader(cfg.kubeconfig())) {
-                KubeConfig kubeConfig = KubeConfig.loadKubeConfig(reader);
-
-                // Apply configured context, if present
-                if (cfg.context() != null && !cfg.context().isBlank()) {
-                    kubeConfig.setContext(cfg.context());
-                }
-
-                client = Config.fromConfig(kubeConfig);
-            }
-        }
-
-        client.setReadTimeout(cfg.timeoutSeconds() * 1000);
-        return client;
-    }
-
-    @Bean
-    @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "KUBERNETES")
-    public CoreV1Api coreV1Api(ApiClient client) {
-        return new CoreV1Api(client);
-    }
-
-    @Bean
-    @ConditionalOnProperty(name = "cosy.engine.selected", havingValue = "KUBERNETES")
-    public EngineManager kubernetesEngineManager(CoreV1Api api, EngineProperties properties) {
-        return new KubernetesEngineManager(properties.kubernetes(), api);
+            DockerClient dockerClient, DockerMappingUtils dockerMappingUtils) {
+        return new DockerEngineManager(dockerClient, dockerMappingUtils);
     }
 }
