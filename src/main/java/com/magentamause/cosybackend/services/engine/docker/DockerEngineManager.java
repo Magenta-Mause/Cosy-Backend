@@ -168,7 +168,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                             newStatus = GameServerDto.GameServerStatus.FAILED;
                             failListeners.forEach(l -> l.accept(uuid));
                         } else {
-                            newStatus = GameServerDto.GameServerStatus.RUNNING;
+                            newStatus = GameServerDto.GameServerStatus.STOPPED;
                         }
                     }
                 } else {
