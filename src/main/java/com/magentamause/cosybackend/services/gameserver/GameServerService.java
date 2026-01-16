@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.services.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameEntity;
@@ -14,10 +15,12 @@ import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
@@ -86,16 +89,52 @@ public class GameServerService {
         gameServerRepository.deleteById(uuid);
     }
 
-    public GameServerEntity updateGameServerConfiguration(String uuid, GameServerEntity entity) {
-        gameServerRepository
-                .findById(uuid)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "Game server with uuid " + uuid + " not found"));
-        entity.setUuid(uuid);
-        return gameServerRepository.save(entity);
+    public GameServerEntity updateGameServerConfiguration(String uuid, GameServerUpdateDto dto) {
+
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(uuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game server with uuid " + uuid + " not found"));
+
+        GameEntity game =
+                gameEntityService
+                        .getGameFromUuid(dto.getGameUuid())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game with uuid "
+                                                        + dto.getGameUuid()
+                                                        + " not found"));
+        gameServer.setGame(game);
+
+        gameServer.setServerName(dto.getServerName());
+        gameServer.setDockerImageName(dto.getDockerImageName());
+        gameServer.setDockerImageTag(dto.getDockerImageTag());
+        gameServer.setDockerExecutionCommand(dto.getExecutionCommand());
+
+        gameServer.setPortMappings(
+                updateList(gameServer.getPortMappings(), dto.getPortMappings(), ArrayList::new));
+        gameServer.setEnvironmentVariables(
+                updateList(
+                        gameServer.getEnvironmentVariables(),
+                        dto.getEnvironmentVariables(),
+                        ArrayList::new));
+        gameServer.setVolumeMounts(
+                updateList(
+                        gameServer.getVolumeMounts(),
+                        dto.getVolumeMounts() != null
+                                ? dto.getVolumeMounts().stream()
+                                        .map(VolumeMountConfiguration::fromDto)
+                                        .toList()
+                                : null,
+                        ArrayList::new));
+
+        return gameServerRepository.save(gameServer);
     }
 
     // @Transactional removed to allow immediate status updates (PULLING_IMAGE)
@@ -263,5 +302,17 @@ public class GameServerService {
                                 : List.of())
                 .portMappings(dto.getPortMappings() != null ? dto.getPortMappings() : List.of())
                 .build();
+    }
+
+    private <T> List<T> updateList(List<T> target, List<T> source, Supplier<List<T>> listSupplier) {
+        if (target == null) {
+            target = listSupplier.get();
+        } else {
+            target.clear();
+        }
+        if (source != null) {
+            target.addAll(source);
+        }
+        return target;
     }
 }

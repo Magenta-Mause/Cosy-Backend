@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/game-server")
@@ -58,6 +61,7 @@ public class GameServerController {
     @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
     public ResponseEntity<GameServerDto> createGameServer(
             @Valid @RequestBody GameServerCreationDto gameServerCreationDto) {
+        log.info("Creating game server {}", gameServerCreationDto);
         UserEntity user = securityContextService.getUser();
 
         GameServerEntity createdGameServer =
@@ -66,6 +70,20 @@ public class GameServerController {
 
         gameServerService.saveGameServer(createdGameServer);
         return ResponseEntity.status(201).body(createdGameServer.toDto());
+    }
+
+    @PutMapping("/{uuid}")
+    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER)
+    public ResponseEntity<GameServerDto> updateGameServer(
+            @PathVariable @ResourceId String uuid,
+            @Valid @RequestBody GameServerUpdateDto updateDto) {
+        log.info("Received request to update the game server with id {}", uuid);
+
+        UserEntity user = securityContextService.getUser();
+
+        GameServerEntity updated = gameServerService.updateGameServerConfiguration(uuid, updateDto);
+
+        return ResponseEntity.ok(updated.toDto());
     }
 
     @GetMapping("/{uuid}/status")
