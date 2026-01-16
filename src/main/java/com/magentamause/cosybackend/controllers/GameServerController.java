@@ -3,7 +3,6 @@ package com.magentamause.cosybackend.controllers;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
-import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
@@ -14,7 +13,6 @@ import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.gameserver.GameServerService;
 import jakarta.validation.Valid;
 
-import java.time.Duration;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -22,9 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @RestController
@@ -81,8 +76,6 @@ public class GameServerController {
             @Valid @RequestBody GameServerUpdateDto updateDto) {
         log.info("Received request to update the game server with id {}", uuid);
 
-        UserEntity user = securityContextService.getUser();
-
         GameServerEntity updated = gameServerService.updateGameServerConfiguration(uuid, updateDto);
 
         return ResponseEntity.ok(updated.toDto());
@@ -97,8 +90,7 @@ public class GameServerController {
 
     @PostMapping(value = "/{uuid}/start", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
-    public ResponseEntity<Void> startServiceSse(@PathVariable @ResourceId String uuid) {
-
+    public ResponseEntity<Void> startService(@PathVariable @ResourceId String uuid) {
         gameServerService
                 .startServer(uuid);
 

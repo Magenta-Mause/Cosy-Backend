@@ -145,7 +145,6 @@ public class GameServerService {
     }
 
     public GameServerEntity updateGameServerConfiguration(String uuid, GameServerUpdateDto dto) {
-
         GameServerEntity gameServer =
                 gameServerRepository
                         .findById(uuid)
@@ -155,7 +154,7 @@ public class GameServerService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Game server with uuid " + uuid + " not found"));
 
-        GameEntity game =
+        GameEntity game = dto.getGameUuid() == null ? null :
                 gameEntityService
                         .getGameFromUuid(dto.getGameUuid())
                         .orElseThrow(
