@@ -1,9 +1,9 @@
 package com.magentamause.cosybackend.dtos.entitydtos;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
@@ -25,7 +25,7 @@ public class GameServerDto {
 
     @NotBlank @Valid private UserEntityDto owner;
 
-    @NotNull @Valid private GameServerEntity.GameServerStatus status;
+    @NotNull @Valid private GameServerStatus status;
 
     @NotNull @Valid private LocalDateTime timestampLastStarted;
 
@@ -44,4 +44,12 @@ public class GameServerDto {
     @NotNull @Valid private List<EnvironmentVariableConfiguration> environmentVariables;
 
     @NotNull @Valid private List<VolumeMountConfiguration> volumeMounts;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    public enum GameServerStatus {
+        RUNNING,
+        STOPPED,
+        FAILED,
+        PULLING_IMAGE
+    }
 }

@@ -43,22 +43,8 @@ cosy:
     url: http://localhost:3100
     application-name: cosy-backend # Label to identify logs from this application
   engine:
-    selected: DOCKER
-
     # Docker-specific configuration
     docker:
       socket-path: ${COSY_DOCKER_SOCKET_PATH:unix:///var/run/docker.sock}  # Docker socket
       tls: false                                # Whether to use TLS
       cert-path: ""                             # Path to TLS certs if enabled
-
-    # Kubernetes-specific configuration
-    kubernetes:
-      kubeconfig: ${COSY_KUBECONFIG_PATH:~/.kube/config} # Path to kubeconfig file
-      context: "docker-desktop"                 # Docker Desktop Kubernetes context
-      namespace: "default"                      # Namespace to operate in
-      in-cluster: false                         # Backend runs on host, not in cluster
-      timeout-seconds: 30                       # Request timeout (seconds)
-
-      labels: # Default labels added to all pods
-        app: cosy
-        platform: docker-desktop
