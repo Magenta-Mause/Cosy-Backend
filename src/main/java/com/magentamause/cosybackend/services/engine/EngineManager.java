@@ -17,9 +17,7 @@ public interface EngineManager {
             Consumer<Void> imagePullEndCallback)
             throws InternalServiceStartException;
 
-    void stop(GameServerEntity serviceConfig);
-
-    void remove(GameServerEntity serviceConfig);
+    void stopAndRemove(GameServerEntity serviceConfig);
 
     void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener);

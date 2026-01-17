@@ -293,8 +293,7 @@ public class GameServerService {
                         GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
         updateStatus(gameServer, GameServerDto.GameServerStatus.AWAITING_UPDATE);
         try {
-            engineManager.stop(gameServer);
-            engineManager.remove(gameServer);
+            engineManager.stopAndRemove(gameServer);
         } catch (ServerAlreadyStoppedException e) {
             log.info("Server '{}' was already stopped", serviceName);
             gameServer.setStatus(GameServerDto.GameServerStatus.STOPPED);

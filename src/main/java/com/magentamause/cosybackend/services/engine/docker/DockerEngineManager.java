@@ -267,7 +267,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     @Override
-    public void stop(GameServerEntity serverConfig) {
+    public void stopAndRemove(GameServerEntity serverConfig) {
         Container container =
                 findContainer(serverConfig)
                         .orElseThrow(
@@ -280,9 +280,9 @@ public class DockerEngineManager implements EngineManager, Closeable {
         }
 
         client.stopContainerCmd(container.getId()).exec();
+        remove(serverConfig);
     }
 
-    @Override
     public void remove(GameServerEntity serverConfig) {
         findContainer(serverConfig)
                 .ifPresent(
