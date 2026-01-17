@@ -5,6 +5,9 @@ import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
+import com.magentamause.cosybackend.entities.metric.Metric;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -49,4 +52,6 @@ public interface EngineManager {
                 imagePullEndCallback);
         attachLogListener(serviceConfig, logListener);
     }
+
+    Optional<Metric> collectMetric(GameServerEntity serviceConfig) throws InterruptedException;
 }

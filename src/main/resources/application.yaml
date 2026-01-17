@@ -28,6 +28,7 @@ management:
     web:
       exposure:
         include: "health,readiness,liveness"
+
 cosy:
   cors:
     allowed-origins:
@@ -42,6 +43,11 @@ cosy:
     password: ${COSY_LOKI_PASSWORD:loki-password}
     url: http://localhost:3100
     application-name: cosy-backend # Label to identify logs from this application
+  influx:
+    url: http://localhost:8086
+    token: ${COSY_INFLUX_TOKEN:cosy-admin-token}
+    org: cosy-org
+    bucket: cosy-bucket
   engine:
     # Docker-specific configuration
     docker:
