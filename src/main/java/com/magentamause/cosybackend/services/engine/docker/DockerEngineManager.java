@@ -242,7 +242,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
         if (env == null) {
             env = List.of();
         }
-        log.info("Env Variables: {}", env);
 
         List<ExposedPort> exposedPorts = mapExposedPorts(serverConfig.getPortMappings());
         if (exposedPorts == null) {
