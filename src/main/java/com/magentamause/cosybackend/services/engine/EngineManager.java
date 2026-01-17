@@ -7,7 +7,6 @@ import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
-
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -26,7 +25,8 @@ public interface EngineManager {
 
     GameServerDto.GameServerStatus getStatus(GameServerEntity serverConfig);
 
-    void attachStatusSupplier(String gameServerUuid, Supplier<GameServerDto.GameServerStatus> statusSupplier);
+    void attachStatusSupplier(
+            String gameServerUuid, Supplier<GameServerDto.GameServerStatus> statusSupplier);
 
     void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener);

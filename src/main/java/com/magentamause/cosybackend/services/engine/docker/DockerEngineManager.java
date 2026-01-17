@@ -22,7 +22,6 @@ import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -34,7 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -53,8 +51,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     private record StatusListenerContext(
             Supplier<GameServerDto.GameServerStatus> currentStatusSupplier,
-            Consumer<GameServerDto.GameServerStatus> listener) {
-    }
+            Consumer<GameServerDto.GameServerStatus> listener) {}
 
     private final List<Consumer<String>> startListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<String>> stopListeners = new CopyOnWriteArrayList<>();
@@ -84,7 +81,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     @Override
-    public void attachStatusSupplier(String gameServerUuid, Supplier<GameServerDto.GameServerStatus> statusSupplier) {
+    public void attachStatusSupplier(
+            String gameServerUuid, Supplier<GameServerDto.GameServerStatus> statusSupplier) {
         statusSuppliers.put(gameServerUuid, statusSupplier);
     }
 
@@ -155,7 +153,11 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 if (!statusSuppliers.containsKey(uuid)) {
                     log.warn("No status supplier for server with uuid: {} found", uuid);
                 }
-                if (statusSuppliers.containsKey(uuid) && statusSuppliers.get(uuid).get().equals(GameServerDto.GameServerStatus.STOPPING)) {
+                if (statusSuppliers.containsKey(uuid)
+                        && statusSuppliers
+                                .get(uuid)
+                                .get()
+                                .equals(GameServerDto.GameServerStatus.STOPPING)) {
                     stopListeners.forEach(l -> l.accept(uuid));
                 } else {
                     failListeners.forEach(l -> l.accept(uuid));
@@ -165,7 +167,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
             default:
                 log.warn("Received docker event with unexpected event action: {}", eventName);
         }
-
     }
 
     @Override
@@ -177,7 +178,10 @@ public class DockerEngineManager implements EngineManager, Closeable {
             Consumer<Void> imagePullEndCallback,
             Supplier<GameServerDto.GameServerStatus> gameServerStatusSupplier)
             throws InternalServiceStartException, DockerPullImageException {
-        log.info("Starting Docker container for server: {} with config: {}", serverConfig.getServerName(), serverConfig);
+        log.info(
+                "Starting Docker container for server: {} with config: {}",
+                serverConfig.getServerName(),
+                serverConfig);
         Optional<Container> container = findContainer(serverConfig);
 
         if (container.isPresent()) {
@@ -406,7 +410,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
             Consumer<StartEventDto> progressListener,
             Consumer<GameServerDto.GameServerStatus> statusUpdater,
             Consumer<Void> imagePullStartCallback,
-            Consumer<Void> imagePullEndCallback) throws DockerPullImageException {
+            Consumer<Void> imagePullEndCallback)
+            throws DockerPullImageException {
         // TODO: refactor
         boolean exists =
                 client.listImagesCmd().withImageNameFilter(image).exec().stream()
