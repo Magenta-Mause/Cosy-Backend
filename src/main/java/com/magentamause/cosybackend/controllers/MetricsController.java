@@ -25,7 +25,7 @@ public class MetricsController {
     private final MetricsQueryService queryService;
 
     @GetMapping("/{gameServerUuid}")
-    @RequireAccess(action = Action.READ, resource = Resource.USER)
+    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_METRIC)
     public ResponseEntity<List<MetricPointDto>> getMetrics(
             @ResourceId @PathVariable String gameServerUuid,
             @RequestParam MetricType type,
