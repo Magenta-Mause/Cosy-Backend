@@ -3,16 +3,19 @@ package com.magentamause.cosybackend.services.engine.docker;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.*;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.PullProgressDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -25,17 +28,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class DockerEngineManager implements EngineManager, Closeable {
 
     private final DockerClient client;
+    private final StatsMapper statsMapper;
     private final DockerMappingUtils dockerMappingUtils;
 
     private final Map<String, StatusListenerContext> statusListeners = new ConcurrentHashMap<>();
@@ -427,5 +434,46 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 throw new IOException("Failed to close DockerClient", e);
             }
         }
+    }
+
+    @Override
+    public Optional<Metric> collectMetric(GameServerEntity gameServer) throws InterruptedException {
+        Optional<Container> containerOpt = findContainer(gameServer);
+        if (containerOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        String containerUuid = containerOpt.get().getId();
+
+        InspectContainerResponse container = client.inspectContainerCmd(containerUuid).exec();
+
+        if (Boolean.FALSE.equals(container.getState().getRunning())) {
+            return Optional.empty();
+        }
+
+        AtomicReference<Metric> statsRef = new AtomicReference<>();
+        client.statsCmd(containerUuid)
+                .exec(
+                        new ResultCallback.Adapter<Statistics>() {
+                            @Override
+                            public void onNext(Statistics statistics) {
+                                Metric stats = statsMapper.mapStats(statistics);
+                                stats.setUuid(containerUuid);
+                                stats.setName(container.getName().replace("/", ""));
+                                stats.setTime(Instant.now());
+                                statsRef.set(stats);
+                                try {
+                                    close();
+                                } catch (Exception e) {
+                                    log.warn(
+                                            "Failed to close Docker stats callback for container {}",
+                                            containerUuid,
+                                            e);
+                                }
+                            }
+                        })
+                .awaitCompletion();
+
+        return Optional.ofNullable(statsRef.get());
     }
 }
