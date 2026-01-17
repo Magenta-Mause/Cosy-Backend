@@ -51,6 +51,7 @@ public class GameServerDto {
         STOPPED,
         FAILED,
         PULLING_IMAGE,
-        AWAITING_UPDATE
+        AWAITING_UPDATE,
+        STOPPING
     }
 }

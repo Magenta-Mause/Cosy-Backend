@@ -5,7 +5,9 @@ import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.metric.Metric;
+import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
+
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -16,18 +18,18 @@ public interface EngineManager {
             Consumer<StartEventDto> progressListener,
             Consumer<GameServerDto.GameServerStatus> statusUpdater,
             Consumer<Void> imagePullStartCallback,
-            Consumer<Void> imagePullEndCallback)
-            throws InternalServiceStartException;
+            Consumer<Void> imagePullEndCallback,
+            Supplier<GameServerDto.GameServerStatus> gameServerStatusSupplier)
+            throws InternalServiceStartException, DockerPullImageException;
 
     void stopAndRemove(GameServerEntity serviceConfig);
 
+    GameServerDto.GameServerStatus getStatus(GameServerEntity serverConfig);
+
+    void attachStatusSupplier(String gameServerUuid, Supplier<GameServerDto.GameServerStatus> statusSupplier);
+
     void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener);
-
-    void attachStatusListener(
-            GameServerEntity serviceConfig,
-            Supplier<GameServerDto.GameServerStatus> currentStatusSupplier,
-            Consumer<GameServerDto.GameServerStatus> listener);
 
     void attachStartListener(Consumer<String> listener);
 
@@ -41,14 +43,16 @@ public interface EngineManager {
             Consumer<StartEventDto> progressListener,
             Consumer<GameServerDto.GameServerStatus> statusUpdater,
             Consumer<Void> imagePullStartCallback,
-            Consumer<Void> imagePullEndCallback)
-            throws InternalServiceStartException {
+            Consumer<Void> imagePullEndCallback,
+            Supplier<GameServerDto.GameServerStatus> gameServerStatusSupplier)
+            throws InternalServiceStartException, DockerPullImageException {
         start(
                 serviceConfig,
                 progressListener,
                 statusUpdater,
                 imagePullStartCallback,
-                imagePullEndCallback);
+                imagePullEndCallback,
+                gameServerStatusSupplier);
         attachLogListener(serviceConfig, logListener);
     }
 
