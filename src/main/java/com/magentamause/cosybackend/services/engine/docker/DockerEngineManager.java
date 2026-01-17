@@ -206,7 +206,16 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
         if (container.isPresent()) {
             if (!container.get().getState().equals("running")) {
-                remove(serverConfig);
+                try {
+                    remove(serverConfig);
+                } catch (Exception e) {
+                    log.error(
+                            "Failed to remove existing non-running container for server {}. "
+                                    + "Aborting start to avoid inconsistent container state.",
+                            serverConfig.getServerName(),
+                            e);
+                    throw new InternalServiceStartException(e);
+                }
             } else {
                 return;
             }
