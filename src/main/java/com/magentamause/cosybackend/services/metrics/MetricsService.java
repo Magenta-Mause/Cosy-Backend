@@ -6,6 +6,7 @@ import com.influxdb.client.write.Point;
 import com.magentamause.cosybackend.configs.properties.InfluxProperties;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.metric.Metric;
+import com.magentamause.cosybackend.entities.metric.MetricType;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import java.util.List;
@@ -28,14 +29,14 @@ public class MetricsService {
         return Point.measurement("metrics")
                 .addTag("container_uuid", metrics.getUuid())
                 .addTag("container_name", metrics.getName())
-                .addField("cpu_percent", metrics.getCpuPercent())
-                .addField("memory_usage", metrics.getMemoryUsage())
-                .addField("memory_limit", metrics.getMemoryLimit())
-                .addField("memory_percent", metrics.getMemoryPercent())
-                .addField("network_input", metrics.getNetworkInput())
-                .addField("network_output", metrics.getNetworkOutput())
-                .addField("block_read", metrics.getBlockRead())
-                .addField("block_write", metrics.getBlockWrite())
+                .addField(MetricType.CPU_PERCENT.getValue(), metrics.getCpuPercent())
+                .addField(MetricType.MEMORY_USAGE.getValue(), metrics.getMemoryUsage())
+                .addField(MetricType.MEMORY_USAGE.getValue(), metrics.getMemoryLimit())
+                .addField(MetricType.MEMORY_PERCENT.getValue(), metrics.getMemoryPercent())
+                .addField(MetricType.NETWORK_INPUT.getValue(), metrics.getNetworkInput())
+                .addField(MetricType.NETWORK_OUTPUT.getValue(), metrics.getNetworkOutput())
+                .addField(MetricType.BLOCK_READ.getValue(), metrics.getBlockRead())
+                .addField(MetricType.BLOCK_WRITE.getValue(), metrics.getBlockWrite())
                 .time(metrics.getTime(), WritePrecision.NS);
     }
 
