@@ -5,10 +5,6 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
-import com.magentamause.cosybackend.services.engine.EngineManager;
-import com.magentamause.cosybackend.services.engine.docker.DockerEngineManager;
-import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
-import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import java.time.Duration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -44,13 +40,5 @@ public class EngineConfiguration {
                         .build();
 
         return DockerClientImpl.getInstance(dockerConfig, httpClient);
-    }
-
-    @Bean
-    public EngineManager dockerEngineManager(
-            DockerClient dockerClient,
-            DockerMappingUtils dockerMappingUtils,
-            StatsMapper statsMapper) {
-        return new DockerEngineManager(dockerClient, statsMapper, dockerMappingUtils);
     }
 }
