@@ -12,9 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LokiMapper {
 
-    private static final Pattern ERROR_DETECTION_REGEX =
-            Pattern.compile("\\[error]", Pattern.CASE_INSENSITIVE);
-
     public static List<GameServerLogMessageEntity> toEntities(LokiQueryResponse response) {
 
         if (response == null || response.data() == null) {
