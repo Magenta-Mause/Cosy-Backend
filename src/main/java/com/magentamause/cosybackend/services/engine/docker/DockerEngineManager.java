@@ -28,13 +28,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class DockerEngineManager implements EngineManager, Closeable {
 
@@ -448,15 +451,17 @@ public class DockerEngineManager implements EngineManager, Closeable {
             return Optional.empty();
         }
 
-        Metric.MetricBuilder builder =
-                Metric.builder().uuid(containerUuid).name(container.getName().replace("/", ""));
-
+        AtomicReference<Metric> statsRef = new AtomicReference<>();
         client.statsCmd(containerUuid)
                 .exec(
                         new ResultCallback.Adapter<Statistics>() {
                             @Override
                             public void onNext(Statistics statistics) {
-                                statsMapper.mapStats(statistics, builder);
+                                Metric stats = statsMapper.mapStats(statistics);
+                                stats.setUuid(containerUuid);
+                                stats.setName(container.getName().replace("/", ""));
+                                stats.setTime(Instant.now());
+                                statsRef.set(stats);
                                 try {
                                     close();
                                 } catch (Exception e) {
@@ -469,6 +474,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         })
                 .awaitCompletion();
 
-        return Optional.of(builder.time(Instant.now()).build());
+        return Optional.ofNullable(statsRef.get());
     }
 }

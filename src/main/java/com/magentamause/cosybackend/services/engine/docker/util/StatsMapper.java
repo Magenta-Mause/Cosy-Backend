@@ -6,9 +6,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class StatsMapper {
-    public void mapStats(Statistics stats, Metric.MetricBuilder builder) {
+    public Metric mapStats(Statistics stats) {
         double cpuPercent = getCpuPercent(stats);
-
         long memoryUsage =
                 stats.getMemoryStats().getUsage() != null ? stats.getMemoryStats().getUsage() : 0L;
         long memoryLimit =
@@ -37,14 +36,16 @@ public class StatsMapper {
             }
         }
 
-        builder.cpuPercent(cpuPercent)
+        return Metric.builder()
+                .cpuPercent(cpuPercent)
                 .memoryUsage(memoryUsage)
                 .memoryLimit(memoryLimit)
                 .memoryPercent(memoryPercent)
                 .networkInput(networkInput)
                 .networkOutput(networkOutput)
                 .blockRead(blockRead)
-                .blockWrite(blockWrite);
+                .blockWrite(blockWrite)
+                .build();
     }
 
     private double getCpuPercent(Statistics stats) {
