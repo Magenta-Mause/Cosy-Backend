@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -44,9 +45,9 @@ public class DockerEngineManager implements EngineManager, Closeable {
             Supplier<GameServerDto.GameServerStatus> currentStatusSupplier,
             Consumer<GameServerDto.GameServerStatus> listener) {}
 
-    private final List<Consumer<String>> startListeners = new ArrayList<>();
-    private final List<Consumer<String>> stopListeners = new ArrayList<>();
-    private final List<Consumer<String>> failListeners = new ArrayList<>();
+    private final List<Consumer<String>> startListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<String>> stopListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<String>> failListeners = new CopyOnWriteArrayList<>();
 
     @PostConstruct
     public void init() {

@@ -86,7 +86,7 @@ public class GameServerController {
         return ResponseEntity.ok(gameServerService.getStatus(uuid));
     }
 
-    @PostMapping(value = "/{uuid}/start", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PostMapping(value = "/{uuid}/start")
     @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
     public ResponseEntity<Void> startService(@PathVariable @ResourceId String uuid) {
         gameServerService.startServer(uuid);

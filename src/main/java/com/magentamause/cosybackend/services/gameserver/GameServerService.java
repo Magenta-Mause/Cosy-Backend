@@ -17,6 +17,7 @@ import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
@@ -157,14 +159,14 @@ public class GameServerService {
                 dto.getGameUuid() == null
                         ? null
                         : gameEntityService
-                                .getGameFromUuid(dto.getGameUuid())
-                                .orElseThrow(
-                                        () ->
-                                                new ResponseStatusException(
-                                                        HttpStatus.NOT_FOUND,
-                                                        "Game with uuid "
-                                                                + dto.getGameUuid()
-                                                                + " not found"));
+                        .getGameFromUuid(dto.getGameUuid())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game with uuid "
+                                                        + dto.getGameUuid()
+                                                        + " not found"));
         gameServer.setGame(game);
 
         gameServer.setServerName(dto.getServerName());
@@ -184,8 +186,8 @@ public class GameServerService {
                         gameServer.getVolumeMounts(),
                         dto.getVolumeMounts() != null
                                 ? dto.getVolumeMounts().stream()
-                                        .map(VolumeMountConfiguration::fromDto)
-                                        .toList()
+                                .map(VolumeMountConfiguration::fromDto)
+                                .toList()
                                 : null,
                         ArrayList::new));
 
@@ -259,13 +261,11 @@ public class GameServerService {
             } catch (Exception e) {
                 updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
                 log.error("Error starting server '{}'", gameServerUuid, e);
-                throw new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR, "Error while starting docker container");
+                throw new RuntimeException("Error while starting docker container");
             }
         } catch (Exception e) {
             log.error("Error starting server '{}'", gameServerUuid, e);
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Error while starting docker container");
+            throw new RuntimeException("Error while starting docker container");
         } finally {
             startingServers.remove(gameServerUuid);
         }
@@ -345,8 +345,8 @@ public class GameServerService {
                 .volumeMounts(
                         dto.getVolumeMounts() != null
                                 ? dto.getVolumeMounts().stream()
-                                        .map(VolumeMountConfiguration::fromDto)
-                                        .toList()
+                                .map(VolumeMountConfiguration::fromDto)
+                                .toList()
                                 : List.of())
                 .portMappings(dto.getPortMappings() != null ? dto.getPortMappings() : List.of())
                 .build();
