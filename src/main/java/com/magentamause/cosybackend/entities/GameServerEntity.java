@@ -19,6 +19,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@ToString(exclude = {"owner", "game"})
 public class GameServerEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

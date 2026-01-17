@@ -201,13 +201,15 @@ public class DockerEngineManager implements EngineManager, Closeable {
             Consumer<Void> imagePullEndCallback)
             throws InternalServiceStartException {
         log.info("Starting Docker container for server {}", serverConfig.getServerName());
+        log.info("Starting config: {}", serverConfig);
         Optional<Container> container = findContainer(serverConfig);
 
         if (container.isPresent()) {
             if (!container.get().getState().equals("running")) {
-                client.startContainerCmd(container.get().getId()).exec();
+                remove(serverConfig);
+            } else {
+                return;
             }
-            return;
         }
 
         String image = buildImageName(serverConfig);
@@ -230,6 +232,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         if (env == null) {
             env = List.of();
         }
+        log.info("Env Variables: {}", env);
 
         List<ExposedPort> exposedPorts = mapExposedPorts(serverConfig.getPortMappings());
         if (exposedPorts == null) {
