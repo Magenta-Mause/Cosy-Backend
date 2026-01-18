@@ -5,35 +5,53 @@ import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.metric.Metric;
-import java.util.List;
+import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
+import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
+import com.magentamause.cosybackend.services.gameserver.GameServerStatusUpdateEventType;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public interface EngineManager {
-    List<Integer> start(
+    void start(
             GameServerEntity serviceConfig,
             Consumer<StartEventDto> progressListener,
-            Consumer<GameServerDto.GameServerStatus> statusUpdater);
+            Consumer<GameServerDto.GameServerStatus> statusUpdater,
+            Consumer<Void> imagePullStartCallback,
+            Consumer<Void> imagePullEndCallback,
+            Supplier<GameServerDto.GameServerStatus> gameServerStatusSupplier)
+            throws InternalServiceStartException, DockerPullImageException;
 
-    void stop(GameServerEntity serviceConfig);
+    void stopAndRemove(GameServerEntity serviceConfig);
+
+    GameServerDto.GameServerStatus getStatus(GameServerEntity serverConfig);
+
+    void attachStatusSupplier(
+            String gameServerUuid, Supplier<GameServerDto.GameServerStatus> statusSupplier);
 
     void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener);
 
-    void attachStatusListener(
-            GameServerEntity serviceConfig,
-            Supplier<GameServerDto.GameServerStatus> currentStatusSupplier,
-            Consumer<GameServerDto.GameServerStatus> listener);
+    void attachStatusListener(BiConsumer<GameServerStatusUpdateEventType, String> listener);
 
-    default List<Integer> startAndAttachLogListener(
+    default void startAndAttachLogListener(
             GameServerEntity serviceConfig,
             Consumer<GameServerLogMessageEntity> logListener,
             Consumer<StartEventDto> progressListener,
-            Consumer<GameServerDto.GameServerStatus> statusUpdater) {
-        List<Integer> exposedPorts = start(serviceConfig, progressListener, statusUpdater);
+            Consumer<GameServerDto.GameServerStatus> statusUpdater,
+            Consumer<Void> imagePullStartCallback,
+            Consumer<Void> imagePullEndCallback,
+            Supplier<GameServerDto.GameServerStatus> gameServerStatusSupplier)
+            throws InternalServiceStartException, DockerPullImageException {
+        start(
+                serviceConfig,
+                progressListener,
+                statusUpdater,
+                imagePullStartCallback,
+                imagePullEndCallback,
+                gameServerStatusSupplier);
         attachLogListener(serviceConfig, logListener);
-        return exposedPorts;
     }
 
     Optional<Metric> collectMetric(GameServerEntity serviceConfig) throws InterruptedException;

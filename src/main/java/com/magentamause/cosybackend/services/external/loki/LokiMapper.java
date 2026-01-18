@@ -30,8 +30,9 @@ public class LokiMapper {
             LokiStreamResult result, List<String> value) {
         String level = result.stream().get("level");
         String serverUuid = result.stream().get("server_uuid");
+        String message = value.get(1);
         return GameServerLogMessageEntity.builder()
-                .message(value.get(1))
+                .message(message)
                 .gameServerUuid(serverUuid)
                 .timestamp(parseTimestamp(value.get(0)))
                 .level(
@@ -39,7 +40,7 @@ public class LokiMapper {
                                 ? GameServerLogMessageEntity.LogLevel.ERROR
                                 : "INFO".equals(level)
                                         ? GameServerLogMessageEntity.LogLevel.INFO
-                                        : GameServerLogMessageEntity.LogLevel.DEBUG)
+                                        : GameServerLogMessageEntity.LogLevel.COSY_DEBUG)
                 .build();
     }
 
