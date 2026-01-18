@@ -10,6 +10,7 @@ import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Builder;
@@ -34,6 +35,10 @@ public class GameServerDto {
     @NotBlank private String dockerImageName;
 
     @NotBlank private String dockerImageTag;
+
+    @Positive private Long dockerMaxCpu;
+
+    @Positive private Long dockerMaxMemory;
 
     private String template;
 

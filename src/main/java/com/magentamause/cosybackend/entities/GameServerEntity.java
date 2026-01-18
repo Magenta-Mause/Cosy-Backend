@@ -41,6 +41,10 @@ public class GameServerEntity {
 
     private String dockerImageTag;
 
+    private Long dockerMaxCpu;
+
+    private Long dockerMaxMemory;
+
     private String template;
 
     @ElementCollection
@@ -76,6 +80,8 @@ public class GameServerEntity {
                 .gameUuid(this.getGame() == null ? null : this.getGame().getUuid())
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
+                .dockerMaxCpu(this.getDockerMaxCpu())
+                .dockerMaxMemory(this.getDockerMaxMemory())
                 .template(this.getTemplate())
                 .executionCommand(this.getDockerExecutionCommand())
                 .portMappings(this.getPortMappings())

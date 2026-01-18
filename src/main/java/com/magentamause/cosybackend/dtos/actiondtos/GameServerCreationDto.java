@@ -7,6 +7,7 @@ import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfigur
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import java.util.List;
 import lombok.Data;
 
@@ -18,6 +19,8 @@ public class GameServerCreationDto {
     @NotBlank private String template;
     @NotBlank private String dockerImageName;
     @NotBlank private String dockerImageTag;
+    @Positive private Long dockerMaxCpu;
+    @Positive private Long dockerMaxMemory;
 
     @UniqueElementsBy(
             fieldNames = {"instancePort", "containerPort"},
