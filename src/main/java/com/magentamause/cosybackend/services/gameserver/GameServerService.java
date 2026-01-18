@@ -49,9 +49,7 @@ public class GameServerService {
 
     @PostConstruct
     public void init() {
-        engineManager.attachStartListener(this::handleGameServerEngineStartEvent);
-        engineManager.attachStopListener(this::handleGameServerEngineStopEvent);
-        engineManager.attachFailListener(this::handleGameServerEngineFailEvent);
+        engineManager.attachStatusListener(this::handleGameServerEngineEvent);
         for (GameServerEntity server : gameServerRepository.findAll()) {
             GameServerDto.GameServerStatus status = engineManager.getStatus(server);
             updateStatus(server, status);
@@ -61,57 +59,58 @@ public class GameServerService {
         }
     }
 
-    private void handleGameServerEngineStartEvent(String gameServerUuid) {
+    private void handleGameServerEngineEvent(
+            GameServerStatusUpdateEventType type, String gameServerUuid) {
         Optional<GameServerEntity> server = gameServerRepository.findById(gameServerUuid);
         server.ifPresent(
                 gameServerEntity -> {
-                    updateStatus(gameServerEntity, GameServerDto.GameServerStatus.RUNNING);
-                    enrichAndPublishLogMessage(
-                            gameServerEntity,
-                            GameServerLogMessageEntity.of(
-                                    gameServerEntity.getUuid(),
-                                    "Docker game server start event received",
-                                    GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
-                    String exposedPorts =
-                            gameServerEntity.getPortMappings().stream()
-                                    .map(PortMapping::getInstancePort)
-                                    .map(Object::toString)
-                                    .collect(Collectors.joining(", "));
-                    enrichAndPublishLogMessage(
-                            gameServerEntity,
-                            GameServerLogMessageEntity.of(
-                                    gameServerEntity.getUuid(),
-                                    "Exposed ports: " + exposedPorts,
-                                    GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
+                    switch (type) {
+                        case STARTED -> handleGameServerEngineStartEvent(gameServerEntity);
+                        case STOPPED -> handleGameServerEngineStopEvent(gameServerEntity);
+                        case FAILED -> handleGameServerEngineFailEvent(gameServerEntity);
+                    }
                 });
     }
 
-    private void handleGameServerEngineStopEvent(String gameServerUuid) {
-        Optional<GameServerEntity> server = gameServerRepository.findById(gameServerUuid);
-        server.ifPresent(
-                gameServerEntity -> {
-                    updateStatus(gameServerEntity, GameServerDto.GameServerStatus.STOPPED);
-                    enrichAndPublishLogMessage(
-                            gameServerEntity,
-                            GameServerLogMessageEntity.of(
-                                    gameServerEntity.getUuid(),
-                                    "Docker game server stop event received",
-                                    GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
-                });
+    private void handleGameServerEngineStartEvent(GameServerEntity gameServerEntity) {
+        updateStatus(gameServerEntity, GameServerDto.GameServerStatus.RUNNING);
+        enrichAndPublishLogMessage(
+                gameServerEntity,
+                GameServerLogMessageEntity.of(
+                        gameServerEntity.getUuid(),
+                        "Docker game server start event received",
+                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
+        String exposedPorts =
+                gameServerEntity.getPortMappings().stream()
+                        .map(PortMapping::getInstancePort)
+                        .map(Object::toString)
+                        .collect(Collectors.joining(", "));
+        enrichAndPublishLogMessage(
+                gameServerEntity,
+                GameServerLogMessageEntity.of(
+                        gameServerEntity.getUuid(),
+                        "Exposed ports: " + exposedPorts,
+                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
     }
 
-    private void handleGameServerEngineFailEvent(String gameServerUuid) {
-        Optional<GameServerEntity> server = gameServerRepository.findById(gameServerUuid);
-        server.ifPresent(
-                gameServerEntity -> {
-                    updateStatus(gameServerEntity, GameServerDto.GameServerStatus.FAILED);
-                    enrichAndPublishLogMessage(
-                            gameServerEntity,
-                            GameServerLogMessageEntity.of(
-                                    gameServerEntity.getUuid(),
-                                    "Docker game server failure event received",
-                                    GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
-                });
+    private void handleGameServerEngineStopEvent(GameServerEntity gameServerEntity) {
+        updateStatus(gameServerEntity, GameServerDto.GameServerStatus.STOPPED);
+        enrichAndPublishLogMessage(
+                gameServerEntity,
+                GameServerLogMessageEntity.of(
+                        gameServerEntity.getUuid(),
+                        "Docker game server stop event received",
+                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
+    }
+
+    private void handleGameServerEngineFailEvent(GameServerEntity gameServerEntity) {
+        updateStatus(gameServerEntity, GameServerDto.GameServerStatus.FAILED);
+        enrichAndPublishLogMessage(
+                gameServerEntity,
+                GameServerLogMessageEntity.of(
+                        gameServerEntity.getUuid(),
+                        "Docker game server failure event received",
+                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
     }
 
     public List<GameServerEntity> getAllGameServers() {

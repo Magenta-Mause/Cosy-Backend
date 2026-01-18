@@ -20,6 +20,7 @@ import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartExcept
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
+import com.magentamause.cosybackend.services.gameserver.GameServerStatusUpdateEventType;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.Closeable;
@@ -30,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -46,16 +48,16 @@ public class DockerEngineManager implements EngineManager, Closeable {
     private final StatsMapper statsMapper;
     private final DockerMappingUtils dockerMappingUtils;
 
-    private final Map<String, StatusListenerContext> statusListeners = new ConcurrentHashMap<>();
+    private final List<BiConsumer<GameServerStatusUpdateEventType, String>> statusListeners =
+            new CopyOnWriteArrayList<>();
     private ResultCallback<Event> eventCallback;
 
     private record StatusListenerContext(
             Supplier<GameServerDto.GameServerStatus> currentStatusSupplier,
             Consumer<GameServerDto.GameServerStatus> listener) {}
 
-    private final List<Consumer<String>> startListeners = new CopyOnWriteArrayList<>();
-    private final List<Consumer<String>> stopListeners = new CopyOnWriteArrayList<>();
-    private final List<Consumer<String>> failListeners = new CopyOnWriteArrayList<>();
+    private final List<BiConsumer<GameServerStatusUpdateEventType, String>> failListeners =
+            new CopyOnWriteArrayList<>();
 
     private final Map<String, Supplier<GameServerDto.GameServerStatus>> statusSuppliers =
             new ConcurrentHashMap<>();
@@ -63,21 +65,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
     @PostConstruct
     public void init() {
         startEventListener();
-    }
-
-    @Override
-    public void attachStartListener(Consumer<String> listener) {
-        startListeners.add(listener);
-    }
-
-    @Override
-    public void attachStopListener(Consumer<String> listener) {
-        stopListeners.add(listener);
-    }
-
-    @Override
-    public void attachFailListener(Consumer<String> listener) {
-        failListeners.add(listener);
     }
 
     @Override
@@ -102,6 +89,11 @@ public class DockerEngineManager implements EngineManager, Closeable {
             return dockerMappingUtils.mapDockerStateToGameServerStatus(state);
         }
         return GameServerDto.GameServerStatus.STOPPED;
+    }
+
+    @Override
+    public void attachStatusListener(BiConsumer<GameServerStatusUpdateEventType, String> listener) {
+        statusListeners.add(listener);
     }
 
     private void startEventListener() {
@@ -147,7 +139,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
         switch (eventName) {
             case "start":
             case "unpause":
-                startListeners.forEach(l -> l.accept(uuid));
+                statusListeners.forEach(
+                        l -> l.accept(GameServerStatusUpdateEventType.STARTED, uuid));
                 break;
             case "die":
                 if (!statusSuppliers.containsKey(uuid)) {
@@ -158,9 +151,11 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                 .get(uuid)
                                 .get()
                                 .equals(GameServerDto.GameServerStatus.STOPPING)) {
-                    stopListeners.forEach(l -> l.accept(uuid));
+                    statusListeners.forEach(
+                            l -> l.accept(GameServerStatusUpdateEventType.STOPPED, uuid));
                 } else {
-                    failListeners.forEach(l -> l.accept(uuid));
+                    statusListeners.forEach(
+                            l -> l.accept(GameServerStatusUpdateEventType.FAILED, uuid));
                     remove(uuid);
                 }
                 break;
@@ -186,6 +181,10 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
         if (container.isPresent()) {
             if (container.get().getState().equals("running")) {
+                log.warn(
+                        "Trying to start container which is already running: {} - {}",
+                        serverConfig.getServerName(),
+                        serverConfig.getUuid());
                 return;
             }
             try {

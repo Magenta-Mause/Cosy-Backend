@@ -7,7 +7,9 @@ import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
+import com.magentamause.cosybackend.services.gameserver.GameServerStatusUpdateEventType;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -31,11 +33,7 @@ public interface EngineManager {
     void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener);
 
-    void attachStartListener(Consumer<String> listener);
-
-    void attachStopListener(Consumer<String> listener);
-
-    void attachFailListener(Consumer<String> listener);
+    void attachStatusListener(BiConsumer<GameServerStatusUpdateEventType, String> listener);
 
     default void startAndAttachLogListener(
             GameServerEntity serviceConfig,
