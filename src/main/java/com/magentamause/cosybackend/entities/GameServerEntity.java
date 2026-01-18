@@ -19,6 +19,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@ToString(exclude = {"owner", "game"})
 public class GameServerEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -54,7 +55,7 @@ public class GameServerEntity {
     @Column(name = "command_part")
     private List<String> dockerExecutionCommand;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "port_mappings",
             joinColumns = @JoinColumn(name = "game_server_configuration_uuid"))

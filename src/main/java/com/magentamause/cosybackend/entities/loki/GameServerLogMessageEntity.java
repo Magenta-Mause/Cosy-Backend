@@ -27,7 +27,7 @@ public class GameServerLogMessageEntity {
 
     public enum LogLevel {
         INFO,
-        DEBUG,
+        COSY_DEBUG,
         ERROR
     }
 }
