@@ -271,11 +271,13 @@ public class GameServerService {
             } catch (Exception e) {
                 updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
                 log.error("Error starting server '{}'", gameServerUuid, e);
-                throw new RuntimeException("Error while starting docker container");
+                throw new RuntimeException(
+                        "Error while starting docker container: " + e.getMessage(), e);
             }
         } catch (Exception e) {
             log.error("Error starting server '{}'", gameServerUuid, e);
-            throw new RuntimeException("Error while starting docker container");
+            throw new RuntimeException(
+                    "Error while starting docker container: " + e.getMessage(), e);
         } finally {
             startingServers.remove(gameServerUuid);
         }
