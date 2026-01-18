@@ -236,14 +236,14 @@ public class GameServerService {
                             }
                         },
                         (status) -> updateStatus(serverConfig, status),
-                        (a) ->
+                        (ignored) ->
                                 enrichAndPublishLogMessage(
                                         serverConfig,
                                         GameServerLogMessageEntity.of(
                                                 serverConfig.getUuid(),
                                                 "Starting to pull Docker Image",
                                                 GameServerLogMessageEntity.LogLevel.COSY_DEBUG)),
-                        (a) ->
+                        (ignored) ->
                                 enrichAndPublishLogMessage(
                                         serverConfig,
                                         GameServerLogMessageEntity.of(
