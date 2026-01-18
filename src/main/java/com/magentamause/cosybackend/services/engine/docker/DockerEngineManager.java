@@ -235,7 +235,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         .withHostConfig(buildHostConfig(serverConfig))
                         .exec();
 
-        statusSuppliers.put(containerName, gameServerStatusSupplier);
+        statusSuppliers.put(serverConfig.getUuid(), gameServerStatusSupplier);
         try {
             client.startContainerCmd(response.getId()).exec();
         } catch (InternalServerErrorException e) {
