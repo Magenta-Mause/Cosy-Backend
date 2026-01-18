@@ -293,14 +293,14 @@ public class GameServerService {
         return logMessage;
     }
 
+    @Async
     public void stopServer(String serviceName) {
         GameServerEntity gameServer =
                 gameServerRepository
                         .findById(serviceName)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
+                                        new RuntimeException(
                                                 "Server '" + serviceName + "' not found"));
         enrichAndPublishLogMessage(
                 gameServer,
