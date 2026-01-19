@@ -28,10 +28,10 @@ public class MetricsService {
     public Point convertMetricToPoint(Metric metrics) {
         return Point.measurement("metrics")
                 .addTag("container_uuid", metrics.getUuid())
-                .addTag("container_name", metrics.getName())
+                .addTag("container_name", metrics.getName().substring(5))
                 .addField(MetricType.CPU_PERCENT.getValue(), metrics.getCpuPercent())
                 .addField(MetricType.MEMORY_USAGE.getValue(), metrics.getMemoryUsage())
-                .addField(MetricType.MEMORY_USAGE.getValue(), metrics.getMemoryLimit())
+                .addField(MetricType.MEMORY_LIMIT.getValue(), metrics.getMemoryLimit())
                 .addField(MetricType.MEMORY_PERCENT.getValue(), metrics.getMemoryPercent())
                 .addField(MetricType.NETWORK_INPUT.getValue(), metrics.getNetworkInput())
                 .addField(MetricType.NETWORK_OUTPUT.getValue(), metrics.getNetworkOutput())
