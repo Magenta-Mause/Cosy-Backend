@@ -36,6 +36,7 @@ public class GameServerDto {
 
     @NotBlank private String dockerImageTag;
 
+    // TODO: rethink annotations
     @Positive private Long dockerMaxCpu;
 
     @Positive private Long dockerMaxMemory;

@@ -37,6 +37,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -372,8 +373,10 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     private HostConfig buildHostConfig(GameServerEntity serverConfig) {
+        // TODO: refactor
         HostConfig hostConfig = HostConfig.newHostConfig();
 
+        // add port bindings
         if (serverConfig.getPortMappings() != null && !serverConfig.getPortMappings().isEmpty()) {
             Ports portBindings = new Ports();
             serverConfig
@@ -387,6 +390,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
             hostConfig.withPortBindings(portBindings);
         }
 
+        // add volume binds
         if (serverConfig.getVolumeMounts() != null && !serverConfig.getVolumeMounts().isEmpty()) {
             List<Bind> binds =
                     serverConfig.getVolumeMounts().stream()
@@ -398,6 +402,16 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                                     AccessMode.rw))
                             .toList();
             hostConfig.withBinds(binds);
+        }
+
+        // memory limit
+        if (serverConfig.getDockerMaxMemory() != null) {
+            hostConfig.withMemory(serverConfig.getDockerMaxMemory());
+        }
+
+        // add cpu limit
+        if (serverConfig.getDockerMaxCpu() != null) {
+            hostConfig.withCpuCount(serverConfig.getDockerMaxCpu());
         }
 
         return hostConfig;

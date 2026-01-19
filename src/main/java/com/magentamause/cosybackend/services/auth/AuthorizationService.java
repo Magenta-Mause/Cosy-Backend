@@ -5,12 +5,16 @@ import com.magentamause.cosybackend.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosybackend.security.jwtfilter.JwtUtils;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import io.jsonwebtoken.Claims;
+
+import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import static reactor.netty.http.HttpConnectionLiveness.log;
 
 @Service
 @RequiredArgsConstructor
@@ -47,17 +51,31 @@ public class AuthorizationService {
     }
 
     public String generateIdentityToken(String userId) {
-        return jwtUtils.generateIdentityToken(getClaimsFromUserId(userId), userId);
+        return jwtUtils.generateIdentityToken(getClaimsFromUserId(userId, JwtTokenBody.TokenType.IDENTITY_TOKEN), userId);
     }
 
     public String generateRefreshToken(String userId) {
-        return jwtUtils.generateRefreshToken(getClaimsFromUserId(userId), userId);
+        return jwtUtils.generateRefreshToken(getClaimsFromUserId(userId, JwtTokenBody.TokenType.REFRESH_TOKEN), userId);
     }
 
-    private Map<String, Object> getClaimsFromUserId(String userId) {
+    private Map<String, Object> getClaimsFromUserId(String userId, JwtTokenBody.TokenType tokenType) {
         UserEntity user = userEntityService.getUserByUuid(userId);
-        return Map.of(
+
+        Map<String, Object> userClaims = new HashMap<>(Map.of(
                 "username", user.getUsername(),
-                "role", user.getRole());
+                "role", user.getRole()
+        ));
+
+
+        if (tokenType == JwtTokenBody.TokenType.IDENTITY_TOKEN) {
+           // TODO: remove log
+           log.info("Adding memory and cpu limits to identity token", user.getMaxMemory(), user.getMaxCpu());
+           userClaims.put("memory_limit", user.getMaxMemory());
+           userClaims.put("cpu_limit", user.getMaxCpu());
+        }
+
+
+        return userClaims;
+
     }
 }

@@ -339,7 +339,7 @@ public class GameServerService {
         return server.getStatus();
     }
 
-    public GameServerEntity convertDtoToEntity(GameServerCreationDto dto) {
+    public GameServerEntity buildFromCreationDto(GameServerCreationDto dto) {
         Optional<GameEntity> game =
                 dto.getGameUuid() != null
                         ? gameEntityService.getGameFromUuid(dto.getGameUuid())
@@ -352,6 +352,8 @@ public class GameServerService {
                 .dockerImageName(dto.getDockerImageName())
                 .dockerImageTag(dto.getDockerImageTag())
                 .dockerExecutionCommand(dto.getExecutionCommand())
+                .dockerMaxCpu(dto.getDockerMaxCpu())
+                .dockerMaxMemory(dto.getDockerMaxMemory())
                 .environmentVariables(dto.getEnvironmentVariables())
                 .volumeMounts(
                         dto.getVolumeMounts() != null

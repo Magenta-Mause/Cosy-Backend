@@ -19,8 +19,9 @@ public class GameServerCreationDto {
     @NotBlank private String template;
     @NotBlank private String dockerImageName;
     @NotBlank private String dockerImageTag;
-    @Positive private Long dockerMaxCpu;
-    @Positive private Long dockerMaxMemory;
+    // TODO: Annotations
+    private Long dockerMaxCpu;
+    private Long dockerMaxMemory;
 
     @UniqueElementsBy(
             fieldNames = {"instancePort", "containerPort"},

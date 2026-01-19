@@ -42,6 +42,7 @@ public class GameServerEntity {
 
     private String dockerImageTag;
 
+    // TODO: add annotations
     private Long dockerMaxCpu;
 
     private Long dockerMaxMemory;
