@@ -60,6 +60,8 @@ public class DummyDataService {
                                 .timestampLastStarted(LocalDateTime.now().minusHours(2))
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
+                                .dockerMaxMemory(512L)
+                                .dockerMaxCpu(2L)
                                 .portMappings(
                                         List.of(
                                                 PortMapping.builder()
