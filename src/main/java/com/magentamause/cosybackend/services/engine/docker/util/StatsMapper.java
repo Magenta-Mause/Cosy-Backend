@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class StatsMapper {
     public Metric mapStats(Statistics stats) {
         double cpuPercent = getCpuPercent(stats);
-        long memoryUsage =
+        long usage =
                 stats.getMemoryStats().getUsage() != null ? stats.getMemoryStats().getUsage() : 0L;
         long memoryLimit =
                 stats.getMemoryStats().getLimit() != null ? stats.getMemoryStats().getLimit() : 1L;
@@ -17,9 +17,9 @@ public class StatsMapper {
                         ? stats.getMemoryStats().getStats().getInactiveFile()
                         : 0L;
 
-        long usedMemory = memoryUsage - inactiveFile;
+        long memoryUsage = usage - inactiveFile;
 
-        double memoryPercent = memoryLimit > 0 ? (double) usedMemory / memoryLimit * 100.0 : 0.0;
+        double memoryPercent = memoryLimit > 0 ? (double) memoryUsage / memoryLimit * 100.0 : 0.0;
 
         long networkInput = 0;
         long networkOutput = 0;
