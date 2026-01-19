@@ -19,7 +19,7 @@ public class StatsMapper {
 
         long usedMemory = memoryUsage - inactiveFile;
 
-        double memoryPercent = round(memoryLimit > 0 ? (double) usedMemory / memoryLimit * 100.0 : 0.0);
+        double memoryPercent = memoryLimit > 0 ? (double) usedMemory / memoryLimit * 100.0 : 0.0;
 
         long networkInput = 0;
         long networkOutput = 0;
@@ -83,14 +83,10 @@ public class StatsMapper {
             return 0.0;
         }
 
-        return round(cpuDelta / systemDelta * cpuCount * 100.0);
+        return cpuDelta / systemDelta * cpuCount * 100.0;
     }
 
     private Long safeLong(Long value) {
         return value != null ? value : 0L;
-    }
-
-    private double round(double value) {
-        return Math.round(value * 100.0) / 100.0;
     }
 }

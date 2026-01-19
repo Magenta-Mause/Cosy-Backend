@@ -16,10 +16,7 @@ import lombok.Setter;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Metric {
     @Column(tag = true)
-    private String uuid;
-
-    @Column(tag = true)
-    private String name;
+    private String gameServerUuid;
 
     @Column private Double cpuPercent;
 

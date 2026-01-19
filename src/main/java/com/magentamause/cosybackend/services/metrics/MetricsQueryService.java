@@ -4,7 +4,6 @@ import com.influxdb.client.InfluxDBClient;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
-import com.magentamause.cosybackend.entities.metric.MetricType;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +15,7 @@ import org.springframework.stereotype.Service;
 public class MetricsQueryService {
     private final InfluxDBClient influxDBClient;
 
-    public List<MetricPointDto> queryMetrics(
-            String gameServerUuid, Instant start, Instant end) {
+    public List<MetricPointDto> queryMetrics(String gameServerUuid, Instant start, Instant end) {
         String flux = buildInfluxQuery(gameServerUuid, start, end);
 
         List<FluxTable> tables = influxDBClient.getQueryApi().query(flux);
@@ -49,13 +47,12 @@ public class MetricsQueryService {
         return results;
     }
 
-    private String buildInfluxQuery(
-            String gameServerUuid, Instant start, Instant end) {
+    private String buildInfluxQuery(String gameServerUuid, Instant start, Instant end) {
         return String.format(
                 "from(bucket: \"cosy-bucket\") "
                         + "|> range(start: %s, stop: %s) "
                         + "|> filter(fn: (r) => r[\"_measurement\"] == \"metrics\") "
-                        + "|> filter(fn: (r) => r[\"container_name\"] == \"%s\") "
+                        + "|> filter(fn: (r) => r[\"game_server_uuid\"] == \"%s\") "
                         + "|> aggregateWindow(every: 10s, fn: mean, createEmpty: false) "
                         + "|> pivot( rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") ",
                 start.toString(), end.toString(), gameServerUuid);
@@ -68,5 +65,4 @@ public class MetricsQueryService {
     private Long toLong(Object value) {
         return value == null ? null : ((Number) value).longValue();
     }
-
 }
