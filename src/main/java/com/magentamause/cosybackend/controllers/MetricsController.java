@@ -28,7 +28,6 @@ public class MetricsController {
     @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_METRIC)
     public ResponseEntity<List<MetricPointDto>> getMetrics(
             @ResourceId @PathVariable String gameServerUuid,
-            @RequestParam MetricType type,
             @RequestParam(required = false) Instant end,
             @RequestParam(required = false) Instant start) {
         Instant now = Instant.now();
@@ -50,6 +49,6 @@ public class MetricsController {
         }
 
         return ResponseEntity.ok(
-                queryService.queryMetrics(gameServerUuid, type, defaultStart, defaultEnd));
+                queryService.queryMetrics(gameServerUuid, defaultStart, defaultEnd));
     }
 }
