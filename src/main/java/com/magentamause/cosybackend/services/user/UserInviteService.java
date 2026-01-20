@@ -42,10 +42,6 @@ public class UserInviteService {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "Invite with the given username already exists");
             }
-            if (userEntityService.existsByUsername(userInviteCreationDto.getUsername())) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT, "A user with the given username already exists");
-            }
         }
 
         UserInviteEntity invite =
