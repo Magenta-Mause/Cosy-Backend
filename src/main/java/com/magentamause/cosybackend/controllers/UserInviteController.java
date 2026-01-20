@@ -20,6 +20,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import static reactor.netty.http.HttpConnectionLiveness.log;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/user-invites")
@@ -49,6 +51,7 @@ public class UserInviteController {
     @RequireAccess(action = Action.CREATE, resource = Resource.USER_INVITE)
     public ResponseEntity<UserInviteDto> createInvite(
             @Valid @RequestBody UserInviteCreationDto userInviteCreationDto) {
+        log.info("Creating invite for {}", userInviteCreationDto);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
                         userInviteService
