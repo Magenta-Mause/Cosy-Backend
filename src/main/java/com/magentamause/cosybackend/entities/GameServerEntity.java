@@ -3,6 +3,7 @@ package com.magentamause.cosybackend.entities;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
@@ -42,10 +43,7 @@ public class GameServerEntity {
 
     private String dockerImageTag;
 
-    // TODO: add annotations
-    private Long dockerMaxCpu;
-
-    private Long dockerMaxMemory;
+    @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
     private String template;
 
@@ -82,8 +80,7 @@ public class GameServerEntity {
                 .gameUuid(this.getGame() == null ? null : this.getGame().getUuid())
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
-                .dockerMaxCpu(this.getDockerMaxCpu())
-                .dockerMaxMemory(this.getDockerMaxMemory())
+                .dockerHardwareLimits(this.getDockerHardwareLimits())
                 .template(this.getTemplate())
                 .executionCommand(this.getDockerExecutionCommand())
                 .portMappings(this.getPortMappings())

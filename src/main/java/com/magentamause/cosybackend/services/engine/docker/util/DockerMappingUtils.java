@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services.engine.util;
+package com.magentamause.cosybackend.services.engine.docker.util;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import org.springframework.stereotype.Component;

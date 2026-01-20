@@ -67,8 +67,7 @@ public class UserEntityService {
                 .username(user.getUsername())
                 .role(user.getRole())
                 .uuid(user.getUuid())
-                .maxMemory(user.getMaxMemory())
-                .maxCpu(user.getMaxCpu())
+                .dockerHardwareLimits(user.getDockerHardwareLimits())
                 .build();
     }
 

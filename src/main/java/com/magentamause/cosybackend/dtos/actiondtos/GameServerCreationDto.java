@@ -3,11 +3,11 @@ package com.magentamause.cosybackend.dtos.actiondtos;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.annotations.uniqueElements.UniqueElementsBy;
+import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
 import java.util.List;
 import lombok.Data;
 
@@ -19,9 +19,8 @@ public class GameServerCreationDto {
     @NotBlank private String template;
     @NotBlank private String dockerImageName;
     @NotBlank private String dockerImageTag;
-    // TODO: Annotations
-    private Long dockerMaxCpu;
-    private Long dockerMaxMemory;
+
+    @Valid private DockerHardwareLimits dockerHardwareLimits;
 
     @UniqueElementsBy(
             fieldNames = {"instancePort", "containerPort"},

@@ -4,6 +4,7 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.repositories.DummyInstantiatedPropertiesRepository;
 import com.magentamause.cosybackend.services.gameserver.GameServerService;
@@ -60,8 +61,11 @@ public class DummyDataService {
                                 .timestampLastStarted(LocalDateTime.now().minusHours(2))
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
-                                .dockerMemoryLimit("50MiB")
-                                .dockerMaxCpuCores(2L)
+                                .dockerHardwareLimits(
+                                        DockerHardwareLimits.builder()
+                                                .dockerMemoryLimit("50MiB")
+                                                .dockerMaxCpuCores(2L)
+                                                .build())
                                 .portMappings(
                                         List.of(
                                                 PortMapping.builder()

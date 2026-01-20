@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.entities;
 
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
+import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import jakarta.persistence.*;
 import java.util.List;
 import lombok.*;
@@ -36,9 +37,7 @@ public class UserEntity {
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GameServerEntity> gameServerConfigurationEntities;
 
-    @Column private Long maxMemory;
-
-    @Column private Long maxCpu;
+    @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
     @Getter
     @RequiredArgsConstructor
@@ -55,8 +54,7 @@ public class UserEntity {
                 .uuid(this.uuid)
                 .username(this.username)
                 .role(this.role)
-                .maxMemory(this.maxMemory)
-                .maxCpu(this.maxCpu)
+                .dockerHardwareLimits(this.dockerHardwareLimits)
                 .build();
     }
 }

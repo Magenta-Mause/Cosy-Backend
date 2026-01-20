@@ -1,5 +1,7 @@
 package com.magentamause.cosybackend.controllers;
 
+import static reactor.netty.http.HttpConnectionLiveness.log;
+
 import com.magentamause.cosybackend.dtos.actiondtos.UserCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.UserInviteCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
@@ -19,8 +21,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import static reactor.netty.http.HttpConnectionLiveness.log;
 
 @RestController
 @RequiredArgsConstructor

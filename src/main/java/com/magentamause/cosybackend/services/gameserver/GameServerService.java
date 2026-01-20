@@ -352,8 +352,7 @@ public class GameServerService {
                 .dockerImageName(dto.getDockerImageName())
                 .dockerImageTag(dto.getDockerImageTag())
                 .dockerExecutionCommand(dto.getExecutionCommand())
-                .dockerMaxCpu(dto.getDockerMaxCpu())
-                .dockerMaxMemory(dto.getDockerMaxMemory())
+                .dockerHardwareLimits(dto.getDockerHardwareLimits())
                 .environmentVariables(dto.getEnvironmentVariables())
                 .volumeMounts(
                         dto.getVolumeMounts() != null

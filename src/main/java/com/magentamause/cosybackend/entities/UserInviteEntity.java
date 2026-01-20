@@ -3,6 +3,7 @@ package com.magentamause.cosybackend.entities;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.entitydtos.UserInviteDto;
+import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import jakarta.persistence.*;
 import java.time.Instant;
 import lombok.*;
@@ -39,11 +40,7 @@ public class UserInviteEntity {
     @Enumerated(EnumType.STRING)
     private UserEntity.Role role;
 
-    @Column(nullable = true)
-    private Long maxMemory;
-
-    @Column(nullable = true)
-    private Long maxCpu;
+    @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
     public UserInviteDto convertToDto() {
         return UserInviteDto.builder()
@@ -54,8 +51,7 @@ public class UserInviteEntity {
                 .createdAt(this.getCreatedAt())
                 .inviteByUsername(this.getInvitedBy().getUsername())
                 .role(this.getRole())
-                .maxMemory(this.maxMemory)
-                .maxCpu(this.maxCpu)
+                .dockerHardwareLimits(this.dockerHardwareLimits)
                 .build();
     }
 }
