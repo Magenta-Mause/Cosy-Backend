@@ -33,12 +33,14 @@ public class GameService {
     }
 
     public Mono<List<GameDto>> query(String query) {
-        return gamesApiService.queryGamesApi(query)
+        Mono<List<GameDto>> gamesFromApi = gamesApiService.queryGamesApi(query)
                 .publishOn(Schedulers.boundedElastic())
                 .onErrorResume(throwable ->
-                        Mono.just(gameRepository.findByNameContainingIgnoreCase(query).stream()
+                        Mono.just(gameRepository.queryByName(query).stream()
                                 .map(GameDto::fromEntity)
                                 .toList()));
+        List<GameEntity> gamesFromDb = gameRepository.queryByName(query);
+        return gamesFromApi;
     }
 
     public GameEntity getGameEntityByExternalId(int externalId, boolean storeInDb) {

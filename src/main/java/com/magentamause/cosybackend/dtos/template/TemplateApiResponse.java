@@ -7,5 +7,5 @@ import java.util.List;
 
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public record TemplateApiResponse(List<TemplateDto> templates) {
+public record TemplateApiResponse(List<ExternalTemplateDto> templates) {
 }

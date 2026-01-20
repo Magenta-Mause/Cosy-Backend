@@ -3,7 +3,7 @@ package com.magentamause.cosybackend.entities;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.template.ResourceLimit;
-import com.magentamause.cosybackend.dtos.template.TemplateDto;
+import com.magentamause.cosybackend.dtos.template.ExternalTemplateDto;
 import com.magentamause.cosybackend.dtos.template.Variable;
 import jakarta.persistence.*;
 import lombok.*;
@@ -61,19 +61,19 @@ public class TemplateEntity {
     @Column(columnDefinition = "jsonb")
     private ResourceLimit resourceLimit;
 
-    public static TemplateEntity ofDto(TemplateDto templateDto) {
+    public static TemplateEntity ofDto(ExternalTemplateDto externalTemplateDto) {
         return TemplateEntity.builder()
-                .name(templateDto.name())
-                .path(templateDto.path())
-                .description(templateDto.description())
-                .gameId(templateDto.gameId())
-                .dockerImageName(templateDto.dockerImageName())
-                .dockerImageTag(templateDto.dockerImageTag())
-                .environmentVariables(templateDto.environmentVariables())
-                .portMappings(templateDto.portMapping())
-                .fileMounts(templateDto.fileMounts())
-                .variables(templateDto.variables())
-                .resourceLimit(templateDto.resourceLimit().orElse(null))
+                .name(externalTemplateDto.name())
+                .path(externalTemplateDto.path())
+                .description(externalTemplateDto.description())
+                .gameId(externalTemplateDto.gameId())
+                .dockerImageName(externalTemplateDto.dockerImageName())
+                .dockerImageTag(externalTemplateDto.dockerImageTag())
+                .environmentVariables(externalTemplateDto.environmentVariables())
+                .portMappings(externalTemplateDto.portMapping())
+                .fileMounts(externalTemplateDto.fileMounts())
+                .variables(externalTemplateDto.variables())
+                .resourceLimit(externalTemplateDto.resourceLimit().orElse(null))
                 .build();
     }
 }

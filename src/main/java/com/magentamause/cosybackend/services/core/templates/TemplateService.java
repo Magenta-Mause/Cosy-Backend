@@ -1,8 +1,10 @@
 package com.magentamause.cosybackend.services.core.templates;
 
-import com.magentamause.cosybackend.dtos.template.TemplateDto;
+import com.magentamause.cosybackend.dtos.template.ExternalTemplateDto;
+import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.TemplateEntity;
 import com.magentamause.cosybackend.repositories.TemplateRepository;
+import com.magentamause.cosybackend.services.core.games.GameService;
 import com.magentamause.cosybackend.services.external.templates.CosyTemplateApiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,14 +20,21 @@ import java.util.concurrent.TimeUnit;
 public class TemplateService {
     private final CosyTemplateApiService cosyTemplateApiService;
     private final TemplateRepository templateRepository;
+    private final GameService gameService;
 
     @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.MINUTES)
     public List<TemplateEntity> refreshTemplates() {
         log.info("Refreshing templates...");
         try {
-            List<TemplateDto> templates = cosyTemplateApiService.queryCosyTemplateApi().block();
+            List<ExternalTemplateDto> templates = cosyTemplateApiService.queryCosyTemplateApi().block();
             templateRepository.deleteAll();
             assert templates != null;
+            for (ExternalTemplateDto template : templates) {
+                log.info("Found template: {}", template.name());
+                log.info("Fetching Game with external id: {}", template.gameId());
+                GameEntity game = gameService.getGameEntityByExternalId(template.gameId(), true);
+                log.info("Fetched Game: {}", game.getName());
+            }
             return templateRepository.saveAll(templates.stream().map(TemplateEntity::ofDto).toList());
         } catch (Exception e) {
             log.error("Failed to refresh templates: {}", e.getMessage(), e);

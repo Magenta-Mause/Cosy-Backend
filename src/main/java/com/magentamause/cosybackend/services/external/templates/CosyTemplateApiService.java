@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.services.external.templates;
 
-import com.magentamause.cosybackend.dtos.template.TemplateDto;
+import com.magentamause.cosybackend.dtos.template.ExternalTemplateDto;
 import com.magentamause.cosybackend.dtos.template.TemplateApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ public class CosyTemplateApiService {
 
     private final WebClient cosyTemplateApiWebClient;
 
-    public Mono<List<TemplateDto>> queryCosyTemplateApi() {
+    public Mono<List<ExternalTemplateDto>> queryCosyTemplateApi() {
         return cosyTemplateApiWebClient.get()
                 .uri(UriBuilder::build)
                 .retrieve()

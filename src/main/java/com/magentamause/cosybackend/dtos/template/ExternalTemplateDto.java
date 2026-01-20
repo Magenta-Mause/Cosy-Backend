@@ -10,7 +10,7 @@ import java.util.Optional;
  * Game Server Template - corresponds to schema/template.schema.json
  */
 // @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) - Removed as WebClient requires @JsonProperty definition anyways
-public record TemplateDto(
+public record ExternalTemplateDto(
         String name,
         String path,
         String description,

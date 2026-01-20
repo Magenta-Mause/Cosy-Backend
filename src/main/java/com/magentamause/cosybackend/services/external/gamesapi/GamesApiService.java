@@ -10,6 +10,7 @@ import com.magentamause.cosybackend.exceptions.gameapi.GameFetchException;
 import com.magentamause.cosybackend.repositories.GameRepository;
 
 import java.util.List;
+import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +62,10 @@ public class GamesApiService {
     public Mono<GameDto> getByExternalId(int externalId) throws GameFetchException {
         return gamesApiWebClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/games?id={id}&include_hero=true&include_logo=true")
+                        .path("/game")
+                        .queryParam("id", externalId)
+                        .queryParam("include_hero", true)
+                        .queryParam("include_logo", true)
                         .build(externalId))
                 .retrieve()
                 .onStatus(
