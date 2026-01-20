@@ -135,13 +135,19 @@ public class GameServerService {
     }
 
     public void deleteGameServerById(String uuid) {
-        gameServerRepository
-                .findById(uuid)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "Game server with uuid " + uuid + " not found"));
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(uuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game server with uuid " + uuid + " not found"));
+        try {
+            engineManager.stopAndRemove(gameServer);
+        } catch (ServerAlreadyStoppedException e) {
+            // ignored
+        }
         gameServerRepository.deleteById(uuid);
     }
 
