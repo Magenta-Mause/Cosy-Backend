@@ -12,17 +12,20 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/games-info")
+@RequestMapping("/games")
 public class GameApiController {
 
     private final GamesApiService gamesApiService;
 
     @GetMapping
-    public ResponseEntity<List<GameDto>> getGameInfo(@RequestParam @NotBlank String query) {
-        List<GameDto> games = gamesApiService.query(query);
-        return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.EXPIRES, "0").body(games);
+    public ResponseEntity<Mono<List<GameDto>>> getGameInfo(@RequestParam @NotBlank String query) {
+        return ResponseEntity.
+                status(HttpStatus.OK)
+                .header(HttpHeaders.EXPIRES, "0")
+                .body(gamesApiService.query(query));
     }
 }

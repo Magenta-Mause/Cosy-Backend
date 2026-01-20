@@ -6,14 +6,18 @@ import com.magentamause.cosybackend.dtos.gamesapi.GamesApiGamesResponse;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.exceptions.GamesApiError;
 import com.magentamause.cosybackend.repositories.GameRepository;
+
 import java.util.Collections;
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @Service
@@ -24,8 +28,8 @@ public class GamesApiService {
     private final WebClient gamesApiWebClient;
     private final GameRepository gameRepository;
 
-    private List<GameDto> queryGamesApi(String query) {
-        GamesApiGamesResponse response;
+    private Mono<List<GameDto>> queryGamesApi(String query) {
+        Mono<GamesApiGamesResponse> response;
         try {
             response =
                     gamesApiWebClient
@@ -39,47 +43,26 @@ public class GamesApiService {
                                                     .queryParam("include_logo", "true")
                                                     .build())
                             .retrieve()
-                            .bodyToMono(GamesApiGamesResponse.class)
-                            .block();
+                            .bodyToMono(GamesApiGamesResponse.class);
         } catch (WebClientRequestException e) {
             throw new GamesApiError("Failed to connect to Games API", e);
         } catch (RuntimeException e) {
             throw new GamesApiError("Unexpected error while calling Games API", e);
         }
-
-        if (response == null
-                || response.getData() == null
-                || response.getData().getGames() == null) {
-            return Collections.emptyList();
-        }
-
-        return response.getData().getGames().stream()
-                .map(GamesApiGamesResponse.DataPayload.GamesPayload::toDto)
-                .toList();
+        return response.map(res ->
+                res.getData() != null
+                        && res.getData().getGames() != null
+                        ? res.getData().getGames().stream()
+                        .map(GamesApiGamesResponse.DataPayload.GamesPayload::toDto).toList()
+                        : List.of());
     }
 
-    public List<GameDto> query(String query) {
-        List<GameDto> apiGames;
-
-        try {
-            apiGames = queryGamesApi(query);
-        } catch (GamesApiError e) {
-            log.warn("Games API query failed, falling back to cached results");
-            List<GameDto> localGamesStream =
-                    gameRepository.findByNameContainingIgnoreCase(query).stream()
-                            .map(GameDto::fromEntity)
-                            .toList();
-            if (localGamesStream.isEmpty()) {
-                throw e;
-            }
-            return localGamesStream;
-        }
-
-        return apiGames.stream()
-                .map(
-                        g ->
-                                GameDto.fromEntity(
-                                        gameRepository.saveIfNotPresent(GameEntity.fromDto(g))))
-                .toList();
+    public Mono<List<GameDto>> query(String query) {
+        return queryGamesApi(query)
+                .publishOn(Schedulers.boundedElastic())
+                .onErrorResume(throwable ->
+                        Mono.just(gameRepository.findByNameContainingIgnoreCase(query).stream()
+                .map(GameDto::fromEntity)
+                .toList()));
     }
 }
