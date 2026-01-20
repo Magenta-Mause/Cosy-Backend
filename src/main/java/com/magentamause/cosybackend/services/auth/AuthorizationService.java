@@ -66,14 +66,10 @@ public class AuthorizationService {
                 "role", user.getRole()
         ));
 
-
         if (tokenType == JwtTokenBody.TokenType.IDENTITY_TOKEN) {
-           // TODO: remove log
-           log.info("Adding memory and cpu limits to identity token", user.getMaxMemory(), user.getMaxCpu());
            userClaims.put("memory_limit", user.getMaxMemory());
            userClaims.put("cpu_limit", user.getMaxCpu());
         }
-
 
         return userClaims;
 
