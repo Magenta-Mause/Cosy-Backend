@@ -1,0 +1,64 @@
+package com.magentamause.cosybackend.services.core.games;
+
+import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
+import com.magentamause.cosybackend.entities.GameEntity;
+import com.magentamause.cosybackend.exceptions.gameapi.GameFetchException;
+import com.magentamause.cosybackend.repositories.GameRepository;
+import com.magentamause.cosybackend.services.external.gamesapi.GamesApiService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+
+import java.util.List;
+import java.util.Optional;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class GameService {
+
+    private final GameRepository gameRepository;
+    private final GamesApiService gamesApiService;
+
+    public List<GameEntity> getAllGames() {
+        return gameRepository.findAll();
+    }
+
+    public Optional<GameEntity> getGameById(String uuid) {
+        return gameRepository.findById(uuid);
+    }
+
+    public Mono<List<GameDto>> query(String query) {
+        return gamesApiService.queryGamesApi(query)
+                .publishOn(Schedulers.boundedElastic())
+                .onErrorResume(throwable ->
+                        Mono.just(gameRepository.findByNameContainingIgnoreCase(query).stream()
+                                .map(GameDto::fromEntity)
+                                .toList()));
+    }
+
+    public GameEntity getGameEntityByExternalId(int externalId, boolean storeInDb) {
+        Optional<GameEntity> game = gameRepository.findByExternalGameId(externalId);
+        if (game.isPresent()) {
+            return game.get();
+        }
+        try {
+            GameDto fetchedGame = gamesApiService.getByExternalId(externalId)
+                    .block();
+            if (fetchedGame == null) {
+                throw new GameFetchException("Game not found");
+            }
+            if (!storeInDb) {
+                return GameEntity.fromDto(fetchedGame);
+            }
+            return gameRepository.save(GameEntity.fromDto(fetchedGame));
+        } catch (GameFetchException e) {
+            log.warn("Could not fetch game with externalId: {}", externalId, e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found");
+        }
+    }
+}

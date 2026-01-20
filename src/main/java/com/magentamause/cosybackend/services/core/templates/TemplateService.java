@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services.gameserver;
+package com.magentamause.cosybackend.services.core.templates;
 
 import com.magentamause.cosybackend.dtos.template.TemplateDto;
 import com.magentamause.cosybackend.entities.TemplateEntity;

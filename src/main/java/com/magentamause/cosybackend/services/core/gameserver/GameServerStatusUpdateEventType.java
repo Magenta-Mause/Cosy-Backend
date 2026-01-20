@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services.gameserver;
+package com.magentamause.cosybackend.services.core.gameserver;
 
 public enum GameServerStatusUpdateEventType {
     FAILED,

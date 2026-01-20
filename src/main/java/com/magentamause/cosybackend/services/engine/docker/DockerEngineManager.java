@@ -20,7 +20,7 @@ import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartExcept
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
-import com.magentamause.cosybackend.services.gameserver.GameServerStatusUpdateEventType;
+import com.magentamause.cosybackend.services.core.gameserver.GameServerStatusUpdateEventType;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.Closeable;

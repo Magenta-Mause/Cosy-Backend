@@ -1,8 +1,7 @@
 package com.magentamause.cosybackend.controllers;
 
-import com.magentamause.cosybackend.dtos.template.TemplateDto;
 import com.magentamause.cosybackend.entities.TemplateEntity;
-import com.magentamause.cosybackend.services.gameserver.TemplateService;
+import com.magentamause.cosybackend.services.core.templates.TemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

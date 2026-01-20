@@ -2,12 +2,13 @@ package com.magentamause.cosybackend.services.external.gamesapi;
 
 import com.magentamause.cosybackend.configs.properties.GamesApiProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
-import com.magentamause.cosybackend.dtos.gamesapi.GamesApiGamesResponse;
-import com.magentamause.cosybackend.entities.GameEntity;
+import com.magentamause.cosybackend.dtos.gamesapi.GamePayload;
+import com.magentamause.cosybackend.dtos.gamesapi.GamesApiGameByIdResponse;
+import com.magentamause.cosybackend.dtos.gamesapi.GamesApiGameSearchResponse;
 import com.magentamause.cosybackend.exceptions.GamesApiError;
+import com.magentamause.cosybackend.exceptions.gameapi.GameFetchException;
 import com.magentamause.cosybackend.repositories.GameRepository;
 
-import java.util.Collections;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @Service
@@ -28,8 +28,8 @@ public class GamesApiService {
     private final WebClient gamesApiWebClient;
     private final GameRepository gameRepository;
 
-    private Mono<List<GameDto>> queryGamesApi(String query) {
-        Mono<GamesApiGamesResponse> response;
+    public Mono<List<GameDto>> queryGamesApi(String query) {
+        Mono<GamesApiGameSearchResponse> response;
         try {
             response =
                     gamesApiWebClient
@@ -43,7 +43,7 @@ public class GamesApiService {
                                                     .queryParam("include_logo", "true")
                                                     .build())
                             .retrieve()
-                            .bodyToMono(GamesApiGamesResponse.class);
+                            .bodyToMono(GamesApiGameSearchResponse.class);
         } catch (WebClientRequestException e) {
             throw new GamesApiError("Failed to connect to Games API", e);
         } catch (RuntimeException e) {
@@ -53,16 +53,31 @@ public class GamesApiService {
                 res.getData() != null
                         && res.getData().getGames() != null
                         ? res.getData().getGames().stream()
-                        .map(GamesApiGamesResponse.DataPayload.GamesPayload::toDto).toList()
+                        .map(game -> game.toDto()).toList()
                         : List.of());
     }
 
-    public Mono<List<GameDto>> query(String query) {
-        return queryGamesApi(query)
-                .publishOn(Schedulers.boundedElastic())
-                .onErrorResume(throwable ->
-                        Mono.just(gameRepository.findByNameContainingIgnoreCase(query).stream()
-                .map(GameDto::fromEntity)
-                .toList()));
+
+    public Mono<GameDto> getByExternalId(int externalId) throws GameFetchException {
+        return gamesApiWebClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/games?id={id}&include_hero=true&include_logo=true")
+                        .build(externalId))
+                .retrieve()
+                .onStatus(
+                        status -> status.value() != 200,
+                        response -> response
+                                .bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .map(body -> new GameFetchException(
+                                        "Games API returned status " +
+                                                response.statusCode().value() +
+                                                " for externalId=" + externalId +
+                                                (body.isBlank() ? "" : ", body=" + body)
+                                ))
+                )
+                .bodyToMono(GamesApiGameByIdResponse.class)
+                .map(response -> response.getData().toDto());
     }
+
 }
