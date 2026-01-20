@@ -13,7 +13,7 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
-import com.magentamause.cosybackend.services.core.games.GameService;
+import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
@@ -49,7 +49,7 @@ public class GameServerService {
     private final GameServerDockerProgressPublisher dockerProgressPublisher;
     private final TransactionTemplate transactionTemplate;
     private final GameServerLogService gameServerLogService;
-    private final GameService gameService;
+    private final GamesService gamesService;
 
     @PostConstruct
     public void init() {
@@ -155,7 +155,7 @@ public class GameServerService {
         GameEntity game =
                 dto.getExternalGameId() == null
                         ? null
-                        : gameService.getGameEntityByExternalId(dto.getExternalGameId(), true);
+                        : gamesService.getGameEntityByExternalId(dto.getExternalGameId(), true);
 
         gameServer.setGame(game);
 
@@ -332,7 +332,7 @@ public class GameServerService {
     public GameServerEntity convertDtoToEntity(GameServerCreationDto dto) {
         Optional<GameEntity> game =
                 dto.getExternalGameId() != null
-                        ? gameService.getGameById(dto.getExternalGameId())
+                        ? gamesService.getGameById(dto.getExternalGameId())
                         : Optional.empty();
 
         return GameServerEntity.builder()

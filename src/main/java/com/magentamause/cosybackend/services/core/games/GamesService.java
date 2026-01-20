@@ -13,13 +13,17 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GameService {
+public class GamesService {
 
     private final GameRepository gameRepository;
     private final GamesApiService gamesApiService;
@@ -33,15 +37,47 @@ public class GameService {
     }
 
     public Mono<List<GameDto>> query(String query) {
-        Mono<List<GameDto>> gamesFromApi = gamesApiService.queryGamesApi(query)
+        return gamesApiService.queryGamesApi(query)
                 .publishOn(Schedulers.boundedElastic())
-                .onErrorResume(throwable ->
-                        Mono.just(gameRepository.queryByName(query).stream()
-                                .map(GameDto::fromEntity)
-                                .toList()));
-        List<GameEntity> gamesFromDb = gameRepository.queryByName(query);
-        return gamesFromApi;
+                .map(apiGames -> {
+                    // Fetch DB games
+                    List<GameEntity> dbGames = gameRepository.queryByName(query);
+
+                    // Convert DB games to DTOs
+                    List<GameDto> dbDtos = dbGames.stream()
+                            .map(GameDto::fromEntity)
+                            .toList();
+
+                    // Index API games by a stable key (example: externalId)
+                    Map<Integer, GameDto> apiGameMap = apiGames.stream()
+                            .collect(Collectors.toMap(
+                                    GameDto::getExternalGameId,
+                                    Function.identity(),
+                                    (a, b) -> a
+                            ));
+
+                    // DB games first, overriding API if present
+                    List<GameDto> result = new ArrayList<>(dbDtos);
+
+                    // Add remaining API games not present in DB
+                    apiGames.stream()
+                            .filter(apiGame -> !apiGameMap.containsKey(apiGame.getExternalGameId())
+                                    || dbGames.stream().noneMatch(
+                                    db -> db.getExternalGameId() == apiGame.getExternalGameId()
+                            ))
+                            .forEach(result::add);
+
+                    return result;
+                })
+                .onErrorResume(ex ->
+                        Mono.fromCallable(() ->
+                                gameRepository.queryByName(query).stream()
+                                        .map(GameDto::fromEntity)
+                                        .toList()
+                        ).subscribeOn(Schedulers.boundedElastic())
+                );
     }
+
 
     public GameEntity getGameEntityByExternalId(int externalId, boolean storeInDb) {
         Optional<GameEntity> game = gameRepository.findByExternalGameId(externalId);

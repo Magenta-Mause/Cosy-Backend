@@ -10,6 +10,7 @@ public record Variable(
         String placeholder,
         String regex,
         @JsonProperty("default_value") Object defaultValue,
-        List<String> options
+        List<String> options,
+        String example
 ) {
 }
