@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
+import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
@@ -17,13 +18,6 @@ import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
@@ -32,6 +26,14 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -46,6 +48,7 @@ public class GameServerService {
     private final GameServerDockerProgressPublisher dockerProgressPublisher;
     private final TransactionTemplate transactionTemplate;
     private final GameServerLogService gameServerLogService;
+    private final HardwareQuotaService hardwareQuotaService;
 
     @PostConstruct
     public void init() {
@@ -206,19 +209,38 @@ public class GameServerService {
         if (!startingServers.add(gameServerUuid)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Server is already starting");
         }
+
         log.info("Starting server {}", gameServerUuid);
         try {
             GameServerEntity serverConfig =
                     transactionTemplate.execute(
                             status -> {
                                 GameServerEntity entity = getGameServerById(gameServerUuid);
-
                                 Hibernate.initialize(entity.getDockerExecutionCommand());
                                 Hibernate.initialize(entity.getPortMappings());
                                 Hibernate.initialize(entity.getEnvironmentVariables());
                                 Hibernate.initialize(entity.getVolumeMounts());
                                 return entity;
                             });
+
+            try {
+                // Check hardware limits
+                transactionTemplate.executeWithoutResult(
+                        status -> {
+                            GameServerEntity entity = getGameServerById(gameServerUuid);
+                            hardwareQuotaService.validateHardwareLimits(entity);
+                        });
+            } catch (HardwareLimitException e) {
+                log.warn("Hardware limit reached for server '{}'", gameServerUuid);
+                updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
+                enrichAndPublishLogMessage(
+                        serverConfig,
+                        GameServerLogMessageEntity.of(
+                                serverConfig.getUuid(),
+                                e.getMessage(),
+                                GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
+                return;
+            }
 
             enrichAndPublishLogMessage(
                     serverConfig,

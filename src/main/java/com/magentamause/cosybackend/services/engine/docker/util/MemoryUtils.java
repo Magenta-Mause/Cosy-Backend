@@ -15,13 +15,25 @@ public class MemoryUtils {
         String trimmed = value.trim();
         if (trimmed.endsWith(MEGABYTE_SUFFIX)) {
             long amount = Long.parseLong(trimmed.replace(MEGABYTE_SUFFIX, ""));
-            return amount * GIGABYTE_IN_BYTES;
+            return amount * MEGABYTE_IN_BYTES;
         }
         if (trimmed.endsWith(GIGABYTE_SUFFIX)) {
             long amount = Long.parseLong(trimmed.replace(GIGABYTE_SUFFIX, ""));
-            return amount * MEGABYTE_IN_BYTES;
+            return amount * GIGABYTE_IN_BYTES;
         }
 
         throw new IllegalArgumentException("Invalid memory format: " + value);
+    }
+
+    public static String formatBytesToReadableString(long bytes) {
+        if (bytes >= GIGABYTE_IN_BYTES) {
+            double gib = (double) bytes / GIGABYTE_IN_BYTES;
+            // if it's a whole number, print as integer
+            if (gib % 1 == 0) {
+                return String.format("%.0f%s", gib, GIGABYTE_SUFFIX);
+            }
+            return String.format("%.2f%s", gib, GIGABYTE_SUFFIX);
+        }
+        return (bytes / MEGABYTE_IN_BYTES) + MEGABYTE_SUFFIX;
     }
 }
