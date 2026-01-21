@@ -71,7 +71,7 @@ public class GameServerController {
     public ResponseEntity<GameServerDto> updateGameServer(
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody GameServerUpdateDto updateDto) {
-        log.info("Received request to update the game server with id {}", uuid);
+        log.info("Updating game server {} with {}", uuid, updateDto);
 
         GameServerEntity updated = gameServerService.updateGameServerConfiguration(uuid, updateDto);
 
