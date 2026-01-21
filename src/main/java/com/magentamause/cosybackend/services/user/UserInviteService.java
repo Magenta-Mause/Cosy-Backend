@@ -44,6 +44,8 @@ public class UserInviteService {
             }
         }
 
+        log.info("Creating Invite for User: {}", userInviteCreationDto);
+
         UserInviteEntity invite =
                 UserInviteEntity.builder()
                         .invitedBy(userEntityService.getUserByUuid(ownerCreationId))
