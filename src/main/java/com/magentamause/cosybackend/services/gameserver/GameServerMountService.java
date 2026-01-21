@@ -31,57 +31,64 @@ public class GameServerMountService {
 
     private final GameServerRepository gameServerRepository;
 
+    /**
+     * Reads a bind mount filesystem by using the requested path as-is, selecting the bind mount by
+     * matching the requested path against a volume's containerPath prefix. The part after the
+     * containerPath is used to query inside the selected hostPath.
+     */
     public GameServerFileSystemDto readBindMountFileSystem(
-            String serverUuid, String volumeUuid, String subPath, int fetchDepth) {
+            String serverUuid, String requestedPath, int fetchDepth) {
 
         if (fetchDepth < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fetchDepth must be >= 0");
         }
 
-        Path volumeRoot = requireVolumeRoot(serverUuid, volumeUuid);
+        ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
 
-        boolean isRootRequest = (subPath == null || subPath.isBlank() || "/".equals(subPath));
+        Path volumeRoot = resolved.volumeRoot();
+        Path requested = resolved.requested();
 
-        Path requested =
-                isRootRequest ? volumeRoot : resolveInsideRoot(volumeRoot, subPath, false, "Path");
-
-        if (!isRootRequest) {
-            requireExists(requested, subPath);
-            requireRealPathInsideRoot(volumeRoot, requested, subPath);
+        if (!resolved.isRootRequest()) {
+            requireExists(requested, resolved.innerRelative());
+            requireRealPathInsideRoot(volumeRoot, requested, resolved.innerRelative());
         }
 
         if (Files.isDirectory(requested, LinkOption.NOFOLLOW_LINKS)) {
             List<GameServerFileSystemDto.FileSystemObjectDto> entries =
                     listDirectory(requested, fetchDepth);
-
             return GameServerFileSystemDto.builder()
-                    .volumeUuid(volumeUuid)
+                    .volumeUuid(resolved.volumeUuid())
                     .objects(entries)
                     .build();
         }
 
         GameServerFileSystemDto.FileSystemObjectDto fileNode = toNode(requested, 0);
-
         return GameServerFileSystemDto.builder()
-                .volumeUuid(volumeUuid)
+                .volumeUuid(resolved.volumeUuid())
                 .objects(List.of(fileNode))
                 .build();
     }
 
-    public byte[] readFileFromBindMountVolume(
-            String serverUuid, String volumeUuid, String filePath) {
+    /**
+     * Reads a file from a bind mount volume by using the requested path as-is (container path +
+     * optional subpath). The bind mount is selected by containerPath prefix match.
+     */
+    public byte[] readFileFromBindMountVolume(String serverUuid, String requestedPath) {
+        ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
 
-        Path volumeRoot = requireVolumeRoot(serverUuid, volumeUuid);
+        Path volumeRoot = resolved.volumeRoot();
+        Path requested = resolved.requested();
 
-        String cleaned = requireNonBlank(cleanRelative(filePath), "File path must not be empty");
-        Path requested = resolveInsideRoot(volumeRoot, cleaned, true, "Path");
+        String cleanedInner =
+                requireNonBlank(
+                        cleanRelative(resolved.innerRelative()), "File path must not be empty");
 
-        requireExists(requested, cleaned);
-        requireNotDirectory(requested, cleaned);
-        requireRealPathInsideRoot(volumeRoot, requested, cleaned);
-        requireReadable(requested, cleaned);
+        requireExists(requested, cleanedInner);
+        requireNotDirectory(requested, cleanedInner);
+        requireRealPathInsideRoot(volumeRoot, requested, cleanedInner);
+        requireReadable(requested, cleanedInner);
 
-        long maxFileSize = 128 * 1024 * 1024; // 128 MB
+        long maxFileSize = 128L * 1024L * 1024L; // 128 MB
         try {
             long fileSize = Files.size(requested);
             if (fileSize > maxFileSize) {
@@ -92,19 +99,60 @@ public class GameServerMountService {
             return Files.readAllBytes(requested);
         } catch (IOException e) {
             throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to read file: " + cleaned, e);
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to read file: " + cleanedInner, e);
         }
     }
 
-    private Path requireVolumeRoot(String serverUuid, String volumeUuid) {
-        GameServerEntity server = getGameServerById(serverUuid);
-        VolumeMountConfiguration mount = findMount(server, serverUuid, volumeUuid);
+    private record ResolvedBindMount(
+            String volumeUuid,
+            String containerPathNormalized,
+            String innerRelative,
+            boolean isRootRequest,
+            Path volumeRoot,
+            Path requested) {}
 
+    /**
+     * Selects the volume mount by checking whether the requested path starts with any mount's
+     * containerPath (boundary-aware), then strips that prefix and resolves the remainder inside the
+     * hostPath.
+     */
+    private ResolvedBindMount resolveBindMount(String serverUuid, String requestedPath) {
+        GameServerEntity server = getGameServerById(serverUuid);
+
+        String req = normalizeContainerLikePath(requestedPath);
+        if (req.isBlank() || "/".equals(req)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Path must not be empty");
+        }
+
+        VolumeMountConfiguration mount = findMountByContainerPathPrefix(server, serverUuid, req);
+
+        String containerPathNorm = normalizeContainerLikePath(mount.getContainerPath());
+        String inner = stripContainerPrefix(req, containerPathNorm); // may be "" (root)
+
+        Path volumeRoot = requireVolumeRootFromMount(mount);
+
+        boolean isRootRequest = inner.isBlank();
+        Path requested =
+                isRootRequest ? volumeRoot : resolveInsideRoot(volumeRoot, inner, true, "Path");
+
+        if (!isRootRequest) {
+            if (!requested.startsWith(volumeRoot)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Path escapes volume root");
+            }
+        }
+
+        String volumeUuid = mount.getUuid();
+
+        return new ResolvedBindMount(
+                volumeUuid, containerPathNorm, inner, isRootRequest, volumeRoot, requested);
+    }
+
+    private Path requireVolumeRootFromMount(VolumeMountConfiguration mount) {
         String hostPath = mount.getHostPath();
         if (hostPath == null || hostPath.isBlank()) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Volume mount " + volumeUuid + " does not have a readable host path");
+                    HttpStatus.BAD_REQUEST, "Volume mount does not have a readable host path");
         }
 
         Path volumeRoot = Paths.get(hostPath).toAbsolutePath().normalize();
@@ -113,6 +161,80 @@ public class GameServerMountService {
                     HttpStatus.NOT_FOUND, "Mount path does not exist: " + volumeRoot);
         }
         return volumeRoot;
+    }
+
+    /**
+     * Finds the best matching mount for the requested path: - boundary-aware prefix match: "/data"
+     * matches "/data" and "/data/..." but NOT "/database/..." - prefers the longest matching
+     * containerPath (more specific mount wins)
+     */
+    private VolumeMountConfiguration findMountByContainerPathPrefix(
+            GameServerEntity server, String serverUuid, String requestedPathNormalized) {
+
+        List<VolumeMountConfiguration> mounts =
+                Optional.ofNullable(server.getVolumeMounts()).orElse(List.of());
+
+        return mounts.stream()
+                .filter(
+                        vm -> {
+                            String cp = normalizeContainerLikePath(vm.getContainerPath());
+                            return isBoundaryAwarePrefixMatch(requestedPathNormalized, cp);
+                        })
+                .max(
+                        Comparator.comparingInt(
+                                vm -> normalizeContainerLikePath(vm.getContainerPath()).length()))
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "No volume mount matching "
+                                                + requestedPathNormalized
+                                                + " found on server "
+                                                + serverUuid));
+    }
+
+    private boolean isBoundaryAwarePrefixMatch(
+            String requestedPathNormalized, String containerPathNormalized) {
+        if (containerPathNormalized.isBlank() || "/".equals(containerPathNormalized)) {
+            return false; // avoid "match everything" mount definitions
+        }
+        if (requestedPathNormalized.equals(containerPathNormalized)) {
+            return true;
+        }
+        // ensure boundary so "/data" doesn't match "/database"
+        return requestedPathNormalized.startsWith(containerPathNormalized + "/");
+    }
+
+    /**
+     * Strips the container path prefix and returns the remainder as a relative path without leading
+     * "/". If requested equals containerPath, returns "".
+     */
+    private String stripContainerPrefix(
+            String requestedPathNormalized, String containerPathNormalized) {
+        if (requestedPathNormalized.equals(containerPathNormalized)) {
+            return "";
+        }
+        if (requestedPathNormalized.startsWith(containerPathNormalized + "/")) {
+            String remainder =
+                    requestedPathNormalized.substring((containerPathNormalized + "/").length());
+            return cleanRelative(remainder);
+        }
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "Path does not start with container path");
+    }
+
+    /**
+     * Normalizes a container-style path: - trims - replaces backslashes with slashes - ensures a
+     * single leading "/" - removes trailing "/" (except for "/")
+     */
+    private String normalizeContainerLikePath(String input) {
+        String s = (input == null) ? "" : input.trim();
+        s = s.replace("\\", "/");
+        if (s.isBlank()) return "";
+        if (!s.startsWith("/")) s = "/" + s;
+        while (s.contains("//")) s = s.replace("//", "/");
+        if (s.length() > 1 && s.endsWith("/")) s = s.substring(0, s.length() - 1);
+        return s;
     }
 
     private Path resolveInsideRoot(
@@ -222,21 +344,6 @@ public class GameServerMountService {
         return children;
     }
 
-    private VolumeMountConfiguration findMount(
-            GameServerEntity server, String serverUuid, String volumeUuid) {
-        return Optional.ofNullable(server.getVolumeMounts()).orElse(List.of()).stream()
-                .filter(vm -> volumeUuid.equals(vm.getUuid()))
-                .findFirst()
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "No volume mount with uuid "
-                                                + volumeUuid
-                                                + " found on server "
-                                                + serverUuid));
-    }
-
     private String cleanRelative(String input) {
         String cleaned = (input == null) ? "" : input.trim();
         cleaned = cleaned.replace("\\", "/");
@@ -247,7 +354,8 @@ public class GameServerMountService {
 
     private GameServerFileSystemDto.FileSystemObjectDto toNode(Path p, int fetchDepth) {
         boolean isDir = Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS);
-        Integer perms = tryReadPermissions(p);
+        Optional<Integer> perms = tryReadPermissions(p);
+        Optional<Long> size = tryReadSize(p);
 
         return GameServerFileSystemDto.FileSystemObjectDto.builder()
                 .fetchDepth(fetchDepth)
@@ -257,21 +365,25 @@ public class GameServerMountService {
                                 ? GameServerFileSystemDto.FileType.DIRECTORY
                                 : GameServerFileSystemDto.FileType.FILE)
                 .permissions(perms)
+                .size(size)
                 .children(new ArrayList<>())
                 .build();
     }
 
-    /** Returns a Unix-like permission bitmask (e.g. 0755 -> 493 decimal) when supported. */
-    private Integer tryReadPermissions(Path p) {
+    /**
+     * Returns a Unix-like permission bitmask (e.g. 0755 -> 493 decimal) when supported. Optional is
+     * empty if permissions could not be fetched.
+     */
+    private Optional<Integer> tryReadPermissions(Path p) {
         try {
             PosixFileAttributes attrs =
                     Files.readAttributes(p, PosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
             Set<PosixFilePermission> perms = attrs.permissions();
-            return toUnixMode(perms);
+            return Optional.of(toUnixMode(perms));
         } catch (UnsupportedOperationException ignored) {
-            return null;
+            return Optional.empty();
         } catch (IOException ignored) {
-            return null;
+            return Optional.empty();
         }
     }
 
@@ -310,5 +422,16 @@ public class GameServerMountService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
         }
         return value;
+    }
+
+    private Optional<Long> tryReadSize(Path p) {
+        try {
+            if (Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS)) {
+                return Optional.of(0L);
+            }
+            return Optional.of(Files.size(p));
+        } catch (IOException | SecurityException e) {
+            return Optional.empty();
+        }
     }
 }
