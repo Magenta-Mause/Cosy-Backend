@@ -64,7 +64,7 @@ public class DummyDataService {
                                 .dockerHardwareLimits(
                                         DockerHardwareLimits.builder()
                                                 .dockerMemoryLimit("50MiB")
-                                                .dockerMaxCpuCores(2L)
+                                                .dockerMaxCpuCores(2f)
                                                 .build())
                                 .portMappings(
                                         List.of(
