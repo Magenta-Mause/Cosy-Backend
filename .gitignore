@@ -40,3 +40,6 @@ src/main/resources/application-local.yaml
 
 ### Mac OS ###
 .DS_Store
+
+# For api client tests
+api-client/

@@ -5,6 +5,7 @@ import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
+import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.repositories.DummyInstantiatedPropertiesRepository;
 import com.magentamause.cosybackend.services.gameserver.GameServerService;
 import com.magentamause.cosybackend.services.user.UserEntityService;
@@ -68,6 +69,12 @@ public class DummyDataService {
                                                         .protocol(PortMapping.PortProtocol.TCP)
                                                         .build()))
                                 .environmentVariables(List.of())
+                                .volumeMounts(
+                                        List.of(
+                                                VolumeMountConfiguration.builder()
+                                                        .hostPath("./dummy/tosios/data")
+                                                        .containerPath("/app/data")
+                                                        .build()))
                                 .build());
     }
 
