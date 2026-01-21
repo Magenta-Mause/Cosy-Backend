@@ -18,8 +18,9 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.docker.util.DockerCpuLimitMapper;
+import com.magentamause.cosybackend.services.engine.docker.util.DockerStatsMapper;
 import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
-import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import com.magentamause.cosybackend.services.gameserver.GameServerStatusUpdateEventType;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -37,7 +38,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -47,18 +47,10 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     private final DockerClient client;
     private final StatsMapper statsMapper;
-    private final DockerMappingUtils dockerMappingUtils;
 
     private final List<BiConsumer<GameServerStatusUpdateEventType, String>> statusListeners =
             new CopyOnWriteArrayList<>();
     private ResultCallback<Event> eventCallback;
-
-    private record StatusListenerContext(
-            Supplier<GameServerDto.GameServerStatus> currentStatusSupplier,
-            Consumer<GameServerDto.GameServerStatus> listener) {}
-
-    private final List<BiConsumer<GameServerStatusUpdateEventType, String>> failListeners =
-            new CopyOnWriteArrayList<>();
 
     private final Map<String, Supplier<GameServerDto.GameServerStatus>> statusSuppliers =
             new ConcurrentHashMap<>();
@@ -87,7 +79,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         Optional<Container> container = findContainer(serverConfig);
         if (container.isPresent()) {
             String state = container.get().getState();
-            return dockerMappingUtils.mapDockerStateToGameServerStatus(state);
+            return DockerStatsMapper.mapDockerStateToGameServerStatus(state);
         }
         return GameServerDto.GameServerStatus.STOPPED;
     }
@@ -404,17 +396,48 @@ public class DockerEngineManager implements EngineManager, Closeable {
             hostConfig.withBinds(binds);
         }
 
+        var limits = serverConfig.getDockerHardwareLimits();
+        if (limits == null) {
+            return hostConfig;
+        }
+
         // memory limit
-        if (serverConfig.getDockerMaxMemory() != null) {
-            hostConfig.withMemory(serverConfig.getDockerMaxMemory());
+        if (limits.getDockerMemoryLimit() != null) {
+            log.info("Bind Memory limit: {}", limits.getDockerMemoryLimit());
+            Long memoryBytes = convertXPQOWHE(limits.getDockerMemoryLimit());
+            hostConfig.withMemory(memoryBytes);
         }
 
         // add cpu limit
-        if (serverConfig.getDockerMaxCpu() != null) {
-            hostConfig.withCpuCount(serverConfig.getDockerMaxCpu());
+        if (limits.getDockerMaxCpuCores() != null) {
+            log.info("Bind CPU limit: {}", limits.getDockerMaxCpuCores());
+            hostConfig.withNanoCPUs(DockerCpuLimitMapper.toNanoCpu(limits.getDockerMaxCpuCores()));
         }
 
+        log.info("Host config: {}", hostConfig);
+
         return hostConfig;
+    }
+
+    public Long convertXPQOWHE(String v) {
+        // TODO: refactor and rename
+        if (v == null) {
+            return null;
+        }
+
+        v = v.trim();
+
+        if (v.endsWith("MiB")) {
+            long amount = Long.parseLong(v.replace("MiB", ""));
+            return amount * 1024L * 1024;
+        }
+
+        if (v.endsWith("GiB")) {
+            long amount = Long.parseLong(v.replace("GiB", ""));
+            return amount * 1024L * 1024 * 1024;
+        }
+
+        throw new IllegalArgumentException("Invalid memory value: " + v);
     }
 
     private void ensureImagePresent(
