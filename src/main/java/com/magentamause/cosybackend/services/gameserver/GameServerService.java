@@ -179,6 +179,7 @@ public class GameServerService {
         gameServer.setDockerImageName(dto.getDockerImageName());
         gameServer.setDockerImageTag(dto.getDockerImageTag());
         gameServer.setDockerExecutionCommand(dto.getExecutionCommand());
+        gameServer.setDockerHardwareLimits(dto.getDockerHardwareLimits());
 
         gameServer.setPortMappings(
                 updateList(gameServer.getPortMappings(), dto.getPortMappings(), ArrayList::new));

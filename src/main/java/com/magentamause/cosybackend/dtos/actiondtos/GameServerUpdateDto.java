@@ -3,6 +3,7 @@ package com.magentamause.cosybackend.dtos.actiondtos;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.annotations.uniqueElements.UniqueElementsBy;
+import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import jakarta.validation.Valid;
@@ -17,6 +18,8 @@ public class GameServerUpdateDto {
     @NotBlank private String serverName;
     @NotBlank private String dockerImageName;
     @NotBlank private String dockerImageTag;
+
+    @Valid private DockerHardwareLimits dockerHardwareLimits;
 
     @UniqueElementsBy(
             fieldNames = {"instancePort", "containerPort"},
