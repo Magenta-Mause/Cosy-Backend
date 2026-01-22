@@ -20,6 +20,7 @@ import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartExcept
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerCpuLimitMapper;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerStatsMapper;
+import com.magentamause.cosybackend.services.engine.docker.util.MemoryUtils;
 import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import com.magentamause.cosybackend.services.gameserver.GameServerStatusUpdateEventType;
 import jakarta.annotation.PostConstruct;
@@ -404,7 +405,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         // memory limit
         if (limits.getDockerMemoryLimit() != null) {
             log.info("Bind Memory limit: {}", limits.getDockerMemoryLimit());
-            Long memoryBytes = convertXPQOWHE(limits.getDockerMemoryLimit());
+            Long memoryBytes = MemoryUtils.parseMemoryStringToBytes(limits.getDockerMemoryLimit());
             hostConfig.withMemory(memoryBytes);
         }
 
@@ -417,27 +418,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
         log.info("Host config: {}", hostConfig);
 
         return hostConfig;
-    }
-
-    public Long convertXPQOWHE(String v) {
-        // TODO: refactor and rename
-        if (v == null) {
-            return null;
-        }
-
-        v = v.trim();
-
-        if (v.endsWith("MiB")) {
-            long amount = Long.parseLong(v.replace("MiB", ""));
-            return amount * 1024L * 1024;
-        }
-
-        if (v.endsWith("GiB")) {
-            long amount = Long.parseLong(v.replace("GiB", ""));
-            return amount * 1024L * 1024 * 1024;
-        }
-
-        throw new IllegalArgumentException("Invalid memory value: " + v);
     }
 
     private void ensureImagePresent(
