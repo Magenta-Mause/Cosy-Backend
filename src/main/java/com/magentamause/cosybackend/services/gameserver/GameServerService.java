@@ -148,7 +148,7 @@ public class GameServerService {
         try {
             engineManager.stopAndRemove(gameServer);
         } catch (ServerAlreadyStoppedException e) {
-            // ignored
+            log.debug("Server '{}' was already stopped when attempting to delete", uuid, e);
         }
         gameServerRepository.deleteById(uuid);
     }
