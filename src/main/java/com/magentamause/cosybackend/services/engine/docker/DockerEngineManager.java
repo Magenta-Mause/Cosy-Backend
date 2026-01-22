@@ -196,7 +196,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
         String containerName = containerName(serverConfig);
 
         ensureImagePresent(
-                serverConfig,
                 image,
                 progressListener,
                 statusUpdater,
@@ -365,14 +364,12 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     private void ensureImagePresent(
-            GameServerEntity serverConfig,
             String image,
             Consumer<StartEventDto> progressListener,
             Consumer<GameServerDto.GameServerStatus> statusUpdater,
             Consumer<Void> imagePullStartCallback,
             Consumer<Void> imagePullEndCallback)
             throws DockerPullImageException {
-        // TODO: refactor
         boolean exists =
                 client.listImagesCmd().withImageNameFilter(image).exec().stream()
                         .anyMatch(
@@ -415,12 +412,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 throw new DockerPullImageException(image);
             }
         }
-    }
-
-    private List<Integer> getInstancePorts(GameServerEntity serverConfig) {
-        return Optional.ofNullable(serverConfig.getPortMappings()).orElse(List.of()).stream()
-                .map(PortMapping::getInstancePort)
-                .collect(Collectors.toList());
     }
 
     @Override
