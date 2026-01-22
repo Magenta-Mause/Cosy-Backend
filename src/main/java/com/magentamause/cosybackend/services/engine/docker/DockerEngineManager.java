@@ -18,9 +18,8 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.services.engine.EngineManager;
-import com.magentamause.cosybackend.services.engine.docker.util.DockerCpuLimitMapper;
+import com.magentamause.cosybackend.services.engine.docker.util.DockerHostConfigFactory;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerStatsMapper;
-import com.magentamause.cosybackend.services.engine.docker.util.MemoryUtils;
 import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import com.magentamause.cosybackend.services.gameserver.GameServerStatusUpdateEventType;
 import jakarta.annotation.PostConstruct;
@@ -225,7 +224,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         .withCmd(cmd)
                         .withEnv(env)
                         .withExposedPorts(exposedPorts)
-                        .withHostConfig(buildHostConfig(serverConfig))
+                        .withHostConfig(DockerHostConfigFactory.buildHostConfig(serverConfig))
                         .exec();
 
         statusSuppliers.put(serverConfig.getUuid(), gameServerStatusSupplier);
@@ -363,61 +362,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 .map(DockerEngineManager::portMappingToExposedPort)
                 .distinct()
                 .collect(Collectors.toList());
-    }
-
-    private HostConfig buildHostConfig(GameServerEntity serverConfig) {
-        // TODO: refactor
-        HostConfig hostConfig = HostConfig.newHostConfig();
-
-        // add port bindings
-        if (serverConfig.getPortMappings() != null && !serverConfig.getPortMappings().isEmpty()) {
-            Ports portBindings = new Ports();
-            serverConfig
-                    .getPortMappings()
-                    .forEach(
-                            p -> {
-                                ExposedPort exposed = portMappingToExposedPort(p);
-                                portBindings.bind(
-                                        exposed, Ports.Binding.bindPort(p.getInstancePort()));
-                            });
-            hostConfig.withPortBindings(portBindings);
-        }
-
-        // add volume binds
-        if (serverConfig.getVolumeMounts() != null && !serverConfig.getVolumeMounts().isEmpty()) {
-            List<Bind> binds =
-                    serverConfig.getVolumeMounts().stream()
-                            .map(
-                                    v ->
-                                            new Bind(
-                                                    v.getHostPath(),
-                                                    new Volume(v.getContainerPath()),
-                                                    AccessMode.rw))
-                            .toList();
-            hostConfig.withBinds(binds);
-        }
-
-        var limits = serverConfig.getDockerHardwareLimits();
-        if (limits == null) {
-            return hostConfig;
-        }
-
-        // memory limit
-        if (limits.getDockerMemoryLimit() != null) {
-            log.info("Bind Memory limit: {}", limits.getDockerMemoryLimit());
-            Long memoryBytes = MemoryUtils.parseMemoryStringToBytes(limits.getDockerMemoryLimit());
-            hostConfig.withMemory(memoryBytes);
-        }
-
-        // add cpu limit
-        if (limits.getDockerMaxCpuCores() != null) {
-            log.info("Bind CPU limit: {}", limits.getDockerMaxCpuCores());
-            hostConfig.withNanoCPUs(DockerCpuLimitMapper.toNanoCpu(limits.getDockerMaxCpuCores()));
-        }
-
-        log.info("Host config: {}", hostConfig);
-
-        return hostConfig;
     }
 
     private void ensureImagePresent(
