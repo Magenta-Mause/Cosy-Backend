@@ -63,7 +63,7 @@ public class GamesApiService {
                                         .queryParam("id", externalId)
                                         .queryParam("include_hero", true)
                                         .queryParam("include_logo", true)
-                                        .build(externalId))
+                                        .build())
                 .retrieve()
                 .onStatus(
                         status -> status.value() != 200,
