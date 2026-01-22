@@ -165,38 +165,44 @@ public class GameServerMountService {
      * containerPath prefix match.
      */
     public void createDirectoryInBindMountVolume(String serverUuid, String requestedPath) {
-        ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
+        withWriteLock(
+                serverUuid,
+                () -> {
+                    ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
 
-        Path volumeRoot = resolved.volumeRoot();
-        Path requested = resolved.requested();
+                    Path volumeRoot = resolved.volumeRoot();
+                    Path requested = resolved.requested();
 
-        String cleaned =
-                requireNonBlank(
-                        cleanRelative(resolved.innerRelative()),
-                        "Directory path must not be empty");
+                    String cleaned =
+                            requireNonBlank(
+                                    cleanRelative(resolved.innerRelative()),
+                                    "Directory path must not be empty");
 
-        if (resolved.isRootRequest()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Refusing to create volume root");
-        }
+                    if (resolved.isRootRequest()) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST, "Refusing to create volume root");
+                    }
 
-        Path parent =
-                requireParentExistsAndDirectory(
-                        requested, cleaned, "Parent directory does not exist: ");
-        requireRealPathInsideRoot(volumeRoot, parent, cleaned);
+                    Path parent =
+                            requireParentExistsAndDirectory(
+                                    requested, cleaned, "Parent directory does not exist: ");
+                    requireRealPathInsideRoot(volumeRoot, parent, cleaned);
 
-        requireWritable(parent, "No permission to create directory in: " + parent);
-        requireNotExists(requested, cleaned, "Directory already exists: ");
+                    requireWritable(parent, "No permission to create directory in: " + parent);
+                    requireNotExists(requested, cleaned, "Directory already exists: ");
 
-        try {
-            Files.createDirectory(requested);
-        } catch (AccessDeniedException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Access denied while creating directory", e);
-        } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create directory: " + cleaned, e);
-        }
+                    try {
+                        Files.createDirectory(requested);
+                    } catch (AccessDeniedException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.FORBIDDEN, "Access denied while creating directory", e);
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Failed to create directory: " + cleaned,
+                                e);
+                    }
+                });
     }
 
     /**
@@ -205,54 +211,61 @@ public class GameServerMountService {
      */
     public void uploadFileToBindMountVolume(
             String serverUuid, String requestedPath, byte[] fileContent) {
+        withWriteLock(
+                serverUuid,
+                () -> {
+                    ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
 
-        ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
+                    Path volumeRoot = resolved.volumeRoot();
+                    Path requested = resolved.requested();
 
-        Path volumeRoot = resolved.volumeRoot();
-        Path requested = resolved.requested();
+                    String cleaned =
+                            requireNonBlank(
+                                    cleanRelative(resolved.innerRelative()),
+                                    "File path must not be empty");
 
-        String cleaned =
-                requireNonBlank(
-                        cleanRelative(resolved.innerRelative()), "File path must not be empty");
+                    if (resolved.isRootRequest()) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST, "File path must not be volume root");
+                    }
 
-        if (resolved.isRootRequest()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "File path must not be volume root");
-        }
+                    Path parent =
+                            requireParentExistsAndDirectory(
+                                    requested, cleaned, "Parent directory does not exist: ");
+                    requireRealPathInsideRoot(volumeRoot, parent, cleaned);
 
-        Path parent =
-                requireParentExistsAndDirectory(
-                        requested, cleaned, "Parent directory does not exist: ");
-        requireRealPathInsideRoot(volumeRoot, parent, cleaned);
+                    requireWritable(parent, "No write permission for directory: " + parent);
 
-        requireWritable(parent, "No write permission for directory: " + parent);
+                    if (Files.exists(requested, LinkOption.NOFOLLOW_LINKS)) {
+                        requireNotDirectory(requested, cleaned);
+                        requireWritable(requested, "No write permission for file: " + cleaned);
+                    }
 
-        if (Files.exists(requested, LinkOption.NOFOLLOW_LINKS)) {
-            requireNotDirectory(requested, cleaned);
-            requireWritable(requested, "No write permission for file: " + cleaned);
-        }
+                    try {
+                        Path tempFile =
+                                Files.createTempFile(
+                                        parent, requested.getFileName().toString(), ".upload");
+                        Files.write(tempFile, fileContent);
 
-        try {
-            Path tempFile =
-                    Files.createTempFile(parent, requested.getFileName().toString(), ".upload");
-            Files.write(tempFile, fileContent);
-
-            try {
-                Files.move(
-                        tempFile,
-                        requested,
-                        StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(tempFile, requested, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (AccessDeniedException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Access denied while writing file", e);
-        } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to write file: " + cleaned, e);
-        }
+                        try {
+                            Files.move(
+                                    tempFile,
+                                    requested,
+                                    StandardCopyOption.REPLACE_EXISTING,
+                                    StandardCopyOption.ATOMIC_MOVE);
+                        } catch (AtomicMoveNotSupportedException e) {
+                            Files.move(tempFile, requested, StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    } catch (AccessDeniedException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.FORBIDDEN, "Access denied while writing file", e);
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Failed to write file: " + cleaned,
+                                e);
+                    }
+                });
     }
 
     /**
@@ -261,93 +274,101 @@ public class GameServerMountService {
      */
     public void renameInBindMountVolume(
             String serverUuid, String oldRequestedPath, String newRequestedPath) {
+        withWriteLock(
+                serverUuid,
+                () -> {
+                    ResolvedBindMount oldResolved = resolveBindMount(serverUuid, oldRequestedPath);
+                    ResolvedBindMount newResolved = resolveBindMount(serverUuid, newRequestedPath);
 
-        ResolvedBindMount oldResolved = resolveBindMount(serverUuid, oldRequestedPath);
-        ResolvedBindMount newResolved = resolveBindMount(serverUuid, newRequestedPath);
+                    Path sourceRoot = oldResolved.volumeRoot();
+                    Path targetRoot = newResolved.volumeRoot();
 
-        Path sourceRoot = oldResolved.volumeRoot();
-        Path targetRoot = newResolved.volumeRoot();
+                    Path source = oldResolved.requested();
+                    Path target = newResolved.requested();
 
-        Path source = oldResolved.requested();
-        Path target = newResolved.requested();
+                    String oldClean =
+                            requireNonBlank(
+                                    cleanRelative(oldResolved.innerRelative()),
+                                    "oldPath must not be empty");
+                    String newClean =
+                            requireNonBlank(
+                                    cleanRelative(newResolved.innerRelative()),
+                                    "newPath must not be empty");
 
-        String oldClean =
-                requireNonBlank(
-                        cleanRelative(oldResolved.innerRelative()), "oldPath must not be empty");
-        String newClean =
-                requireNonBlank(
-                        cleanRelative(newResolved.innerRelative()), "newPath must not be empty");
+                    if (oldResolved.isRootRequest() || newResolved.isRootRequest()) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST, "Renaming volume root is not allowed");
+                    }
 
-        if (oldResolved.isRootRequest() || newResolved.isRootRequest()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Renaming volume root is not allowed");
-        }
+                    requireExists(source, oldClean);
 
-        requireExists(source, oldClean);
+                    if (Files.isSymbolicLink(source)) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Renaming symlinks is not allowed: " + oldClean);
+                    }
 
-        if (Files.isSymbolicLink(source)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Renaming symlinks is not allowed: " + oldClean);
-        }
+                    Path sourceParent = requireParent(source, "Invalid oldPath");
+                    Path targetParent = requireParent(target, "Invalid newPath");
 
-        Path sourceParent = requireParent(source, "Invalid oldPath");
-        Path targetParent = requireParent(target, "Invalid newPath");
+                    requireExists(
+                            targetParent, newClean, "Target parent directory does not exist: ");
+                    requireDirectory(targetParent, newClean, "Target parent is not a directory: ");
+                    requireNotExists(target, newClean, "Target already exists: ");
 
-        requireExists(targetParent, newClean, "Target parent directory does not exist: ");
-        requireDirectory(targetParent, newClean, "Target parent is not a directory: ");
-        requireNotExists(target, newClean, "Target already exists: ");
+                    // Real-path containment checks (protect against symlink tricks)
+                    requireRealPathInsideRoot(sourceRoot, source, oldClean);
+                    requireRealPathInsideRoot(sourceRoot, sourceParent, oldClean);
 
-        // Real-path containment checks (protect against symlink tricks)
-        requireRealPathInsideRoot(sourceRoot, source, oldClean);
-        requireRealPathInsideRoot(sourceRoot, sourceParent, oldClean);
+                    // For the target we only need to verify the parent is inside the target root
+                    requireRealPathInsideRoot(targetRoot, targetParent, newClean);
 
-        // For the target we only need to verify the parent is inside the target root
-        requireRealPathInsideRoot(targetRoot, targetParent, newClean);
+                    requireReadable(source, oldClean);
+                    requireWritable(sourceParent, "No permission to modify: " + sourceParent);
+                    requireWritable(targetParent, "No permission to write into: " + targetParent);
 
-        requireReadable(source, oldClean);
-        requireWritable(sourceParent, "No permission to modify: " + sourceParent);
-        requireWritable(targetParent, "No permission to write into: " + targetParent);
+                    boolean sameMount = oldResolved.volumeUuid().equals(newResolved.volumeUuid());
 
-        boolean sameMount = oldResolved.volumeUuid().equals(newResolved.volumeUuid());
+                    try {
+                        if (sameMount) {
+                            // Fast path: within same mount
+                            try {
+                                Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+                            } catch (AtomicMoveNotSupportedException e) {
+                                Files.move(source, target);
+                            }
+                            return;
+                        }
 
-        try {
-            if (sameMount) {
-                // Fast path: within same mount
-                try {
-                    Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
-                } catch (AtomicMoveNotSupportedException e) {
-                    Files.move(source, target);
-                }
-                return;
-            }
+                        // Cross-mount: copy -> delete
+                        if (Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) {
+                            // target must not exist; create target dir then copy children
+                            Files.createDirectory(target);
+                            copyDirectoryRecursiveNoSymlinks(source, target);
 
-            // Cross-mount: copy -> delete
-            if (Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) {
-                // target must not exist; create target dir then copy children
-                Files.createDirectory(target);
-                copyDirectoryRecursiveNoSymlinks(source, target);
+                            // need permission to delete from source parent (already checked)
+                            deleteDirectoryRecursive(source);
+                        } else {
+                            // file copy (no overwrite)
+                            Files.copy(source, target, StandardCopyOption.COPY_ATTRIBUTES);
 
-                // need permission to delete from source parent (already checked)
-                deleteDirectoryRecursive(source);
-            } else {
-                // file copy (no overwrite)
-                Files.copy(source, target, StandardCopyOption.COPY_ATTRIBUTES);
-
-                // delete original
-                Files.delete(source);
-            }
-        } catch (AccessDeniedException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Access denied while renaming", e);
-        } catch (FileAlreadyExistsException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Target already exists: " + newClean, e);
-        } catch (NoSuchFileException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Path not found", e);
-        } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to rename/move", e);
-        }
+                            // delete original
+                            Files.delete(source);
+                        }
+                    } catch (AccessDeniedException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.FORBIDDEN, "Access denied while renaming", e);
+                    } catch (FileAlreadyExistsException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.CONFLICT, "Target already exists: " + newClean, e);
+                    } catch (NoSuchFileException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "Path not found", e);
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR, "Failed to rename/move", e);
+                    }
+                });
     }
 
     /**
@@ -405,53 +426,64 @@ public class GameServerMountService {
 
     /** Deletes a file or directory (recursively) at the given container-style requested path. */
     public void deleteInBindMountVolume(String serverUuid, String requestedPath) {
-        ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
+        withWriteLock(
+                serverUuid,
+                () -> {
+                    ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
 
-        Path volumeRoot = resolved.volumeRoot();
-        Path requested = resolved.requested();
+                    Path volumeRoot = resolved.volumeRoot();
+                    Path requested = resolved.requested();
 
-        String cleaned =
-                requireNonBlank(cleanRelative(resolved.innerRelative()), "Path must not be empty");
+                    String cleaned =
+                            requireNonBlank(
+                                    cleanRelative(resolved.innerRelative()),
+                                    "Path must not be empty");
 
-        if (resolved.isRootRequest() || requested.equals(volumeRoot)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Refusing to delete volume root");
-        }
+                    if (resolved.isRootRequest() || requested.equals(volumeRoot)) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST, "Refusing to delete volume root");
+                    }
 
-        requireExists(requested, cleaned);
+                    requireExists(requested, cleaned);
 
-        if (Files.isSymbolicLink(requested)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Deleting symlinks is not allowed: " + cleaned);
-        }
+                    if (Files.isSymbolicLink(requested)) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Deleting symlinks is not allowed: " + cleaned);
+                    }
 
-        Path parent = requireParent(requested, "Invalid path: " + cleaned);
+                    Path parent = requireParent(requested, "Invalid path: " + cleaned);
 
-        // Containment checks
-        requireRealPathInsideRoot(volumeRoot, requested, cleaned);
-        requireRealPathInsideRoot(volumeRoot, parent, cleaned);
+                    // Containment checks
+                    requireRealPathInsideRoot(volumeRoot, requested, cleaned);
+                    requireRealPathInsideRoot(volumeRoot, parent, cleaned);
 
-        requireWritable(parent, "No permission to delete from: " + parent);
+                    requireWritable(parent, "No permission to delete from: " + parent);
 
-        try {
-            if (Files.isDirectory(requested, LinkOption.NOFOLLOW_LINKS)) {
-                deleteDirectoryRecursive(requested);
-            } else {
-                Files.delete(requested);
-            }
-        } catch (AccessDeniedException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Access denied while deleting: " + cleaned, e);
-        } catch (NoSuchFileException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Path not found: " + cleaned, e);
-        } catch (DirectoryNotEmptyException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Directory not empty: " + cleaned, e);
-        } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete: " + cleaned, e);
-        }
+                    try {
+                        if (Files.isDirectory(requested, LinkOption.NOFOLLOW_LINKS)) {
+                            deleteDirectoryRecursive(requested);
+                        } else {
+                            Files.delete(requested);
+                        }
+                    } catch (AccessDeniedException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.FORBIDDEN,
+                                "Access denied while deleting: " + cleaned,
+                                e);
+                    } catch (NoSuchFileException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "Path not found: " + cleaned, e);
+                    } catch (DirectoryNotEmptyException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.CONFLICT, "Directory not empty: " + cleaned, e);
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Failed to delete: " + cleaned,
+                                e);
+                    }
+                });
     }
 
     /**
