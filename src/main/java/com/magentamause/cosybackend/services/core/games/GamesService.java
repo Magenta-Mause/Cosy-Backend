@@ -73,6 +73,14 @@ public class GamesService {
                                         .subscribeOn(Schedulers.boundedElastic()));
     }
 
+    public Optional<GameEntity> getOptionalGameByExternalId(int externalId, boolean storeInDb) {
+        try {
+            return Optional.of(getGameEntityByExternalId(externalId, storeInDb));
+        } catch (RuntimeException e) {
+            return Optional.empty();
+        }
+    }
+
     public GameEntity getGameEntityByExternalId(int externalId, boolean storeInDb) {
         Optional<GameEntity> game = gameRepository.findByExternalGameId(externalId);
         if (game.isPresent()) {

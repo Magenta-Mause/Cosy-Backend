@@ -74,6 +74,7 @@ public class TemplateEntity {
                 .gameId(externalTemplateDto.gameId())
                 .dockerImageName(externalTemplateDto.dockerImageName())
                 .dockerImageTag(externalTemplateDto.dockerImageTag())
+                .dockerExecutionCommand(externalTemplateDto.dockerExecutionCommand())
                 .environmentVariables(externalTemplateDto.environmentVariables())
                 .portMappings(externalTemplateDto.portMapping())
                 .fileMounts(externalTemplateDto.fileMounts())
