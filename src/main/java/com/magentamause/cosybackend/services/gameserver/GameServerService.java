@@ -222,22 +222,7 @@ public class GameServerService {
                                 return entity;
                             });
 
-            try {
-                // Check hardware limits
-                transactionTemplate.executeWithoutResult(
-                        status -> {
-                            GameServerEntity entity = getGameServerById(gameServerUuid);
-                            hardwareQuotaService.validateHardwareLimits(entity);
-                        });
-            } catch (HardwareLimitException e) {
-                log.warn("Hardware limit reached for server '{}'", gameServerUuid);
-                updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
-                enrichAndPublishLogMessage(
-                        serverConfig,
-                        GameServerLogMessageEntity.of(
-                                serverConfig.getUuid(),
-                                e.getMessage(),
-                                GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
+            if (!checkHardwareLimits(gameServerUuid, serverConfig)) {
                 return;
             }
 
@@ -307,6 +292,28 @@ public class GameServerService {
                     "Error while starting docker container: " + e.getMessage(), e);
         } finally {
             startingServers.remove(gameServerUuid);
+        }
+    }
+
+    private boolean checkHardwareLimits(String gameServerUuid, GameServerEntity serverConfig) {
+        try {
+            // Check hardware limits
+            transactionTemplate.executeWithoutResult(
+                    status -> {
+                        GameServerEntity entity = getGameServerById(gameServerUuid);
+                        hardwareQuotaService.validateHardwareLimits(entity);
+                    });
+            return true;
+        } catch (HardwareLimitException e) {
+            log.warn("Could not start Server '{}' - Hardware quota limit reached.", gameServerUuid);
+            updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
+            enrichAndPublishLogMessage(
+                    serverConfig,
+                    GameServerLogMessageEntity.of(
+                            serverConfig.getUuid(),
+                            e.getMessage(),
+                            GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
+            return false;
         }
     }
 
