@@ -1,7 +1,5 @@
 package com.magentamause.cosybackend.controllers;
 
-import static reactor.netty.http.HttpConnectionLiveness.log;
-
 import com.magentamause.cosybackend.dtos.actiondtos.UserCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.UserInviteCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
@@ -18,6 +16,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/user-invites")
+@Slf4j
 public class UserInviteController {
 
     private final UserInviteService userInviteService;
