@@ -27,8 +27,11 @@ public class TemplateService {
         try {
             List<ExternalTemplateDto> templates =
                     cosyTemplateApiService.queryCosyTemplateApi().block();
+            if (templates == null) {
+                log.warn("Failed to fetch templates from Cosy Template API");
+                throw new RuntimeException("Failed to fetch templates from Cosy Template API");
+            }
             templateRepository.deleteAll();
-            assert templates != null;
             for (ExternalTemplateDto template : templates) {
                 log.info("Found template: {}", template.name());
                 log.info("Fetching Game with external id: {}", template.gameId());
