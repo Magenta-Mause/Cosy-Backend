@@ -21,5 +21,4 @@ public class GamesApiGameSearchResponse {
     public static class DataPayload {
         private List<GamePayload> games;
     }
-
 }

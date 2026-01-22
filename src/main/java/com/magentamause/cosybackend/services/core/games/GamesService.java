@@ -5,6 +5,12 @@ import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.exceptions.gameapi.GameFetchException;
 import com.magentamause.cosybackend.repositories.GameRepository;
 import com.magentamause.cosybackend.services.external.gamesapi.GamesApiService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -12,13 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -40,44 +39,53 @@ public class GamesService {
         if (query == null || query.isBlank()) {
             return Mono.just(gameRepository.findAll().stream().map(GameDto::fromEntity).toList());
         }
-        return gamesApiService.queryGamesApi(query, false)
+        return gamesApiService
+                .queryGamesApi(query, false)
                 .publishOn(Schedulers.boundedElastic())
-                .map(apiGames -> {
-                    List<GameEntity> dbGames = gameRepository.queryByName(query);
+                .map(
+                        apiGames -> {
+                            List<GameEntity> dbGames = gameRepository.queryByName(query);
 
-                    List<GameDto> dbDtos = dbGames.stream()
-                            .map(GameDto::fromEntity)
-                            .toList();
+                            List<GameDto> dbDtos =
+                                    dbGames.stream().map(GameDto::fromEntity).toList();
 
-                    Map<Integer, GameDto> apiGameMap = apiGames.stream()
-                            .collect(Collectors.toMap(
-                                    GameDto::getExternalGameId,
-                                    Function.identity(),
-                                    (a, b) -> a
-                            ));
+                            Map<Integer, GameDto> apiGameMap =
+                                    apiGames.stream()
+                                            .collect(
+                                                    Collectors.toMap(
+                                                            GameDto::getExternalGameId,
+                                                            Function.identity(),
+                                                            (a, b) -> a));
 
-                    // DB games first, overriding API if present
-                    List<GameDto> result = new ArrayList<>(dbDtos);
+                            // DB games first, overriding API if present
+                            List<GameDto> result = new ArrayList<>(dbDtos);
 
-                    // Add remaining API games not present in DB
-                    apiGames.stream()
-                            .filter(apiGame -> !apiGameMap.containsKey(apiGame.getExternalGameId())
-                                    || dbGames.stream().noneMatch(
-                                    db -> db.getExternalGameId() == apiGame.getExternalGameId()
-                            ))
-                            .forEach(result::add);
+                            // Add remaining API games not present in DB
+                            apiGames.stream()
+                                    .filter(
+                                            apiGame ->
+                                                    !apiGameMap.containsKey(
+                                                                    apiGame.getExternalGameId())
+                                                            || dbGames.stream()
+                                                                    .noneMatch(
+                                                                            db ->
+                                                                                    db
+                                                                                                    .getExternalGameId()
+                                                                                            == apiGame
+                                                                                                    .getExternalGameId()))
+                                    .forEach(result::add);
 
-                    return result;
-                })
-                .onErrorResume(ex ->
-                        Mono.fromCallable(() ->
-                                gameRepository.queryByName(query).stream()
-                                        .map(GameDto::fromEntity)
-                                        .toList()
-                        ).subscribeOn(Schedulers.boundedElastic())
-                );
+                            return result;
+                        })
+                .onErrorResume(
+                        ex ->
+                                Mono.fromCallable(
+                                                () ->
+                                                        gameRepository.queryByName(query).stream()
+                                                                .map(GameDto::fromEntity)
+                                                                .toList())
+                                        .subscribeOn(Schedulers.boundedElastic()));
     }
-
 
     public GameEntity getGameEntityByExternalId(int externalId, boolean storeInDb) {
         Optional<GameEntity> game = gameRepository.findByExternalGameId(externalId);
@@ -85,8 +93,7 @@ public class GamesService {
             return game.get();
         }
         try {
-            GameDto fetchedGame = gamesApiService.getByExternalId(externalId)
-                    .block();
+            GameDto fetchedGame = gamesApiService.getByExternalId(externalId).block();
             if (fetchedGame == null) {
                 throw new GameFetchException("Game not found");
             }

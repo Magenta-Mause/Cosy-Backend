@@ -2,16 +2,15 @@ package com.magentamause.cosybackend.entities;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.magentamause.cosybackend.dtos.template.ResourceLimit;
 import com.magentamause.cosybackend.dtos.template.ExternalTemplateDto;
+import com.magentamause.cosybackend.dtos.template.ResourceLimit;
 import com.magentamause.cosybackend.dtos.template.Variable;
 import jakarta.persistence.*;
+import java.util.List;
+import java.util.Map;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-
-import java.util.List;
-import java.util.Map;
 
 @Getter
 @Setter
@@ -24,19 +23,25 @@ public class TemplateEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String uuid;
+
     @Column(nullable = false)
     private String name;
+
     @Column(nullable = false)
     private String path;
+
     @Column(nullable = false)
     private String description;
+
     @Column(nullable = false)
     private int gameId;
 
     @Column(nullable = false)
     private String dockerImageName;
+
     @Column(nullable = false)
     private String dockerImageTag;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, String> environmentVariables;

@@ -2,16 +2,11 @@ package com.magentamause.cosybackend.services.external.gamesapi;
 
 import com.magentamause.cosybackend.configs.properties.GamesApiProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
-import com.magentamause.cosybackend.dtos.gamesapi.GamePayload;
 import com.magentamause.cosybackend.dtos.gamesapi.GamesApiGameByIdResponse;
 import com.magentamause.cosybackend.dtos.gamesapi.GamesApiGameSearchResponse;
 import com.magentamause.cosybackend.exceptions.GamesApiError;
 import com.magentamause.cosybackend.exceptions.gameapi.GameFetchException;
-import com.magentamause.cosybackend.repositories.GameRepository;
-
 import java.util.List;
-import java.util.Map;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -39,7 +34,7 @@ public class GamesApiService {
                                             uriBuilder
                                                     .path("/games")
                                                     .queryParam("query", query)
-                                                    .queryParam("include_hero", includeAssets )
+                                                    .queryParam("include_hero", includeAssets)
                                                     .queryParam("include_logo", includeAssets)
                                                     .build())
                             .retrieve()
@@ -49,38 +44,45 @@ public class GamesApiService {
         } catch (RuntimeException e) {
             throw new GamesApiError("Unexpected error while calling Games API", e);
         }
-        return response.map(res ->
-                res.getData() != null
-                        && res.getData().getGames() != null
-                        ? res.getData().getGames().stream()
-                        .map(game -> game.toDto()).toList()
-                        : List.of());
+        return response.map(
+                res ->
+                        res.getData() != null && res.getData().getGames() != null
+                                ? res.getData().getGames().stream()
+                                        .map(game -> game.toDto())
+                                        .toList()
+                                : List.of());
     }
 
-
     public Mono<GameDto> getByExternalId(int externalId) throws GameFetchException {
-        return gamesApiWebClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/game")
-                        .queryParam("id", externalId)
-                        .queryParam("include_hero", true)
-                        .queryParam("include_logo", true)
-                        .build(externalId))
+        return gamesApiWebClient
+                .get()
+                .uri(
+                        uriBuilder ->
+                                uriBuilder
+                                        .path("/game")
+                                        .queryParam("id", externalId)
+                                        .queryParam("include_hero", true)
+                                        .queryParam("include_logo", true)
+                                        .build(externalId))
                 .retrieve()
                 .onStatus(
                         status -> status.value() != 200,
-                        response -> response
-                                .bodyToMono(String.class)
-                                .defaultIfEmpty("")
-                                .map(body -> new GameFetchException(
-                                        "Games API returned status " +
-                                                response.statusCode().value() +
-                                                " for externalId=" + externalId +
-                                                (body.isBlank() ? "" : ", body=" + body)
-                                ))
-                )
+                        response ->
+                                response.bodyToMono(String.class)
+                                        .defaultIfEmpty("")
+                                        .map(
+                                                body ->
+                                                        new GameFetchException(
+                                                                "Games API returned status "
+                                                                        + response.statusCode()
+                                                                                .value()
+                                                                        + " for externalId="
+                                                                        + externalId
+                                                                        + (body.isBlank()
+                                                                                ? ""
+                                                                                : ", body="
+                                                                                        + body))))
                 .bodyToMono(GamesApiGameByIdResponse.class)
                 .map(response -> response.getData().toDto());
     }
-
 }

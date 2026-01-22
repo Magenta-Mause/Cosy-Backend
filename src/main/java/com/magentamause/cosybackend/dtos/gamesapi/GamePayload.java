@@ -17,8 +17,7 @@ public class GamePayload {
     @JsonProperty("id")
     private int externalGameId;
 
-    @NotBlank
-    private String name;
+    @NotBlank private String name;
 
     @JsonProperty("hero_url")
     private String heroUrl;

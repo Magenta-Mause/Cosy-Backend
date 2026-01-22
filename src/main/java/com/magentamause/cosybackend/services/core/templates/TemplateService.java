@@ -6,13 +6,12 @@ import com.magentamause.cosybackend.entities.TemplateEntity;
 import com.magentamause.cosybackend.repositories.TemplateRepository;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.external.templates.CosyTemplateApiService;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -26,7 +25,8 @@ public class TemplateService {
     public List<TemplateEntity> refreshTemplates() {
         log.info("Refreshing templates...");
         try {
-            List<ExternalTemplateDto> templates = cosyTemplateApiService.queryCosyTemplateApi().block();
+            List<ExternalTemplateDto> templates =
+                    cosyTemplateApiService.queryCosyTemplateApi().block();
             templateRepository.deleteAll();
             assert templates != null;
             for (ExternalTemplateDto template : templates) {
@@ -35,7 +35,8 @@ public class TemplateService {
                 GameEntity game = gamesService.getGameEntityByExternalId(template.gameId(), true);
                 log.info("Fetched Game: {}", game.getName());
             }
-            return templateRepository.saveAll(templates.stream().map(TemplateEntity::ofDto).toList());
+            return templateRepository.saveAll(
+                    templates.stream().map(TemplateEntity::ofDto).toList());
         } catch (Exception e) {
             log.error("Failed to refresh templates: {}", e.getMessage(), e);
             throw e;
@@ -45,5 +46,4 @@ public class TemplateService {
     public List<TemplateEntity> getAllTemplates() {
         return templateRepository.findAll();
     }
-
 }

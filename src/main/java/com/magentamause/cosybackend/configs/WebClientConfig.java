@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.configs;
 
-import com.magentamause.cosybackend.configs.properties.GamesApiProperties;
 import com.magentamause.cosybackend.configs.properties.CosyTemplateApiProperties;
+import com.magentamause.cosybackend.configs.properties.GamesApiProperties;
 import com.magentamause.cosybackend.configs.properties.LokiProperties;
 import java.util.Base64;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -13,7 +13,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
 @Configuration
-@EnableConfigurationProperties({LokiProperties.class, GamesApiProperties.class, CosyTemplateApiProperties.class})
+@EnableConfigurationProperties({
+    LokiProperties.class,
+    GamesApiProperties.class,
+    CosyTemplateApiProperties.class
+})
 public class WebClientConfig {
 
     @Bean

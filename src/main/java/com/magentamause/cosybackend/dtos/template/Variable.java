@@ -1,7 +1,6 @@
 package com.magentamause.cosybackend.dtos.template;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
 public record Variable(
@@ -11,6 +10,4 @@ public record Variable(
         String regex,
         @JsonProperty("default_value") Object defaultValue,
         List<String> options,
-        String example
-) {
-}
+        String example) {}
