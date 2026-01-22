@@ -312,7 +312,7 @@ public class GameServerService {
                     GameServerLogMessageEntity.of(
                             serverConfig.getUuid(),
                             e.getMessage(),
-                            GameServerLogMessageEntity.LogLevel.COSY_DEBUG));
+                            GameServerLogMessageEntity.LogLevel.COSY_ERROR));
             return false;
         }
     }
