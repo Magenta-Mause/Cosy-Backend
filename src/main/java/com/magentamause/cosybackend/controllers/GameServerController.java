@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
@@ -115,7 +116,8 @@ public class GameServerController {
     public ResponseEntity<GameServerFileSystemDto> getFileSystemForVolume(
             @PathVariable @ResourceId String uuid,
             @RequestParam(name = "path", required = false, defaultValue = "") String path,
-            @RequestParam(name = "fetch_depth", defaultValue = "1") @Min(0) int fetchDepth) {
+            @RequestParam(name = "fetch_depth", defaultValue = "1") @Min(0) @Max(5)
+                    int fetchDepth) {
         GameServerFileSystemDto dto =
                 gameServerMountService.readBindMountFileSystem(uuid, path, fetchDepth);
         return ResponseEntity.ok(dto);
