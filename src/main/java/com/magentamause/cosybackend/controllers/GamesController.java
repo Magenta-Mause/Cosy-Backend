@@ -18,7 +18,7 @@ public class GamesController {
     private final GamesService gamesService;
 
     @GetMapping
-    public Mono<ResponseEntity<List<GameDto>>> queryGames(@RequestParam String query) {
+    public Mono<ResponseEntity<List<GameDto>>> queryGames(@RequestParam(required = false) String query) {
         return gamesService
                 .query(query)
                 .map(
