@@ -352,7 +352,9 @@ public class GameServerMountService {
 
     private List<GameServerFileSystemDto.FileSystemObjectDto> listDirectory(
             Path dir, int fetchDepth) {
-        if (fetchDepth < 0) fetchDepth = 0;
+        if (fetchDepth < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fetchDepth must be >= 0");
+        }
 
         List<GameServerFileSystemDto.FileSystemObjectDto> children = new ArrayList<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
