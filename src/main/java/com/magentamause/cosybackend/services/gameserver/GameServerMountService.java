@@ -18,6 +18,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -30,6 +34,35 @@ import org.springframework.web.server.ResponseStatusException;
 public class GameServerMountService {
 
     private final GameServerRepository gameServerRepository;
+    private final ConcurrentHashMap<String, ReadWriteLock> locks = new ConcurrentHashMap<>();
+
+    private ReadWriteLock lockForServer(String serverUuid) {
+        return locks.computeIfAbsent(serverUuid, k -> new ReentrantReadWriteLock(true));
+    }
+
+    private <T> T withReadLock(String serverUuid, java.util.concurrent.Callable<T> action) {
+        Lock l = lockForServer(serverUuid).readLock();
+        l.lock();
+        try {
+            return action.call();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            l.unlock();
+        }
+    }
+
+    private void withWriteLock(String serverUuid, Runnable action) {
+        Lock l = lockForServer(serverUuid).writeLock();
+        l.lock();
+        try {
+            action.run();
+        } finally {
+            l.unlock();
+        }
+    }
 
     /**
      * Reads a bind mount filesystem by using the requested path as-is, selecting the bind mount by
@@ -38,35 +71,39 @@ public class GameServerMountService {
      */
     public GameServerFileSystemDto readBindMountFileSystem(
             String serverUuid, String requestedPath, int fetchDepth) {
+        return withReadLock(
+                serverUuid,
+                () -> {
+                    if (fetchDepth < 0) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST, "fetchDepth must be >= 0");
+                    }
 
-        if (fetchDepth < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "fetchDepth must be >= 0");
-        }
+                    ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
 
-        ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
+                    Path volumeRoot = resolved.volumeRoot();
+                    Path requested = resolved.requested();
 
-        Path volumeRoot = resolved.volumeRoot();
-        Path requested = resolved.requested();
+                    if (!resolved.isRootRequest()) {
+                        requireExists(requested, resolved.innerRelative());
+                        requireRealPathInsideRoot(volumeRoot, requested, resolved.innerRelative());
+                    }
 
-        if (!resolved.isRootRequest()) {
-            requireExists(requested, resolved.innerRelative());
-            requireRealPathInsideRoot(volumeRoot, requested, resolved.innerRelative());
-        }
+                    if (Files.isDirectory(requested, LinkOption.NOFOLLOW_LINKS)) {
+                        List<GameServerFileSystemDto.FileSystemObjectDto> entries =
+                                listDirectory(requested, fetchDepth);
+                        return GameServerFileSystemDto.builder()
+                                .volumeUuid(resolved.volumeUuid())
+                                .objects(entries)
+                                .build();
+                    }
 
-        if (Files.isDirectory(requested, LinkOption.NOFOLLOW_LINKS)) {
-            List<GameServerFileSystemDto.FileSystemObjectDto> entries =
-                    listDirectory(requested, fetchDepth);
-            return GameServerFileSystemDto.builder()
-                    .volumeUuid(resolved.volumeUuid())
-                    .objects(entries)
-                    .build();
-        }
-
-        GameServerFileSystemDto.FileSystemObjectDto fileNode = toNode(requested, 0);
-        return GameServerFileSystemDto.builder()
-                .volumeUuid(resolved.volumeUuid())
-                .objects(List.of(fileNode))
-                .build();
+                    GameServerFileSystemDto.FileSystemObjectDto fileNode = toNode(requested, 0);
+                    return GameServerFileSystemDto.builder()
+                            .volumeUuid(resolved.volumeUuid())
+                            .objects(List.of(fileNode))
+                            .build();
+                });
     }
 
     /**
@@ -74,33 +111,40 @@ public class GameServerMountService {
      * optional subpath). The bind mount is selected by containerPath prefix match.
      */
     public byte[] readFileFromBindMountVolume(String serverUuid, String requestedPath) {
-        ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
+        return withReadLock(
+                serverUuid,
+                () -> {
+                    ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
 
-        Path volumeRoot = resolved.volumeRoot();
-        Path requested = resolved.requested();
+                    Path volumeRoot = resolved.volumeRoot();
+                    Path requested = resolved.requested();
 
-        String cleanedInner =
-                requireNonBlank(
-                        cleanRelative(resolved.innerRelative()), "File path must not be empty");
+                    String cleanedInner =
+                            requireNonBlank(
+                                    cleanRelative(resolved.innerRelative()),
+                                    "File path must not be empty");
 
-        requireExists(requested, cleanedInner);
-        requireNotDirectory(requested, cleanedInner);
-        requireRealPathInsideRoot(volumeRoot, requested, cleanedInner);
-        requireReadable(requested, cleanedInner);
+                    requireExists(requested, cleanedInner);
+                    requireNotDirectory(requested, cleanedInner);
+                    requireRealPathInsideRoot(volumeRoot, requested, cleanedInner);
+                    requireReadable(requested, cleanedInner);
 
-        long maxFileSize = 128L * 1024L * 1024L; // 128 MB
-        try {
-            long fileSize = Files.size(requested);
-            if (fileSize > maxFileSize) {
-                throw new ResponseStatusException(
-                        HttpStatus.PAYLOAD_TOO_LARGE,
-                        "File size exceeds maximum allowed size of 128MB");
-            }
-            return Files.readAllBytes(requested);
-        } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to read file: " + cleanedInner, e);
-        }
+                    long maxFileSize = 128L * 1024L * 1024L; // 128 MB
+                    try {
+                        long fileSize = Files.size(requested);
+                        if (fileSize > maxFileSize) {
+                            throw new ResponseStatusException(
+                                    HttpStatus.PAYLOAD_TOO_LARGE,
+                                    "File size exceeds maximum allowed size of 128MB");
+                        }
+                        return Files.readAllBytes(requested);
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Failed to read file: " + cleanedInner,
+                                e);
+                    }
+                });
     }
 
     private record ResolvedBindMount(
