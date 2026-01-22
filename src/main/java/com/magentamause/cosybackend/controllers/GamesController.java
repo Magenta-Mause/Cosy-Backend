@@ -18,10 +18,14 @@ public class GamesController {
     private final GamesService gamesService;
 
     @GetMapping
-    public ResponseEntity<Mono<List<GameDto>>> queryGames(@RequestParam String query) {
-        return ResponseEntity.status(HttpStatus.OK)
-                .header(HttpHeaders.EXPIRES, "0")
-                .body(gamesService.query(query));
+    public Mono<ResponseEntity<List<GameDto>>> queryGames(@RequestParam String query) {
+        return gamesService
+                .query(query)
+                .map(
+                        response ->
+                                ResponseEntity.status(HttpStatus.OK)
+                                        .header(HttpHeaders.EXPIRES, "0")
+                                        .body(response));
     }
 
     @GetMapping("/external/{id}")
