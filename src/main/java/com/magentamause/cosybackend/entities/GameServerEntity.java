@@ -42,8 +42,6 @@ public class GameServerEntity {
 
     private String dockerImageTag;
 
-    private String template;
-
     @ElementCollection
     @CollectionTable(
             name = "docker_execution_command",
@@ -77,7 +75,6 @@ public class GameServerEntity {
                 .gameUuid(this.getGame() == null ? null : this.getGame().getUuid())
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
-                .template(this.getTemplate())
                 .executionCommand(this.getDockerExecutionCommand())
                 .portMappings(this.getPortMappings())
                 .environmentVariables(this.getEnvironmentVariables())

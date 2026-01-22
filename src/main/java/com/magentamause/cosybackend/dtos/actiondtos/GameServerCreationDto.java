@@ -15,7 +15,6 @@ import lombok.Data;
 public class GameServerCreationDto {
     private String externalGameId;
     @NotBlank private String serverName;
-    @NotBlank private String template;
     @NotBlank private String dockerImageName;
     @NotBlank private String dockerImageTag;
 

@@ -338,7 +338,6 @@ public class GameServerService {
         return GameServerEntity.builder()
                 .game(game.orElse(null))
                 .serverName(dto.getServerName())
-                .template(dto.getTemplate())
                 .dockerImageName(dto.getDockerImageName())
                 .dockerImageTag(dto.getDockerImageTag())
                 .dockerExecutionCommand(dto.getExecutionCommand())
