@@ -71,13 +71,17 @@ public class DockerHostConfigFactory {
     }
 
     private void applyMemoryLimit(HostConfig hostConfig, String memoryLimit) {
-        if (memoryLimit == null) {return;}
+        if (memoryLimit == null) {
+            return;
+        }
         Long memoryBytes = MemoryUtils.parseMemoryStringToBytes(memoryLimit);
         hostConfig.withMemory(memoryBytes);
     }
 
     private void applyCpuLimit(HostConfig hostConfig, Float cpuLimit) {
-        if (cpuLimit == null) {return;}
+        if (cpuLimit == null) {
+            return;
+        }
         Long nanoCpus = DockerCpuLimitMapper.toNanoCpu(cpuLimit);
         hostConfig.withNanoCPUs(nanoCpus);
     }
