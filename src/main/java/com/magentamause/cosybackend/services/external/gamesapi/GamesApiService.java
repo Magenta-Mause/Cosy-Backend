@@ -53,7 +53,7 @@ public class GamesApiService {
                                 : List.of());
     }
 
-    public Mono<GameDto> getByExternalId(int externalId) throws GameFetchException {
+    public Mono<GameDto> getByExternalId(int externalId) {
         return gamesApiWebClient
                 .get()
                 .uri(
