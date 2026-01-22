@@ -1,7 +1,6 @@
 package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
-import com.magentamause.cosybackend.entities.metric.MetricType;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
@@ -28,7 +27,6 @@ public class MetricsController {
     @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_METRIC)
     public ResponseEntity<List<MetricPointDto>> getMetrics(
             @ResourceId @PathVariable String gameServerUuid,
-            @RequestParam MetricType type,
             @RequestParam(required = false) Instant end,
             @RequestParam(required = false) Instant start) {
         Instant now = Instant.now();
@@ -50,6 +48,6 @@ public class MetricsController {
         }
 
         return ResponseEntity.ok(
-                queryService.queryMetrics(gameServerUuid, type, defaultStart, defaultEnd));
+                queryService.queryMetrics(gameServerUuid, defaultStart, defaultEnd));
     }
 }
