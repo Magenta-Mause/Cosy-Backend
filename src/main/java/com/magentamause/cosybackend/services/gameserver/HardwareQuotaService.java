@@ -37,7 +37,8 @@ public class HardwareQuotaService {
     }
 
     private String createLimitExceededMessage(ResourceUsage totalUsage, ResourceUsage userLimits) {
-        StringBuilder sb = new StringBuilder("Could not start Server - user Hardware limit was reached:\n");
+        StringBuilder sb =
+                new StringBuilder("Could not start Server - user Hardware limit was reached:\n");
         if (userLimits.cpu < Double.MAX_VALUE) {
             sb.append(String.format("cpu-cores: %.2f/%.2f\n", totalUsage.cpu, userLimits.cpu));
         }

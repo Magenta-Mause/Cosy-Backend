@@ -4,7 +4,8 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 
 public class DockerStatsMapper {
 
-    public static GameServerDto.GameServerStatus mapDockerStateToGameServerStatus(String dockerState) {
+    public static GameServerDto.GameServerStatus mapDockerStateToGameServerStatus(
+            String dockerState) {
         return switch (dockerState != null ? dockerState.toLowerCase() : "") {
             case "running" -> GameServerDto.GameServerStatus.RUNNING;
             default -> GameServerDto.GameServerStatus.STOPPED;
