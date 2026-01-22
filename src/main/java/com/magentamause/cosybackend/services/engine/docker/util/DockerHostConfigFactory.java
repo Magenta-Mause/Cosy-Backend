@@ -19,7 +19,16 @@ public class DockerHostConfigFactory {
     public HostConfig buildHostConfig(GameServerEntity serverConfig) {
         HostConfig hostConfig = HostConfig.newHostConfig();
 
-        // add port bindings
+        applyPortBindings(hostConfig, serverConfig);
+        applyVolumeBinds(hostConfig, serverConfig);
+        applyHardwareLimits(hostConfig, serverConfig);
+
+        log.debug("Host config: {}", hostConfig);
+
+        return hostConfig;
+    }
+
+    private void applyPortBindings(HostConfig hostConfig, GameServerEntity serverConfig) {
         if (serverConfig.getPortMappings() != null && !serverConfig.getPortMappings().isEmpty()) {
             Ports portBindings = new Ports();
             serverConfig
@@ -33,8 +42,9 @@ public class DockerHostConfigFactory {
                             });
             hostConfig.withPortBindings(portBindings);
         }
+    }
 
-        // add volume binds
+    private void applyVolumeBinds(HostConfig hostConfig, GameServerEntity serverConfig) {
         if (serverConfig.getVolumeMounts() != null && !serverConfig.getVolumeMounts().isEmpty()) {
             List<Bind> binds =
                     serverConfig.getVolumeMounts().stream()
@@ -47,10 +57,12 @@ public class DockerHostConfigFactory {
                             .toList();
             hostConfig.withBinds(binds);
         }
+    }
 
+    private void applyHardwareLimits(HostConfig hostConfig, GameServerEntity serverConfig) {
         var limits = serverConfig.getDockerHardwareLimits();
         if (limits == null) {
-            return hostConfig;
+            return;
         }
 
         // memory limit
@@ -64,9 +76,5 @@ public class DockerHostConfigFactory {
             Long nanoCpus = DockerCpuLimitMapper.toNanoCpu(limits.getDockerMaxCpuCores());
             hostConfig.withNanoCPUs(nanoCpus);
         }
-
-        log.info("Host config: {}", hostConfig);
-
-        return hostConfig;
     }
 }
