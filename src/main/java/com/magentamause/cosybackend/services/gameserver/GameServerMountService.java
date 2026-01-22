@@ -34,6 +34,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class GameServerMountService {
 
     private final GameServerRepository gameServerRepository;
+    private final GameServerService gameServerService;
     private final ConcurrentHashMap<String, ReadWriteLock> locks = new ConcurrentHashMap<>();
 
     private ReadWriteLock lockForServer(String serverUuid) {
@@ -161,7 +162,7 @@ public class GameServerMountService {
      * hostPath.
      */
     private ResolvedBindMount resolveBindMount(String serverUuid, String requestedPath) {
-        GameServerEntity server = getGameServerById(serverUuid);
+        GameServerEntity server = gameServerService.getGameServerById(serverUuid);
 
         String req = normalizeContainerLikePath(requestedPath);
         if (req.isBlank() || "/".equals(req)) {
@@ -316,16 +317,6 @@ public class GameServerMountService {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Path not accessible: " + cleanedForMessage, e);
         }
-    }
-
-    public GameServerEntity getGameServerById(String uuid) {
-        return gameServerRepository
-                .findById(uuid)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "Game server with uuid " + uuid + " not found"));
     }
 
     private GameServerFileSystemDto.FileSystemObjectDto buildTree(Path root, int fetchDepth) {
