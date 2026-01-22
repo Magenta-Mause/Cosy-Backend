@@ -328,12 +328,23 @@ public class GameServerMountService {
                     requireDirectory(targetParent, newClean, "Target parent is not a directory: ");
                     requireNotExists(target, newClean, "Target already exists: ");
 
-                    // Real-path containment checks (protect against symlink tricks)
                     requireRealPathInsideRoot(sourceRoot, source, oldClean);
                     requireRealPathInsideRoot(sourceRoot, sourceParent, oldClean);
 
-                    // For the target we only need to verify the parent is inside the target root
                     requireRealPathInsideRoot(targetRoot, targetParent, newClean);
+
+                    try {
+                        requireTargetNotInsideSourceDir(source, target);
+                    } catch (AccessDeniedException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.FORBIDDEN, "Access denied while validating rename", e);
+                    } catch (NoSuchFileException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "Path not found", e);
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR, "Failed to validate rename", e);
+                    }
 
                     requireReadable(source, oldClean);
                     requireWritable(sourceParent, "No permission to modify: " + sourceParent);
@@ -343,7 +354,6 @@ public class GameServerMountService {
 
                     try {
                         if (sameMount) {
-                            // Fast path: within same mount
                             try {
                                 Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
                             } catch (AtomicMoveNotSupportedException e) {
@@ -352,16 +362,12 @@ public class GameServerMountService {
                             return;
                         }
 
-                        // Cross-mount: copy -> delete
                         if (Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) {
-                            // target must not exist; create target dir then copy children
                             Files.createDirectory(target);
                             copyDirectoryRecursiveNoSymlinks(source, target);
 
-                            // need permission to delete from source parent (already checked)
                             deleteDirectoryRecursive(source);
                         } else {
-                            // file copy (no overwrite)
                             Files.copy(source, target, StandardCopyOption.COPY_ATTRIBUTES);
 
                             // delete original
@@ -579,6 +585,27 @@ public class GameServerMountService {
         }
 
         return volumeRoot;
+    }
+
+    private static void requireTargetNotInsideSourceDir(Path source, Path target)
+            throws IOException {
+        if (!Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) {
+            return;
+        }
+
+        Path sourceReal = source.toRealPath(LinkOption.NOFOLLOW_LINKS).normalize();
+
+        // Target might not exist; use parent real path + target file name.
+        Path targetParent = requireParent(target, "Invalid newPath");
+        Path targetParentReal = targetParent.toRealPath().normalize();
+        Path targetAbs = targetParentReal.resolve(target.getFileName()).normalize();
+
+        // Reject same path or descendant
+        if (targetAbs.equals(sourceReal) || targetAbs.startsWith(sourceReal)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Cannot move a directory into itself or its subdirectory");
+        }
     }
 
     /**
@@ -870,7 +897,7 @@ public class GameServerMountService {
         return parent;
     }
 
-    private Path requireParent(Path p, String message) {
+    private static Path requireParent(Path p, String message) {
         Path parent = p.getParent();
         if (parent == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
