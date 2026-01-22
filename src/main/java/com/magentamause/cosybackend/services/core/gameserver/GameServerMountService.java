@@ -241,8 +241,9 @@ public class GameServerMountService {
                         requireWritable(requested, "No write permission for file: " + cleaned);
                     }
 
+                    Path tempFile = null;
                     try {
-                        Path tempFile =
+                        tempFile =
                                 Files.createTempFile(
                                         parent, requested.getFileName().toString(), ".upload");
                         Files.write(tempFile, fileContent);
@@ -253,9 +254,12 @@ public class GameServerMountService {
                                     requested,
                                     StandardCopyOption.REPLACE_EXISTING,
                                     StandardCopyOption.ATOMIC_MOVE);
+                            tempFile = null; // ownership transferred, don't delete in finally
                         } catch (AtomicMoveNotSupportedException e) {
                             Files.move(tempFile, requested, StandardCopyOption.REPLACE_EXISTING);
+                            tempFile = null; // same here
                         }
+
                     } catch (AccessDeniedException e) {
                         throw new ResponseStatusException(
                                 HttpStatus.FORBIDDEN, "Access denied while writing file", e);
@@ -264,6 +268,14 @@ public class GameServerMountService {
                                 HttpStatus.INTERNAL_SERVER_ERROR,
                                 "Failed to write file: " + cleaned,
                                 e);
+                    } finally {
+                        if (tempFile != null) {
+                            try {
+                                Files.deleteIfExists(tempFile);
+                            } catch (IOException cleanupEx) {
+                                log.warn("Failed to cleanup temp file: " + tempFile.toString());
+                            }
+                        }
                     }
                 });
     }
