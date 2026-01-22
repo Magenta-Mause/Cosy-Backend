@@ -7,6 +7,7 @@ import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.Volume;
 import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.services.engine.docker.DockerEngineManager;
 import java.util.List;
 import lombok.experimental.UtilityClass;
@@ -60,21 +61,24 @@ public class DockerHostConfigFactory {
     }
 
     private void applyHardwareLimits(HostConfig hostConfig, GameServerEntity serverConfig) {
-        var limits = serverConfig.getDockerHardwareLimits();
+        DockerHardwareLimits limits = serverConfig.getDockerHardwareLimits();
         if (limits == null) {
             return;
         }
 
-        // memory limit
-        if (limits.getDockerMemoryLimit() != null) {
-            Long memoryBytes = MemoryUtils.parseMemoryStringToBytes(limits.getDockerMemoryLimit());
-            hostConfig.withMemory(memoryBytes);
-        }
+        applyMemoryLimit(hostConfig, limits.getDockerMemoryLimit());
+        applyCpuLimit(hostConfig, limits.getDockerMaxCpuCores());
+    }
 
-        // add cpu limit
-        if (limits.getDockerMaxCpuCores() != null) {
-            Long nanoCpus = DockerCpuLimitMapper.toNanoCpu(limits.getDockerMaxCpuCores());
-            hostConfig.withNanoCPUs(nanoCpus);
-        }
+    private void applyMemoryLimit(HostConfig hostConfig, String memoryLimit) {
+        if (memoryLimit == null) {return;}
+        Long memoryBytes = MemoryUtils.parseMemoryStringToBytes(memoryLimit);
+        hostConfig.withMemory(memoryBytes);
+    }
+
+    private void applyCpuLimit(HostConfig hostConfig, Float cpuLimit) {
+        if (cpuLimit == null) {return;}
+        Long nanoCpus = DockerCpuLimitMapper.toNanoCpu(cpuLimit);
+        hostConfig.withNanoCPUs(nanoCpus);
     }
 }
