@@ -7,10 +7,7 @@ import com.magentamause.cosybackend.repositories.GameRepository;
 import com.magentamause.cosybackend.services.external.gamesapi.GamesApiService;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -49,14 +46,6 @@ public class GamesService {
                             List<GameDto> dbDtos =
                                     dbGames.stream().map(GameDto::fromEntity).toList();
 
-                            Map<Integer, GameDto> apiGameMap =
-                                    apiGames.stream()
-                                            .collect(
-                                                    Collectors.toMap(
-                                                            GameDto::getExternalGameId,
-                                                            Function.identity(),
-                                                            (a, b) -> a));
-
                             // DB games first, overriding API if present
                             List<GameDto> result = new ArrayList<>(dbDtos);
 
@@ -64,15 +53,12 @@ public class GamesService {
                             apiGames.stream()
                                     .filter(
                                             apiGame ->
-                                                    !apiGameMap.containsKey(
-                                                                    apiGame.getExternalGameId())
-                                                            || dbGames.stream()
-                                                                    .noneMatch(
-                                                                            db ->
-                                                                                    db
-                                                                                                    .getExternalGameId()
-                                                                                            == apiGame
-                                                                                                    .getExternalGameId()))
+                                                    dbGames.stream()
+                                                            .noneMatch(
+                                                                    db ->
+                                                                            db.getExternalGameId()
+                                                                                    == apiGame
+                                                                                            .getExternalGameId()))
                                     .forEach(result::add);
 
                             return result;
