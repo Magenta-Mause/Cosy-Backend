@@ -297,12 +297,7 @@ public class GameServerService {
 
     private boolean checkHardwareLimits(String gameServerUuid, GameServerEntity serverConfig) {
         try {
-            // Check hardware limits
-            transactionTemplate.executeWithoutResult(
-                    status -> {
-                        GameServerEntity entity = getGameServerById(gameServerUuid);
-                        hardwareQuotaService.validateHardwareLimits(entity);
-                    });
+            hardwareQuotaService.validateHardwareLimits(serverConfig);
             return true;
         } catch (HardwareLimitException e) {
             log.warn("Could not start Server '{}' - Hardware quota limit reached.", gameServerUuid);
