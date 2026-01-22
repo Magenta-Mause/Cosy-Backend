@@ -201,8 +201,7 @@ public class GameServerMountService {
 
         Path volumeRoot = Paths.get(hostPath).toAbsolutePath().normalize();
         if (!Files.exists(volumeRoot)) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Mount path does not exist: " + volumeRoot);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Mount path does not exist.");
         }
         return volumeRoot;
     }
@@ -341,10 +340,9 @@ public class GameServerMountService {
                 node.getChildren().add(buildTree(child, fetchDepth - 1));
             }
         } catch (AccessDeniedException ade) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied: " + root, ade);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied", ade);
         } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Error reading " + root, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error reading", e);
         }
 
         node.getChildren()
@@ -371,10 +369,9 @@ public class GameServerMountService {
                 children.add(buildTree(child, Math.max(fetchDepth - 1, 0)));
             }
         } catch (AccessDeniedException ade) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied: " + dir, ade);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied", ade);
         } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Error reading " + dir, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error reading", e);
         }
 
         children.sort(
