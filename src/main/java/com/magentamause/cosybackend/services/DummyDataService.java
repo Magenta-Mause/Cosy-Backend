@@ -72,7 +72,6 @@ public class DummyDataService {
                                 .volumeMounts(
                                         List.of(
                                                 VolumeMountConfiguration.builder()
-                                                        .hostPath("./dummy/tosios/data")
                                                         .containerPath("/app/data")
                                                         .build()))
                                 .build());

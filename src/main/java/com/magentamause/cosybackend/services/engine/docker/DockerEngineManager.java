@@ -14,10 +14,12 @@ import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
+import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.config.EngineProperties;
 import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
 import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import com.magentamause.cosybackend.services.gameserver.GameServerStatusUpdateEventType;
@@ -26,6 +28,8 @@ import jakarta.annotation.PreDestroy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
@@ -48,6 +52,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     private final DockerClient client;
     private final StatsMapper statsMapper;
     private final DockerMappingUtils dockerMappingUtils;
+    private final EngineProperties engineProperties;
 
     private final List<BiConsumer<GameServerStatusUpdateEventType, String>> statusListeners =
             new CopyOnWriteArrayList<>();
@@ -392,14 +397,16 @@ public class DockerEngineManager implements EngineManager, Closeable {
             List<Bind> binds =
                     serverConfig.getVolumeMounts().stream()
                             .map(
-                                    v ->
-                                            new Bind(
-                                                    Paths.get(v.getHostPath())
-                                                            .toAbsolutePath()
-                                                            .toString(),
-                                                    new Volume(v.getContainerPath()),
-                                                    AccessMode.rw))
+                                    v -> {
+                                        String hostPath = resolveAndEnsureVolumeHostPath(v);
+
+                                        return new Bind(
+                                                hostPath,
+                                                new Volume(v.getContainerPath()),
+                                                AccessMode.rw);
+                                    })
                             .toList();
+
             hostConfig.withBinds(binds);
         }
 
@@ -522,5 +529,39 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 .awaitCompletion();
 
         return Optional.ofNullable(statsRef.get());
+    }
+
+    private String resolveAndEnsureVolumeHostPath(VolumeMountConfiguration v) {
+        String baseDir =
+                Optional.ofNullable(engineProperties)
+                        .map(EngineProperties::docker)
+                        .map(EngineProperties.Docker::volumeDirectory)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "cosy.engine.docker.volume-directory is not configured"));
+
+        String uuid =
+                Optional.ofNullable(v.getUuid())
+                        .filter(s -> !s.isBlank())
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "VolumeMountConfiguration.uuid is null/blank; cannot resolve host path"));
+
+        if (uuid.contains("/") || uuid.contains("\\") || uuid.contains("..")) {
+            throw new IllegalArgumentException("Invalid volume uuid: " + uuid);
+        }
+
+        Path mountPath = Paths.get(baseDir).resolve(uuid).normalize();
+
+        try {
+            Files.createDirectories(mountPath);
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Failed to create volume mount directory: " + mountPath, e);
+        }
+
+        return mountPath.toAbsolutePath().toString();
     }
 }

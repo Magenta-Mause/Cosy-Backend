@@ -3,7 +3,7 @@ package com.magentamause.cosybackend.services.gameserver;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerFileSystemDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
-import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.services.engine.config.EngineProperties;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryStream;
@@ -32,10 +32,9 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class GameServerMountService {
-
-    private final GameServerRepository gameServerRepository;
     private final GameServerService gameServerService;
     private final ConcurrentHashMap<String, ReadWriteLock> locks = new ConcurrentHashMap<>();
+    private final EngineProperties engineProperties;
 
     private ReadWriteLock lockForServer(String serverUuid) {
         return locks.computeIfAbsent(serverUuid, k -> new ReentrantReadWriteLock(true));
@@ -194,16 +193,49 @@ public class GameServerMountService {
     }
 
     private Path requireVolumeRootFromMount(VolumeMountConfiguration mount) {
-        String hostPath = mount.getHostPath();
-        if (hostPath == null || hostPath.isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Volume mount does not have a readable host path");
+        String baseDir =
+                Optional.ofNullable(engineProperties)
+                        .map(EngineProperties::docker)
+                        .map(EngineProperties.Docker::volumeDirectory)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                                "cosy.engine.docker.volume-directory is not configured"));
+
+        String uuid =
+                Optional.ofNullable(mount.getUuid())
+                        .filter(s -> !s.isBlank())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.BAD_REQUEST,
+                                                "Volume mount does not have a uuid"));
+
+        // basic hardening
+        if (uuid.contains("/") || uuid.contains("\\") || uuid.contains("..")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
         }
 
-        Path volumeRoot = Paths.get(hostPath).toAbsolutePath().normalize();
-        if (!Files.exists(volumeRoot)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Mount path does not exist.");
+        Path volumeRoot = Paths.get(baseDir).resolve(uuid).normalize().toAbsolutePath();
+
+        try {
+            Files.createDirectories(volumeRoot);
+        } catch (IOException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to create mount directory: " + volumeRoot,
+                    e);
         }
+
+        // Optional: still keep a friendly error if something is weird (file instead of
+        // dir)
+        if (!Files.isDirectory(volumeRoot, LinkOption.NOFOLLOW_LINKS)) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Mount root is not a directory: " + volumeRoot);
+        }
+
         return volumeRoot;
     }
 
