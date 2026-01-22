@@ -21,7 +21,7 @@ public class GamesController {
     private final GamesService gamesService;
 
     @GetMapping
-    public ResponseEntity<Mono<List<GameDto>>> queryGames(@RequestParam @NotBlank String query) {
+    public ResponseEntity<Mono<List<GameDto>>> queryGames(@RequestParam String query) {
         return ResponseEntity.
                 status(HttpStatus.OK)
                 .header(HttpHeaders.EXPIRES, "0")

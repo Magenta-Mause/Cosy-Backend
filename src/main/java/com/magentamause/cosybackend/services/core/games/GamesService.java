@@ -37,18 +37,18 @@ public class GamesService {
     }
 
     public Mono<List<GameDto>> query(String query) {
-        return gamesApiService.queryGamesApi(query)
+        if (query == null || query.isBlank()) {
+            return Mono.just(gameRepository.findAll().stream().map(GameDto::fromEntity).toList());
+        }
+        return gamesApiService.queryGamesApi(query, false)
                 .publishOn(Schedulers.boundedElastic())
                 .map(apiGames -> {
-                    // Fetch DB games
                     List<GameEntity> dbGames = gameRepository.queryByName(query);
 
-                    // Convert DB games to DTOs
                     List<GameDto> dbDtos = dbGames.stream()
                             .map(GameDto::fromEntity)
                             .toList();
 
-                    // Index API games by a stable key (example: externalId)
                     Map<Integer, GameDto> apiGameMap = apiGames.stream()
                             .collect(Collectors.toMap(
                                     GameDto::getExternalGameId,

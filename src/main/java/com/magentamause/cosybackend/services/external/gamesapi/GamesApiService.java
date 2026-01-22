@@ -27,9 +27,8 @@ import reactor.core.publisher.Mono;
 public class GamesApiService {
 
     private final WebClient gamesApiWebClient;
-    private final GameRepository gameRepository;
 
-    public Mono<List<GameDto>> queryGamesApi(String query) {
+    public Mono<List<GameDto>> queryGamesApi(String query, boolean includeAssets) {
         Mono<GamesApiGameSearchResponse> response;
         try {
             response =
@@ -40,8 +39,8 @@ public class GamesApiService {
                                             uriBuilder
                                                     .path("/games")
                                                     .queryParam("query", query)
-                                                    .queryParam("include_hero", "true")
-                                                    .queryParam("include_logo", "true")
+                                                    .queryParam("include_hero", includeAssets )
+                                                    .queryParam("include_logo", includeAssets)
                                                     .build())
                             .retrieve()
                             .bodyToMono(GamesApiGameSearchResponse.class);
