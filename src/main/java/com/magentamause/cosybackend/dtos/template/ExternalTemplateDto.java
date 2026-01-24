@@ -1,8 +1,6 @@
 package com.magentamause.cosybackend.dtos.template;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import tools.jackson.databind.annotation.JsonNaming;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,5 +18,4 @@ public record ExternalTemplateDto(
         @JsonProperty("port_mapping") Map<String, Number> portMapping,
         @JsonProperty("file_mounts") List<String> fileMounts,
         @JsonProperty("resource_limit") Optional<ResourceLimit> resourceLimit,
-        List<Variable> variables) {
-}
+        List<Variable> variables) {}
