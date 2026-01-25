@@ -14,9 +14,14 @@ import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.config.EngineProperties;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +51,7 @@ public class GameServerService {
     private final GameServerDockerProgressPublisher dockerProgressPublisher;
     private final TransactionTemplate transactionTemplate;
     private final GameServerLogService gameServerLogService;
-    private final GameServerMountService gameServerMountService;
+    private final EngineProperties engineProperties;
 
     @PostConstruct
     public void init() {
@@ -135,7 +140,7 @@ public class GameServerService {
 
         GameServerEntity saved = gameServerRepository.save(entity);
 
-        gameServerMountService.ensureVolumeDirectoriesExist(saved);
+        ensureVolumeDirectoriesExist(saved);
 
         return saved;
     }
@@ -198,7 +203,7 @@ public class GameServerService {
                         ArrayList::new));
 
         GameServerEntity saved = gameServerRepository.save(gameServer);
-        gameServerMountService.ensureVolumeDirectoriesExist(saved);
+        ensureVolumeDirectoriesExist(saved);
 
         return saved;
     }
@@ -382,5 +387,49 @@ public class GameServerService {
             target.addAll(source);
         }
         return target;
+    }
+
+    private Path volumeBaseDir() {
+        String baseDir = engineProperties.docker().volumeDirectory();
+        if (baseDir == null || baseDir.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "cosy.engine.docker.volume-directory is not configured");
+        }
+        return Paths.get(baseDir).toAbsolutePath().normalize();
+    }
+
+    private void ensureVolumeDirectoriesExist(GameServerEntity server) {
+        if (server.getVolumeMounts() == null || server.getVolumeMounts().isEmpty()) {
+            return;
+        }
+
+        Path base = volumeBaseDir();
+
+        for (var vm : server.getVolumeMounts()) {
+            String id = vm.getUuid();
+            if (id == null || id.isBlank()) {
+                // Should not happen if server is saved, but guard anyway.
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "Volume mount uuid missing after save");
+            }
+            if (id.contains("/") || id.contains("\\") || id.contains("..")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
+            }
+
+            Path dir = base.resolve(id).normalize();
+            if (!dir.startsWith(base)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
+            }
+
+            try {
+                Files.createDirectories(dir);
+            } catch (IOException e) {
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Failed to create volume directory: " + dir,
+                        e);
+            }
+        }
     }
 }

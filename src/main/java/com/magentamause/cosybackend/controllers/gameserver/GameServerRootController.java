@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/game-server")
-public class RootController {
+public class GameServerRootController {
 
     private final GameServerService gameServerService;
     private final SecurityContextService securityContextService;
