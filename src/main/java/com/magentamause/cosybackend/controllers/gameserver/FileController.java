@@ -32,7 +32,7 @@ public class FileController {
     private final GameServerMountService gameServerMountService;
 
     @GetMapping("/")
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
+    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_FILES)
     public ResponseEntity<GameServerFileSystemDto> getFileSystemForVolume(
             @PathVariable @ResourceId String uuid,
             @RequestParam(name = "path", required = false, defaultValue = "") String path,
@@ -47,7 +47,7 @@ public class FileController {
             value = "/file",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
+    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_FILES)
     // We have to specify this so orval generates reasonable typescript types for
     // this response
     @Operation(
