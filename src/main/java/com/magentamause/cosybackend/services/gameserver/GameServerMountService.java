@@ -32,6 +32,14 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class GameServerMountService {
+    private record ResolvedBindMount(
+            String volumeUuid,
+            String containerPathNormalized,
+            String innerRelative,
+            boolean isRootRequest,
+            Path volumeRoot,
+            Path requested) {}
+
     private final GameServerService gameServerService;
     private final ConcurrentHashMap<String, ReadWriteLock> locks = new ConcurrentHashMap<>();
     private final EngineProperties engineProperties;
@@ -147,14 +155,6 @@ public class GameServerMountService {
                 });
     }
 
-    private record ResolvedBindMount(
-            String volumeUuid,
-            String containerPathNormalized,
-            String innerRelative,
-            boolean isRootRequest,
-            Path volumeRoot,
-            Path requested) {}
-
     /**
      * Selects the volume mount by checking whether the requested path starts with any mount's
      * containerPath (boundary-aware), then strips that prefix and resolves the remainder inside the
@@ -232,8 +232,7 @@ public class GameServerMountService {
         // dir)
         if (!Files.isDirectory(volumeRoot, LinkOption.NOFOLLOW_LINKS)) {
             throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Mount root is not a directory: " + volumeRoot);
+                    HttpStatus.BAD_REQUEST, "Mount root is not a directory: " + volumeRoot);
         }
 
         return volumeRoot;
@@ -498,6 +497,50 @@ public class GameServerMountService {
             return Optional.of(Files.size(p));
         } catch (IOException | SecurityException e) {
             return Optional.empty();
+        }
+    }
+
+    private Path volumeBaseDir() {
+        String baseDir = engineProperties.docker().volumeDirectory();
+        if (baseDir == null || baseDir.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "cosy.engine.docker.volume-directory is not configured");
+        }
+        return Paths.get(baseDir).toAbsolutePath().normalize();
+    }
+
+    public void ensureVolumeDirectoriesExist(GameServerEntity server) {
+        if (server.getVolumeMounts() == null || server.getVolumeMounts().isEmpty()) {
+            return;
+        }
+
+        Path base = volumeBaseDir();
+
+        for (var vm : server.getVolumeMounts()) {
+            String id = vm.getUuid();
+            if (id == null || id.isBlank()) {
+                // Should not happen if server is saved, but guard anyway.
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "Volume mount uuid missing after save");
+            }
+            if (id.contains("/") || id.contains("\\") || id.contains("..")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
+            }
+
+            Path dir = base.resolve(id).normalize();
+            if (!dir.startsWith(base)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
+            }
+
+            try {
+                Files.createDirectories(dir);
+            } catch (IOException e) {
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Failed to create volume directory: " + dir,
+                        e);
+            }
         }
     }
 }

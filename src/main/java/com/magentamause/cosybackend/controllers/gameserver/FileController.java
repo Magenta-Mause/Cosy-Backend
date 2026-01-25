@@ -43,6 +43,7 @@ public class FileController {
         return ResponseEntity.ok(dto);
     }
 
+    // TODO: consider adding limit / pagination support later
     @RequestMapping(
             value = "/file",
             method = RequestMethod.GET,
