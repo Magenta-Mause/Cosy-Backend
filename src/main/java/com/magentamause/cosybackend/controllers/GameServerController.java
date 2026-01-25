@@ -88,7 +88,7 @@ public class GameServerController {
     @PostMapping(value = "/{uuid}/start")
     @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
     public ResponseEntity<Void> startService(@PathVariable @ResourceId String uuid) {
-        gameServerService.startServer(uuid);
+        gameServerService.startServer(uuid, securityContextService.getUser());
 
         return ResponseEntity.accepted().build();
     }

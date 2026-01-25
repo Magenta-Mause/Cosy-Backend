@@ -6,6 +6,7 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
@@ -206,7 +207,7 @@ public class GameServerService {
     }
 
     @Async
-    public void startServer(String gameServerUuid) {
+    public void startServer(String gameServerUuid, UserEntity user) {
         if (!startingServers.add(gameServerUuid)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Server is already starting");
         }
@@ -221,6 +222,7 @@ public class GameServerService {
                                 Hibernate.initialize(entity.getPortMappings());
                                 Hibernate.initialize(entity.getEnvironmentVariables());
                                 Hibernate.initialize(entity.getVolumeMounts());
+                                entity.setLastStartedBy(user);
                                 return entity;
                             });
 

@@ -36,15 +36,16 @@ public class HardwareQuotaService {
     }
 
     public void assertSufficientQuota(GameServerEntity serverToStart) {
-        UserEntity owner = serverToStart.getOwner();
-        if (!hasHardwareLimits(owner)) {
+        UserEntity startedBy = serverToStart.getLastStartedBy();
+        if (!hasHardwareLimits(startedBy)) {
             return;
         }
 
-        ResourceUsage currentUsage = calculateRunningServersUsage(owner, serverToStart.getUuid());
+        ResourceUsage currentUsage =
+                calculateRunningServersUsage(startedBy, serverToStart.getUuid());
         ResourceUsage requiredUsage = calculateServerUsage(serverToStart);
 
-        checkUsageAgainstLimits(currentUsage.add(requiredUsage), getUsageLimits(owner));
+        checkUsageAgainstLimits(currentUsage.add(requiredUsage), getUsageLimits(startedBy));
     }
 
     private void validateCpuRequirements(
@@ -74,8 +75,7 @@ public class HardwareQuotaService {
 
         long serverMemory =
                 MemoryUtils.parseMemoryStringToBytes(serverLimits.getDockerMemoryLimit());
-        long userMemory =
-                MemoryUtils.parseMemoryStringToBytes(userLimits.getDockerMemoryLimit());
+        long userMemory = MemoryUtils.parseMemoryStringToBytes(userLimits.getDockerMemoryLimit());
 
         if (serverMemory > userMemory) {
             throw new ResponseStatusException(
@@ -126,11 +126,11 @@ public class HardwareQuotaService {
         return new ResourceUsage(cpu, mem);
     }
 
-    private ResourceUsage calculateRunningServersUsage(UserEntity owner, String excludeUuid) {
+    private ResourceUsage calculateRunningServersUsage(UserEntity user, String excludeUuid) {
         double totalCpu = 0.0;
         long totalMem = 0L;
 
-        List<GameServerEntity> servers = owner.getGameServerConfigurationEntities();
+        List<GameServerEntity> servers = user.getStartedServers();
         if (servers == null) {
             return new ResourceUsage(0, 0);
         }
