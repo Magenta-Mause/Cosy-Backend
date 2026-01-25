@@ -8,7 +8,9 @@ import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.services.engine.docker.util.MemoryUtils;
 import java.util.List;
 import java.util.Objects;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class HardwareQuotaService {
@@ -16,6 +18,52 @@ public class HardwareQuotaService {
     private record ResourceUsage(double cpu, long memoryBytes) {
         public ResourceUsage add(ResourceUsage other) {
             return new ResourceUsage(this.cpu + other.cpu, this.memoryBytes + other.memoryBytes);
+        }
+    }
+
+    public void validateHardwareLimitsPresent(UserEntity user, DockerHardwareLimits serverLimits) {
+        if (user == null || user.getDockerHardwareLimits() == null) {
+            return;
+        }
+
+        DockerHardwareLimits userLimits = user.getDockerHardwareLimits();
+        boolean userHasCpuLimit = userLimits.getDockerMaxCpuCores() != null;
+        boolean userHasMemoryLimit = userLimits.getDockerMemoryLimit() != null;
+
+        if (!userHasCpuLimit && !userHasMemoryLimit) {
+            return;
+        }
+
+        if (serverLimits == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Hardware limits are required for this user.");
+        }
+
+        if (userHasCpuLimit && serverLimits.getDockerMaxCpuCores() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "CPU limit is required for this user.");
+        }
+
+        if (userHasMemoryLimit && serverLimits.getDockerMemoryLimit() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Memory limit is required for this user.");
+        }
+
+        if (userHasCpuLimit
+                && serverLimits.getDockerMaxCpuCores() > userLimits.getDockerMaxCpuCores()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "CPU limit exceeds user quota.");
+        }
+
+        if (userHasMemoryLimit) {
+            long serverMemory =
+                    MemoryUtils.parseMemoryStringToBytes(serverLimits.getDockerMemoryLimit());
+            long userMemory =
+                    MemoryUtils.parseMemoryStringToBytes(userLimits.getDockerMemoryLimit());
+            if (serverMemory > userMemory) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Memory limit exceeds user quota.");
+            }
         }
     }
 
