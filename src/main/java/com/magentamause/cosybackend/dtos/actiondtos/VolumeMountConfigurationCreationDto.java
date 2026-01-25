@@ -8,7 +8,8 @@ import lombok.Data;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class VolumeMountConfigurationCreationDto {
-    // kept for legacy purposes, remove when host path is fully removed from
+    // kept for legacy purposes.
+    // TODO: remove when host path is fully removed from
     // frontend
     @NotBlank private String hostPath;
 
