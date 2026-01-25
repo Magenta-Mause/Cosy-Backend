@@ -1,9 +1,8 @@
-package com.magentamause.cosybackend.controllers;
+package com.magentamause.cosybackend.controllers.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerFileSystemDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
@@ -11,20 +10,11 @@ import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
-import com.magentamause.cosybackend.services.gameserver.GameServerMountService;
 import com.magentamause.cosybackend.services.gameserver.GameServerService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,10 +22,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/game-server")
-public class GameServerController {
+public class RootController {
 
     private final GameServerService gameServerService;
-    private final GameServerMountService gameServerMountService;
     private final SecurityContextService securityContextService;
 
     @GetMapping
@@ -109,45 +98,5 @@ public class GameServerController {
     public ResponseEntity<Void> stopService(@PathVariable @ResourceId String uuid) {
         gameServerService.stopServer(uuid);
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/{uuid}/file-system")
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
-    public ResponseEntity<GameServerFileSystemDto> getFileSystemForVolume(
-            @PathVariable @ResourceId String uuid,
-            @RequestParam(name = "path", required = false, defaultValue = "") String path,
-            @RequestParam(name = "fetch_depth", defaultValue = "1") @Min(0) @Max(5)
-                    int fetchDepth) {
-        GameServerFileSystemDto dto =
-                gameServerMountService.readBindMountFileSystem(uuid, path, fetchDepth);
-        return ResponseEntity.ok(dto);
-    }
-
-    @RequestMapping(
-            value = "/{uuid}/file-system/file",
-            method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
-    // We have to specify this so orval generates reasonable typescript types for
-    // this response
-    @Operation(
-            summary = "Read a file from a bind mount volume",
-            responses = {
-                @ApiResponse(
-                        responseCode = "200",
-                        description = "File content",
-                        content =
-                                @Content(
-                                        mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE,
-                                        schema =
-                                                @Schema(
-                                                        type = "string",
-                                                        format = "binary",
-                                                        description = "Raw file bytes")))
-            })
-    public ResponseEntity<byte[]> readFileFromVolume(
-            @PathVariable @ResourceId String uuid, @RequestParam("path") @NotBlank String path) {
-        byte[] content = gameServerMountService.readFileFromBindMountVolume(uuid, path);
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(content);
     }
 }
