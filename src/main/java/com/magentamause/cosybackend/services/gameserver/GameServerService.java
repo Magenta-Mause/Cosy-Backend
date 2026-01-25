@@ -224,7 +224,7 @@ public class GameServerService {
                                 return entity;
                             });
 
-            if (!checkHardwareLimits(gameServerUuid, serverConfig)) {
+            if (!verifyQuotaCompliance(gameServerUuid, serverConfig)) {
                 return;
             }
 
@@ -297,9 +297,9 @@ public class GameServerService {
         }
     }
 
-    private boolean checkHardwareLimits(String gameServerUuid, GameServerEntity serverConfig) {
+    private boolean verifyQuotaCompliance(String gameServerUuid, GameServerEntity serverConfig) {
         try {
-            hardwareQuotaService.validateHardwareLimits(serverConfig);
+            hardwareQuotaService.assertSufficientQuota(serverConfig);
             return true;
         } catch (HardwareLimitException e) {
             log.warn("Could not start Server '{}' - Hardware quota limit reached.", gameServerUuid);

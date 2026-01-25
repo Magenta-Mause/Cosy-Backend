@@ -22,52 +22,20 @@ public class HardwareQuotaService {
     }
 
     public void validateHardwareLimitsPresent(UserEntity user, DockerHardwareLimits serverLimits) {
-        if (user == null || user.getDockerHardwareLimits() == null) {
+        if (!hasHardwareLimits(user)) {
             return;
         }
-
-        DockerHardwareLimits userLimits = user.getDockerHardwareLimits();
-        boolean userHasCpuLimit = userLimits.getDockerMaxCpuCores() != null;
-        boolean userHasMemoryLimit = userLimits.getDockerMemoryLimit() != null;
-
-        if (!userHasCpuLimit && !userHasMemoryLimit) {
-            return;
-        }
-
         if (serverLimits == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "Hardware limits are required for this user.");
         }
 
-        if (userHasCpuLimit && serverLimits.getDockerMaxCpuCores() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "CPU limit is required for this user.");
-        }
-
-        if (userHasMemoryLimit && serverLimits.getDockerMemoryLimit() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Memory limit is required for this user.");
-        }
-
-        if (userHasCpuLimit
-                && serverLimits.getDockerMaxCpuCores() > userLimits.getDockerMaxCpuCores()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "CPU limit exceeds user quota.");
-        }
-
-        if (userHasMemoryLimit) {
-            long serverMemory =
-                    MemoryUtils.parseMemoryStringToBytes(serverLimits.getDockerMemoryLimit());
-            long userMemory =
-                    MemoryUtils.parseMemoryStringToBytes(userLimits.getDockerMemoryLimit());
-            if (serverMemory > userMemory) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Memory limit exceeds user quota.");
-            }
-        }
+        DockerHardwareLimits userLimits = user.getDockerHardwareLimits();
+        validateCpuRequirements(userLimits, serverLimits);
+        validateMemoryRequirements(userLimits, serverLimits);
     }
 
-    public void validateHardwareLimits(GameServerEntity serverToStart) {
+    public void assertSufficientQuota(GameServerEntity serverToStart) {
         UserEntity owner = serverToStart.getOwner();
         if (!hasHardwareLimits(owner)) {
             return;
@@ -75,10 +43,47 @@ public class HardwareQuotaService {
 
         ResourceUsage currentUsage = calculateRunningServersUsage(owner, serverToStart.getUuid());
         ResourceUsage requiredUsage = calculateServerUsage(serverToStart);
-        ResourceUsage totalUsage = currentUsage.add(requiredUsage);
 
-        ResourceUsage userLimits = getUsageLimits(owner);
+        checkUsageAgainstLimits(currentUsage.add(requiredUsage), getUsageLimits(owner));
+    }
 
+    private void validateCpuRequirements(
+            DockerHardwareLimits userLimits, DockerHardwareLimits serverLimits) {
+        if (userLimits.getDockerMaxCpuCores() == null) {
+            return;
+        }
+        if (serverLimits.getDockerMaxCpuCores() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "CPU limit is required for this user.");
+        }
+        if (serverLimits.getDockerMaxCpuCores() > userLimits.getDockerMaxCpuCores()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "CPU limit exceeds user quota.");
+        }
+    }
+
+    private void validateMemoryRequirements(
+            DockerHardwareLimits userLimits, DockerHardwareLimits serverLimits) {
+        if (userLimits.getDockerMemoryLimit() == null) {
+            return;
+        }
+        if (serverLimits.getDockerMemoryLimit() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Memory limit is required for this user.");
+        }
+
+        long serverMemory =
+                MemoryUtils.parseMemoryStringToBytes(serverLimits.getDockerMemoryLimit());
+        long userMemory =
+                MemoryUtils.parseMemoryStringToBytes(userLimits.getDockerMemoryLimit());
+
+        if (serverMemory > userMemory) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Memory limit exceeds user quota.");
+        }
+    }
+
+    private void checkUsageAgainstLimits(ResourceUsage totalUsage, ResourceUsage userLimits) {
         if (totalUsage.cpu > userLimits.cpu || totalUsage.memoryBytes > userLimits.memoryBytes) {
             throw new HardwareLimitException(createLimitExceededMessage(totalUsage, userLimits));
         }
