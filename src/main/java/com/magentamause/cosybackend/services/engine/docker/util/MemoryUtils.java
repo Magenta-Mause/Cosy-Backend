@@ -14,11 +14,15 @@ public class MemoryUtils {
 
         String trimmed = value.trim();
         if (trimmed.endsWith(MEGABYTE_SUFFIX)) {
-            long amount = Long.parseLong(trimmed.replace(MEGABYTE_SUFFIX, ""));
+            long amount =
+                    Long.parseLong(
+                            trimmed.substring(0, trimmed.length() - MEGABYTE_SUFFIX.length()));
             return amount * MEGABYTE_IN_BYTES;
         }
         if (trimmed.endsWith(GIGABYTE_SUFFIX)) {
-            long amount = Long.parseLong(trimmed.replace(GIGABYTE_SUFFIX, ""));
+            long amount =
+                    Long.parseLong(
+                            trimmed.substring(0, trimmed.length() - GIGABYTE_SUFFIX.length()));
             return amount * GIGABYTE_IN_BYTES;
         }
 
