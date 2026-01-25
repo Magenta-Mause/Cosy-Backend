@@ -130,13 +130,13 @@ public class GameServerService {
                                         "Game server with uuid " + uuid + " not found"));
     }
 
-    public GameServerEntity saveGameServer(GameServerEntity entity) {
+    public void saveGameServer(GameServerEntity entity) {
         hardwareQuotaService.validateHardwareLimitsPresent(
                 entity.getOwner(), entity.getDockerHardwareLimits());
         entity.setUuid(null);
         entity.setStatus(GameServerDto.GameServerStatus.STOPPED);
         log.info("Saving game server {}", entity);
-        return gameServerRepository.save(entity);
+        gameServerRepository.save(entity);
     }
 
     public void deleteGameServerById(String uuid) {
@@ -320,11 +320,10 @@ public class GameServerService {
         return getGameServerById(uuid).getStatus();
     }
 
-    public GameServerLogMessageEntity enrichAndPublishLogMessage(
+    public void enrichAndPublishLogMessage(
             GameServerEntity gameServer, GameServerLogMessageEntity logMessage) {
         logMessage.setGameServerUuid(gameServer.getUuid());
         gameServerLogService.saveGameServerLog(logMessage);
-        return logMessage;
     }
 
     public void stopServer(String serviceName) {
