@@ -75,7 +75,7 @@ public class FileController {
     }
 
     @RequestMapping(
-            value = "/{uuid}/file-system/upload",
+            value = "/upload",
             method = RequestMethod.POST,
             consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER_FILES)
@@ -105,7 +105,7 @@ public class FileController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{uuid}/file-system/mkdir")
+    @PostMapping("/mkdir")
     @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER_FILES)
     public ResponseEntity<Void> createDirectoryInVolume(
             @PathVariable @ResourceId String uuid, @RequestParam("path") @NotBlank String path) {
@@ -113,7 +113,7 @@ public class FileController {
         return ResponseEntity.status(201).build();
     }
 
-    @PostMapping("/{uuid}/file-system/rename")
+    @PostMapping("/rename")
     @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER_FILES)
     public ResponseEntity<Void> renameInVolume(
             @PathVariable @ResourceId String uuid,
@@ -123,7 +123,7 @@ public class FileController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{uuid}/file-system/delete")
+    @PostMapping("/delete")
     @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER_FILES)
     public ResponseEntity<Void> deleteInVolume(
             @PathVariable @ResourceId String uuid, @RequestParam("path") @NotBlank String path) {
