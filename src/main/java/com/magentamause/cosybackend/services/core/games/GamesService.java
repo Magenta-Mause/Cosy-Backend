@@ -34,43 +34,39 @@ public class GamesService {
 
     public Mono<List<GameDto>> query(String query) {
         if (query == null || query.isBlank()) {
-            return Mono.just(gameRepository.findAll().stream().map(GameDto::fromEntity).toList());
+            return Mono.just(queryLocalGames(null));
         }
         return gamesApiService
                 .queryGamesApi(query, false)
                 .publishOn(Schedulers.boundedElastic())
-                .map(
-                        apiGames -> {
-                            List<GameEntity> dbGames = gameRepository.queryByName(query);
-
-                            List<GameDto> dbDtos =
-                                    dbGames.stream().map(GameDto::fromEntity).toList();
-
-                            // DB games first, overriding API if present
-                            List<GameDto> result = new ArrayList<>(dbDtos);
-
-                            // Add remaining API games not present in DB
-                            apiGames.stream()
-                                    .filter(
-                                            apiGame ->
-                                                    dbGames.stream()
-                                                            .noneMatch(
-                                                                    db ->
-                                                                            db.getExternalGameId()
-                                                                                    == apiGame
-                                                                                            .getExternalGameId()))
-                                    .forEach(result::add);
-
-                            return result;
-                        })
+                .map(apiGames -> mergeWithLocalGames(query, apiGames))
                 .onErrorResume(
                         ex ->
-                                Mono.fromCallable(
-                                                () ->
-                                                        gameRepository.queryByName(query).stream()
-                                                                .map(GameDto::fromEntity)
-                                                                .toList())
+                                Mono.fromCallable(() -> queryLocalGames(query))
                                         .subscribeOn(Schedulers.boundedElastic()));
+    }
+
+    private List<GameDto> queryLocalGames(String query) {
+        List<GameEntity> games =
+                (query == null) ? gameRepository.findAll() : gameRepository.queryByName(query);
+        return games.stream().map(GameDto::fromEntity).toList();
+    }
+
+    private List<GameDto> mergeWithLocalGames(String query, List<GameDto> apiGames) {
+        List<GameEntity> dbGames = gameRepository.queryByName(query);
+        List<GameDto> result = new ArrayList<>(dbGames.stream().map(GameDto::fromEntity).toList());
+
+        apiGames.stream()
+                .filter(
+                        apiGame ->
+                                dbGames.stream()
+                                        .noneMatch(
+                                                db ->
+                                                        db.getExternalGameId()
+                                                                == apiGame.getExternalGameId()))
+                .forEach(result::add);
+
+        return result;
     }
 
     public Optional<GameEntity> getOptionalGameByExternalId(int externalId, boolean storeInDb) {
