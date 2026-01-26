@@ -78,7 +78,7 @@ public class TemplateEntity {
                 .environmentVariables(externalTemplateDto.environmentVariables())
                 .portMappings(externalTemplateDto.portMapping())
                 .fileMounts(externalTemplateDto.fileMounts())
-                .templateVariables(externalTemplateDto.templateVariables())
+                .templateVariables(externalTemplateDto.variables())
                 .resourceLimit(externalTemplateDto.resourceLimit().orElse(null))
                 .build();
     }

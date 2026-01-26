@@ -18,4 +18,4 @@ public record ExternalTemplateDto(
         @JsonProperty("port_mapping") Map<String, Number> portMapping,
         @JsonProperty("file_mounts") List<String> fileMounts,
         @JsonProperty("resource_limit") Optional<ResourceLimit> resourceLimit,
-        List<TemplateVariable> templateVariables) {}
+        List<TemplateVariable> variables) {}
