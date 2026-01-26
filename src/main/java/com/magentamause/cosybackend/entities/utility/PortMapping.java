@@ -18,6 +18,7 @@ import lombok.*;
 @Embeddable
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@ToString
 public class PortMapping {
     @Min(1)
     @Max(65535)

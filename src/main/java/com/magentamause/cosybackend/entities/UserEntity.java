@@ -12,7 +12,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
+@ToString(exclude = {"password", "invites", "gameServerConfigurationEntities", "startedServers"})
 public class UserEntity {
 
     @Id
