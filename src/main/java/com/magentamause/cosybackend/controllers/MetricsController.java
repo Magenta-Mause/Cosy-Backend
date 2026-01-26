@@ -5,7 +5,7 @@ import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
-import com.magentamause.cosybackend.services.metrics.MetricsQueryService;
+import com.magentamause.cosybackend.services.core.metrics.MetricsQueryService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;

@@ -6,11 +6,10 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.repositories.DummyInstantiatedPropertiesRepository;
-import com.magentamause.cosybackend.services.gameserver.GameServerService;
+import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +52,6 @@ public class DummyDataService {
         this.dummyGameServers =
                 List.of(
                         GameServerEntity.builder()
-                                .uuid(UUID.randomUUID().toString())
                                 .serverName("TOSIOS")
                                 .owner(adminUser)
                                 .status(GameServerDto.GameServerStatus.STOPPED)

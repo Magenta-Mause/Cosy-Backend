@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services.metrics;
+package com.magentamause.cosybackend.services.core.metrics;
 
 import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.domain.WritePrecision;
