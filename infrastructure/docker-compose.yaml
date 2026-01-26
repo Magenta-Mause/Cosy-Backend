@@ -18,7 +18,7 @@ services:
       retries: 5
   loki:
     image: grafana/loki:2.9.4
-    container_name: loki
+    container_name: cosy-loki
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
       - loki-data:/loki
@@ -27,7 +27,7 @@ services:
       - "3100"
   nginx:
     image: nginx:1.25
-    container_name: loki-nginx
+    container_name: cosy-loki-nginx
     ports:
       - "3100:80"
     volumes:
