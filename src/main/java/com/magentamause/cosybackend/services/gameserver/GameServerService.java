@@ -206,13 +206,11 @@ public class GameServerService {
         return gameServerRepository.save(gameServer);
     }
 
-    @Async
     public void startServer(String gameServerUuid, UserEntity user) {
         if (!startingServers.add(gameServerUuid)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Server is already starting");
         }
 
-        log.info("Starting server {}", gameServerUuid);
         try {
             GameServerEntity serverConfig =
                     transactionTemplate.execute(
@@ -226,9 +224,24 @@ public class GameServerService {
                                 return entity;
                             });
 
-            if (!verifyQuotaCompliance(gameServerUuid, serverConfig)) {
-                return;
-            }
+            hardwareQuotaService.assertSufficientQuota(serverConfig);
+
+            startServerAsync(gameServerUuid, serverConfig);
+        } catch (HardwareLimitException e) {
+            startingServers.remove(gameServerUuid);
+            log.warn("Could not start Server '{}' - Hardware quota limit reached.", gameServerUuid);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Hardware quota limit reached: " + e.getMessage());
+        } catch (Exception e) {
+            startingServers.remove(gameServerUuid);
+            throw e;
+        }
+    }
+
+    @Async
+    void startServerAsync(String gameServerUuid, GameServerEntity serverConfig) {
+        log.info("Starting server {}", gameServerUuid);
+        try {
 
             enrichAndPublishLogMessage(
                     serverConfig,
@@ -290,29 +303,8 @@ public class GameServerService {
                 throw new RuntimeException(
                         "Error while starting docker container: " + e.getMessage(), e);
             }
-        } catch (Exception e) {
-            log.error("Error starting server '{}'", gameServerUuid, e);
-            throw new RuntimeException(
-                    "Error while starting docker container: " + e.getMessage(), e);
         } finally {
             startingServers.remove(gameServerUuid);
-        }
-    }
-
-    private boolean verifyQuotaCompliance(String gameServerUuid, GameServerEntity serverConfig) {
-        try {
-            hardwareQuotaService.assertSufficientQuota(serverConfig);
-            return true;
-        } catch (HardwareLimitException e) {
-            log.warn("Could not start Server '{}' - Hardware quota limit reached.", gameServerUuid);
-            updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
-            enrichAndPublishLogMessage(
-                    serverConfig,
-                    GameServerLogMessageEntity.of(
-                            serverConfig.getUuid(),
-                            e.getMessage(),
-                            GameServerLogMessageEntity.LogLevel.COSY_ERROR));
-            return false;
         }
     }
 
