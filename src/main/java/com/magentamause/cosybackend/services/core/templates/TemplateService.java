@@ -27,7 +27,7 @@ public class TemplateService {
         try {
             List<ExternalTemplateDto> templates =
                     cosyTemplateApiService.queryCosyTemplateApi().block();
-            if (templates == null) {
+            if (templates == null || templates.isEmpty()) {
                 log.warn("Failed to fetch templates from Cosy Template API");
                 throw new RuntimeException("Failed to fetch templates from Cosy Template API");
             }
