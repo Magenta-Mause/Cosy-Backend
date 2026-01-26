@@ -2,8 +2,8 @@ package com.magentamause.cosybackend.services.external.gamesapi;
 
 import com.magentamause.cosybackend.configs.properties.GamesApiProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
-import com.magentamause.cosybackend.dtos.gamesapi.GamesApiGameByIdResponse;
-import com.magentamause.cosybackend.dtos.gamesapi.GamesApiGameSearchResponse;
+import com.magentamause.cosybackend.dtos.gamesapi.GamesApiFindGameByIdResponse;
+import com.magentamause.cosybackend.dtos.gamesapi.GamesApiFindGamesSearchResponse;
 import com.magentamause.cosybackend.exceptions.GamesApiError;
 import com.magentamause.cosybackend.exceptions.gameapi.GameFetchException;
 import java.util.List;
@@ -24,7 +24,7 @@ public class GamesApiService {
     private final WebClient gamesApiWebClient;
 
     public Mono<List<GameDto>> queryGamesApi(String query, boolean includeAssets) {
-        Mono<GamesApiGameSearchResponse> response;
+        Mono<GamesApiFindGamesSearchResponse> response;
         try {
             response =
                     gamesApiWebClient
@@ -38,7 +38,7 @@ public class GamesApiService {
                                                     .queryParam("include_logo", includeAssets)
                                                     .build())
                             .retrieve()
-                            .bodyToMono(GamesApiGameSearchResponse.class);
+                            .bodyToMono(GamesApiFindGamesSearchResponse.class);
         } catch (WebClientRequestException e) {
             throw new GamesApiError("Failed to connect to Games API", e);
         } catch (RuntimeException e) {
@@ -82,7 +82,7 @@ public class GamesApiService {
                                                                                 ? ""
                                                                                 : ", body="
                                                                                         + body))))
-                .bodyToMono(GamesApiGameByIdResponse.class)
+                .bodyToMono(GamesApiFindGameByIdResponse.class)
                 .map(response -> response.getData().toDto());
     }
 }

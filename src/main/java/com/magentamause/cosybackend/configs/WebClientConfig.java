@@ -57,8 +57,4 @@ public class WebClientConfig {
                 .build();
     }
 
-    @Bean
-    public WebClient cleanWebClient() {
-        return WebClient.builder().build();
-    }
 }

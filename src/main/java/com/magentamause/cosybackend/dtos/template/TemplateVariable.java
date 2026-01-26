@@ -3,7 +3,7 @@ package com.magentamause.cosybackend.dtos.template;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
-public record Variable(
+public record TemplateVariable(
         String name,
         String type,
         String placeholder,

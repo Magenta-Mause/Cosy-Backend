@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.template.ExternalTemplateDto;
 import com.magentamause.cosybackend.dtos.template.ResourceLimit;
-import com.magentamause.cosybackend.dtos.template.Variable;
+import com.magentamause.cosybackend.dtos.template.TemplateVariable;
 import jakarta.persistence.*;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +60,7 @@ public class TemplateEntity {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private List<Variable> variables;
+    private List<TemplateVariable> templateVariables;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
@@ -78,7 +78,7 @@ public class TemplateEntity {
                 .environmentVariables(externalTemplateDto.environmentVariables())
                 .portMappings(externalTemplateDto.portMapping())
                 .fileMounts(externalTemplateDto.fileMounts())
-                .variables(externalTemplateDto.variables())
+                .templateVariables(externalTemplateDto.templateVariables())
                 .resourceLimit(externalTemplateDto.resourceLimit().orElse(null))
                 .build();
     }

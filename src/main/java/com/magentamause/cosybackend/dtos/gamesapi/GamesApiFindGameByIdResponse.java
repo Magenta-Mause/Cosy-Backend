@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class GamesApiGameByIdResponse {
+public class GamesApiFindGameByIdResponse {
     private boolean success;
     private long timestamp;
     private GamePayload data;

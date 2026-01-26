@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class GamesApiGameSearchResponse {
+public class GamesApiFindGamesSearchResponse {
     private boolean success;
     private long timestamp;
     private DataPayload data;
