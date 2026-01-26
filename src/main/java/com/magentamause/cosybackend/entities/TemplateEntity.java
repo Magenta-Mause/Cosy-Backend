@@ -60,7 +60,7 @@ public class TemplateEntity {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private List<TemplateVariable> templateVariables;
+    private List<TemplateVariable> variables;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
@@ -78,7 +78,7 @@ public class TemplateEntity {
                 .environmentVariables(externalTemplateDto.environmentVariables())
                 .portMappings(externalTemplateDto.portMapping())
                 .fileMounts(externalTemplateDto.fileMounts())
-                .templateVariables(externalTemplateDto.variables())
+                .variables(externalTemplateDto.variables())
                 .resourceLimit(externalTemplateDto.resourceLimit().orElse(null))
                 .build();
     }
