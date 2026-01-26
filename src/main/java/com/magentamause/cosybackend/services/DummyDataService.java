@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.services;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
+import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
@@ -54,22 +55,78 @@ public class DummyDataService {
         this.dummyGameServers =
                 List.of(
                         GameServerEntity.builder()
-                                .uuid(UUID.randomUUID().toString())
-                                .serverName("TOSIOS")
+                                .serverName("TOSIOS - No Limits")
                                 .owner(adminUser)
+                                .lastStartedBy(null)
                                 .status(GameServerDto.GameServerStatus.STOPPED)
-                                .timestampLastStarted(LocalDateTime.now().minusHours(2))
+                                .dockerImageName("halftheopposite/tosios")
+                                .dockerImageTag("latest")
+                                .dockerHardwareLimits(DockerHardwareLimits.builder().build())
+                                .portMappings(
+                                        List.of(
+                                                PortMapping.builder()
+                                                        .instancePort(3001)
+                                                        .containerPort(3001)
+                                                        .protocol(PortMapping.PortProtocol.TCP)
+                                                        .build()))
+                                .environmentVariables(List.of())
+                                .build(),
+                        GameServerEntity.builder()
+                                .serverName("TOSIOS - Memory Only")
+                                .owner(adminUser)
+                                .lastStartedBy(null)
+                                .status(GameServerDto.GameServerStatus.STOPPED)
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
                                 .dockerHardwareLimits(
                                         DockerHardwareLimits.builder()
-                                                .dockerMemoryLimit("50MiB")
+                                                .dockerMemoryLimit("512MiB")
+                                                .build())
+                                .portMappings(
+                                        List.of(
+                                                PortMapping.builder()
+                                                        .instancePort(3002)
+                                                        .containerPort(3001)
+                                                        .protocol(PortMapping.PortProtocol.TCP)
+                                                        .build()))
+                                .environmentVariables(List.of())
+                                .build(),
+                        GameServerEntity.builder()
+                                .serverName("TOSIOS - CPU Only")
+                                .owner(adminUser)
+                                .lastStartedBy(null)
+                                .status(GameServerDto.GameServerStatus.STOPPED)
+                                .dockerImageName("halftheopposite/tosios")
+                                .dockerImageTag("latest")
+                                .dockerHardwareLimits(
+                                        DockerHardwareLimits.builder()
                                                 .dockerMaxCpuCores(2f)
                                                 .build())
                                 .portMappings(
                                         List.of(
                                                 PortMapping.builder()
-                                                        .instancePort(3001)
+                                                        .instancePort(3003)
+                                                        .containerPort(3001)
+                                                        .protocol(PortMapping.PortProtocol.TCP)
+                                                        .build()))
+                                .environmentVariables(List.of())
+                                .build(),
+                        GameServerEntity.builder()
+                                .serverName("TOSIOS - Memory and CPU")
+                                .owner(adminUser)
+                                .lastStartedBy(null)
+                                .status(GameServerDto.GameServerStatus.STOPPED)
+                                .dockerImageName("halftheopposite/tosios")
+                                .dockerImageTag("latest")
+                                .dockerHardwareLimits(
+                                        DockerHardwareLimits.builder()
+                                                .dockerMemoryLimit("512MiB")
+                                                .dockerMaxCpuCores(2f)
+                                                .build())
+                                .portMappings(
+                                        List.of(
+                                                PortMapping.builder()
+                                                        .instancePort(3004)
                                                         .containerPort(3001)
                                                         .protocol(PortMapping.PortProtocol.TCP)
                                                         .build()))
