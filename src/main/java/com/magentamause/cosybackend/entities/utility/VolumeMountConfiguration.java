@@ -19,8 +19,7 @@ public class VolumeMountConfiguration {
     private String uuid;
 
     // TODO: Remove as soon as HostPath isnt used in the frontend anymore
-    @Column(nullable = false)
-    private String hostPath;
+    @Column private String hostPath;
 
     @Column(nullable = false)
     private String containerPath;
