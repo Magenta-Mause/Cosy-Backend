@@ -4,7 +4,6 @@ import com.influxdb.client.InfluxDBClient;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +15,9 @@ import org.springframework.stereotype.Service;
 public class MetricsQueryService {
     private final InfluxDBClient influxDBClient;
 
-    public List<MetricPointDto> queryMetrics(String gameServerUuid, Instant start, Instant end) {
-        String flux = buildInfluxQuery(gameServerUuid, start, end);
+    public List<MetricPointDto> queryMetrics(
+            String gameServerUuid, Instant start, Instant end, int pointCount) {
+        String flux = buildInfluxQuery(gameServerUuid, start, end, pointCount);
 
         List<FluxTable> tables = influxDBClient.getQueryApi().query(flux);
 
@@ -49,21 +49,12 @@ public class MetricsQueryService {
         return results;
     }
 
-    private String buildInfluxQuery(String gameServerUuid, Instant start, Instant end) {
-        long diff = end.getEpochSecond() - start.getEpochSecond();
-        Duration duration = Duration.ofSeconds(diff);
-        String time;
-        if (duration.toMinutes() <= 30) {
-            time = "5s";
-        } else if (duration.toHours() <= 1) {
-            time = "45s";
-        } else if (duration.toHours() <= 24) {
-            time = "10m";
-        } else if (duration.toDays() <= 30) {
-            time = "1h";
-        } else {
-            time = "1d";
-        }
+    private String buildInfluxQuery(
+            String gameServerUuid, Instant start, Instant end, int pointCount) {
+        long totalSeconds = end.getEpochSecond() - start.getEpochSecond();
+
+        long intervalSeconds = Math.max(1, totalSeconds / pointCount);
+        String time = intervalSeconds + "s";
 
         return String.format(
                 "from(bucket: \"cosy-bucket\") "

@@ -28,10 +28,12 @@ public class MetricsController {
     public ResponseEntity<List<MetricPointDto>> getMetrics(
             @ResourceId @PathVariable String gameServerUuid,
             @RequestParam(required = false) Instant end,
-            @RequestParam(required = false) Instant start) {
+            @RequestParam(required = false) Instant start,
+            @RequestParam(required = false) Integer pointCount) {
         Instant now = Instant.now();
         Instant defaultEnd = (end != null) ? end : now;
         Instant defaultStart = (start != null) ? start : now.minus(Duration.ofHours(1));
+        int point = (pointCount != null) ? pointCount : 500;
 
         if (defaultEnd.isAfter(now)) {
             throw new ResponseStatusException(
@@ -48,6 +50,6 @@ public class MetricsController {
         }
 
         return ResponseEntity.ok(
-                queryService.queryMetrics(gameServerUuid, defaultStart, defaultEnd));
+                queryService.queryMetrics(gameServerUuid, defaultStart, defaultEnd, point));
     }
 }
