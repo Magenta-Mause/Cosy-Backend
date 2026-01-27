@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.entities.metric.MetricType;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.websockets.GameServerMetricsPublisher;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +26,7 @@ public class MetricsService {
     private final InfluxProperties influxProperties;
     private final EngineManager engineManager;
     private final GameServerRepository gameServerRepository;
+    private final GameServerMetricsPublisher gameServerMetricsPublisher;
 
     public Point convertMetricToPoint(Metric metrics) {
         return Point.measurement("metrics")
@@ -50,7 +52,7 @@ public class MetricsService {
         }
     }
 
-    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedRate = 5, timeUnit = TimeUnit.SECONDS)
     public void collectMetrics() {
         List<GameServerEntity> gameServers = gameServerRepository.findAll();
         try {
@@ -60,6 +62,8 @@ public class MetricsService {
                     if (metric.isPresent()) {
                         Point point = convertMetricToPoint(metric.get());
                         writeToInfluxDB(point);
+                        gameServerMetricsPublisher.publishMetrics(
+                                gameServer.getUuid(), metric.get().toDto());
                     }
                 } catch (Exception e) {
                     log.error(

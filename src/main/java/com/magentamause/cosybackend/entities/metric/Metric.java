@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.influxdb.annotations.Column;
 import com.influxdb.annotations.Measurement;
+import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,4 +37,24 @@ public class Metric {
 
     @Column(timestamp = true)
     private Instant time;
+
+    public MetricPointDto toDto() {
+        MetricPointDto.MetricValues metricValues =
+                MetricPointDto.MetricValues.builder()
+                        .cpuPercent(this.getCpuPercent())
+                        .memoryPercent(this.getMemoryPercent())
+                        .memoryUsage(this.getMemoryUsage())
+                        .memoryLimit(this.getMemoryLimit())
+                        .networkInput(this.getNetworkInput())
+                        .networkOutput(this.getNetworkOutput())
+                        .blockRead(this.getBlockRead())
+                        .blockWrite(this.getBlockWrite())
+                        .build();
+
+        return MetricPointDto.builder()
+                .gameServerUuid(this.getGameServerUuid().substring(5))
+                .time(this.getTime())
+                .metricValues(metricValues)
+                .build();
+    }
 }

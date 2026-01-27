@@ -4,6 +4,7 @@ import com.influxdb.client.InfluxDBClient;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,7 @@ public class MetricsQueryService {
 
                 results.add(
                         MetricPointDto.builder()
+                                .gameServerUuid(gameServerUuid.substring(5))
                                 .time(record.getTime())
                                 .metricValues(metrics)
                                 .build());
@@ -48,14 +50,27 @@ public class MetricsQueryService {
     }
 
     private String buildInfluxQuery(String gameServerUuid, Instant start, Instant end) {
+        long diff = start.getEpochSecond() - end.getEpochSecond();
+        Duration duration = Duration.ofSeconds(diff);
+        String time;
+        if (duration.getSeconds() > 60) {
+            time = "10s";
+        } else if (duration.toHours() < 24) {
+            time = "10m";
+        } else if (duration.toDays() < 30) {
+            time = "1h";
+        } else {
+            time = "1d";
+        }
+
         return String.format(
                 "from(bucket: \"cosy-bucket\") "
                         + "|> range(start: %s, stop: %s) "
                         + "|> filter(fn: (r) => r[\"_measurement\"] == \"metrics\") "
                         + "|> filter(fn: (r) => r[\"game_server_uuid\"] == \"%s\") "
-                        + "|> aggregateWindow(every: 10s, fn: mean, createEmpty: false) "
+                        + "|> aggregateWindow(every: %s, fn: mean, createEmpty: false) "
                         + "|> pivot( rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") ",
-                start.toString(), end.toString(), gameServerUuid);
+                start.toString(), end.toString(), gameServerUuid, time);
     }
 
     private Double toDouble(Object value) {

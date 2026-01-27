@@ -15,14 +15,15 @@ import lombok.NoArgsConstructor;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class MetricPointDto {
 
+    private String gameServerUuid;
     private Instant time;
-
     private MetricValues metricValues;
 
     @Data
     @Builder
     @AllArgsConstructor
     @NoArgsConstructor
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public static class MetricValues {
         private Double cpuPercent;
         private Double memoryPercent;
