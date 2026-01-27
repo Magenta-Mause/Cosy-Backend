@@ -35,8 +35,6 @@ public class GameServerDto {
 
     @NotBlank private String dockerImageTag;
 
-    private String template;
-
     private List<String> executionCommand;
 
     @NotNull @Valid private List<PortMapping> portMappings;

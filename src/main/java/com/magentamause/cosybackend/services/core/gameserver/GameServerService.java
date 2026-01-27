@@ -1,5 +1,6 @@
-package com.magentamause.cosybackend.services.gameserver;
+package com.magentamause.cosybackend.services.core.gameserver;
 
+import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
@@ -13,8 +14,9 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.services.core.games.GamesService;
+import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
-import com.magentamause.cosybackend.services.engine.config.EngineProperties;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
@@ -44,7 +46,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class GameServerService {
 
     private final GameServerRepository gameServerRepository;
-    private final GameEntityService gameEntityService;
     private final EngineManager engineManager;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
     private final GameServerStatusPublisher statusPublisher;
@@ -52,6 +53,7 @@ public class GameServerService {
     private final TransactionTemplate transactionTemplate;
     private final GameServerLogService gameServerLogService;
     private final EngineProperties engineProperties;
+    private final GamesService gamesService;
 
     @PostConstruct
     public void init() {
@@ -157,27 +159,13 @@ public class GameServerService {
     }
 
     public GameServerEntity updateGameServerConfiguration(String uuid, GameServerUpdateDto dto) {
-        GameServerEntity gameServer =
-                gameServerRepository
-                        .findById(uuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Game server with uuid " + uuid + " not found"));
+        GameServerEntity gameServer = getGameServerById(uuid);
 
         GameEntity game =
-                dto.getGameUuid() == null
+                dto.getExternalGameId() == null
                         ? null
-                        : gameEntityService
-                                .getGameFromUuid(dto.getGameUuid())
-                                .orElseThrow(
-                                        () ->
-                                                new ResponseStatusException(
-                                                        HttpStatus.NOT_FOUND,
-                                                        "Game with uuid "
-                                                                + dto.getGameUuid()
-                                                                + " not found"));
+                        : gamesService.getGameEntityByExternalId(dto.getExternalGameId(), true);
+
         gameServer.setGame(game);
 
         gameServer.setServerName(dto.getServerName());
@@ -355,14 +343,13 @@ public class GameServerService {
 
     public GameServerEntity convertDtoToEntity(GameServerCreationDto dto) {
         Optional<GameEntity> game =
-                dto.getGameUuid() != null
-                        ? gameEntityService.getGameFromUuid(dto.getGameUuid())
+                dto.getExternalGameId() != null
+                        ? gamesService.getOptionalGameByExternalId(dto.getExternalGameId(), true)
                         : Optional.empty();
 
         return GameServerEntity.builder()
                 .game(game.orElse(null))
                 .serverName(dto.getServerName())
-                .template(dto.getTemplate())
                 .dockerImageName(dto.getDockerImageName())
                 .dockerImageTag(dto.getDockerImageTag())
                 .dockerExecutionCommand(dto.getExecutionCommand())

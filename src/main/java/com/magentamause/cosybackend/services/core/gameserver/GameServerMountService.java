@@ -1,9 +1,9 @@
-package com.magentamause.cosybackend.services.gameserver;
+package com.magentamause.cosybackend.services.core.gameserver;
 
+import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerFileSystemDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
-import com.magentamause.cosybackend.services.engine.config.EngineProperties;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryStream;

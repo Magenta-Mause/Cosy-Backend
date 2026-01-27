@@ -5,7 +5,7 @@ import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
-import com.magentamause.cosybackend.services.gameserver.GameServerLogService;
+import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import java.time.Duration;

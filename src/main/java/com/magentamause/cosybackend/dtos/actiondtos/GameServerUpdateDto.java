@@ -13,7 +13,7 @@ import lombok.Data;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GameServerUpdateDto {
-    private String gameUuid;
+    private Integer externalGameId;
     @NotBlank private String serverName;
     @NotBlank private String dockerImageName;
     @NotBlank private String dockerImageTag;
