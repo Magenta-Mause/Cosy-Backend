@@ -18,6 +18,9 @@ public class VolumeMountConfiguration {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String uuid;
 
+    // TODO: Remove as soon as HostPath isnt used in the frontend anymore
+    @Column private String hostPath;
+
     @Column(nullable = false)
     private String containerPath;
 
