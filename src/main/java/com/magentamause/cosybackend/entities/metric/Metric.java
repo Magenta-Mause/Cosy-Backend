@@ -52,7 +52,7 @@ public class Metric {
                         .build();
 
         return MetricPointDto.builder()
-                .gameServerUuid(this.getGameServerUuid().substring(5))
+                .gameServerUuid(this.getGameServerUuid())
                 .time(this.getTime())
                 .metricValues(metricValues)
                 .build();

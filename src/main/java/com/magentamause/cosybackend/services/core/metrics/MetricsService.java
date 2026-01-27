@@ -30,7 +30,7 @@ public class MetricsService {
 
     public Point convertMetricToPoint(Metric metrics) {
         return Point.measurement("metrics")
-                .addTag("game_server_uuid", metrics.getGameServerUuid().substring(5))
+                .addTag("game_server_uuid", metrics.getGameServerUuid())
                 .addField(MetricType.CPU_PERCENT.getValue(), metrics.getCpuPercent())
                 .addField(MetricType.MEMORY_USAGE.getValue(), metrics.getMemoryUsage())
                 .addField(MetricType.MEMORY_LIMIT.getValue(), metrics.getMemoryLimit())

@@ -39,7 +39,7 @@ public class MetricsQueryService {
 
                 results.add(
                         MetricPointDto.builder()
-                                .gameServerUuid(gameServerUuid.substring(5))
+                                .gameServerUuid(gameServerUuid)
                                 .time(record.getTime())
                                 .metricValues(metrics)
                                 .build());

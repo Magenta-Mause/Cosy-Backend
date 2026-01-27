@@ -503,7 +503,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                             @Override
                             public void onNext(Statistics statistics) {
                                 Metric stats = statsMapper.mapStats(statistics);
-                                stats.setGameServerUuid(container.getName().replace("/", ""));
+                                stats.setGameServerUuid(container.getName().replace("/", "").substring(5));
                                 stats.setTime(Instant.now());
                                 statsRef.set(stats);
                                 try {
