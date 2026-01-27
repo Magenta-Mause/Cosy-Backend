@@ -50,14 +50,16 @@ public class MetricsQueryService {
     }
 
     private String buildInfluxQuery(String gameServerUuid, Instant start, Instant end) {
-        long diff = start.getEpochSecond() - end.getEpochSecond();
+        long diff = end.getEpochSecond() - start.getEpochSecond();
         Duration duration = Duration.ofSeconds(diff);
         String time;
-        if (duration.getSeconds() > 60) {
-            time = "10s";
-        } else if (duration.toHours() < 24) {
+        if (duration.toMinutes() <= 30) {
+            time = "5s";
+        } else if (duration.toHours() <= 1) {
+            time = "45s";
+        } else if (duration.toHours() <= 24) {
             time = "10m";
-        } else if (duration.toDays() < 30) {
+        } else if (duration.toDays() <= 30) {
             time = "1h";
         } else {
             time = "1d";
