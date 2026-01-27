@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.controllers;
+package com.magentamause.cosybackend.controllers.gameserver;
 
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/game-server/{gameServerUuid}/logs")
-public class GameServerLogController {
+public class LogController {
 
     private final GameServerLogService gameServerLogService;
 

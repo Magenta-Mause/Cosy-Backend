@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.controllers;
+package com.magentamause.cosybackend.controllers.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/game-server")
-public class GameServerController {
+public class GameServerRootController {
 
     private final GameServerService gameServerService;
     private final SecurityContextService securityContextService;
