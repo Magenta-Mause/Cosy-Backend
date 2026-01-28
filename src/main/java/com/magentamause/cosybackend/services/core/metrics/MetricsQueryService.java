@@ -16,8 +16,8 @@ public class MetricsQueryService {
     private final InfluxDBClient influxDBClient;
 
     public List<MetricPointDto> queryMetrics(
-            String gameServerUuid, Instant start, Instant end, int pointCount) {
-        String flux = buildInfluxQuery(gameServerUuid, start, end, pointCount);
+            String gameServerUuid, Instant start, Instant end, int point) {
+        String flux = buildInfluxQuery(gameServerUuid, start, end, point);
 
         List<FluxTable> tables = influxDBClient.getQueryApi().query(flux);
 
@@ -61,7 +61,7 @@ public class MetricsQueryService {
                         + "|> range(start: %s, stop: %s) "
                         + "|> filter(fn: (r) => r[\"_measurement\"] == \"metrics\") "
                         + "|> filter(fn: (r) => r[\"game_server_uuid\"] == \"%s\") "
-                        + "|> aggregateWindow(every: %s, fn: mean, createEmpty: false) "
+                        + "|> aggregateWindow(every: %s, fn: mean, createEmpty: true) "
                         + "|> pivot( rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") ",
                 start.toString(), end.toString(), gameServerUuid, time);
     }
