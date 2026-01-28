@@ -35,8 +35,9 @@ build/
 ### SdkMan
 .sdkmanrc
 
-# local dev spring profile
+# local dev
 src/main/resources/application-local.yaml
+dummy
 
 ### Mac OS ###
 .DS_Store

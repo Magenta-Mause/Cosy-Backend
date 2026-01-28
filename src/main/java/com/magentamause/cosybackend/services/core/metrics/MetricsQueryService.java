@@ -8,8 +8,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MetricsQueryService {
@@ -46,6 +48,11 @@ public class MetricsQueryService {
             }
         }
 
+        if (results.isEmpty()) {
+            log.debug("No metrics found for query {}, generating zero-value data points", flux);
+            return generateZeroValueMetrics(gameServerUuid, start, end, point);
+        }
+
         return results;
     }
 
@@ -72,5 +79,37 @@ public class MetricsQueryService {
 
     private Long toLong(Object value) {
         return value == null ? null : ((Number) value).longValue();
+    }
+
+    private List<MetricPointDto> generateZeroValueMetrics(
+            String gameServerUuid, Instant start, Instant end, int pointCount) {
+        List<MetricPointDto> zeroMetrics = new ArrayList<>();
+        
+        long totalSeconds = end.getEpochSecond() - start.getEpochSecond();
+        long intervalSeconds = totalSeconds / pointCount;
+        
+        MetricPointDto.MetricValues zeroValues =
+                MetricPointDto.MetricValues.builder()
+                        .cpuPercent(0.0)
+                        .memoryPercent(0.0)
+                        .memoryUsage(0L)
+                        .memoryLimit(0L)
+                        .networkInput(0L)
+                        .networkOutput(0L)
+                        .blockRead(0L)
+                        .blockWrite(0L)
+                        .build();
+        
+        for (int i = 0; i < pointCount; i++) {
+            Instant timestamp = start.plusSeconds(i * intervalSeconds);
+            zeroMetrics.add(
+                    MetricPointDto.builder()
+                            .gameServerUuid(gameServerUuid)
+                            .time(timestamp)
+                            .metricValues(zeroValues)
+                            .build());
+        }
+        
+        return zeroMetrics;
     }
 }
