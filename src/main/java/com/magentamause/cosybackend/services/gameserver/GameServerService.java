@@ -130,13 +130,22 @@ public class GameServerService {
                                         "Game server with uuid " + uuid + " not found"));
     }
 
-    public void saveGameServer(GameServerEntity entity) {
+    public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto dto) {
+        Optional<GameEntity> game =
+                dto.getGameUuid() != null
+                        ? gameEntityService.getGameFromUuid(dto.getGameUuid())
+                        : Optional.empty();
+        GameServerEntity created =  dto.toEntity(user, game);
+        return saveGameServer(created);
+    }
+
+    public GameServerEntity saveGameServer(GameServerEntity entity) {
         hardwareQuotaService.validateHardwareLimitsPresent(
                 entity.getOwner(), entity.getDockerHardwareLimits());
         entity.setUuid(null);
         entity.setStatus(GameServerDto.GameServerStatus.STOPPED);
         log.info("Saving game server {}", entity);
-        gameServerRepository.save(entity);
+        return gameServerRepository.save(entity);
     }
 
     public void deleteGameServerById(String uuid) {
@@ -362,31 +371,6 @@ public class GameServerService {
                                                 "Server '" + serviceName + "' not found"));
 
         return server.getStatus();
-    }
-
-    public GameServerEntity buildFromCreationDto(GameServerCreationDto dto) {
-        Optional<GameEntity> game =
-                dto.getGameUuid() != null
-                        ? gameEntityService.getGameFromUuid(dto.getGameUuid())
-                        : Optional.empty();
-
-        return GameServerEntity.builder()
-                .game(game.orElse(null))
-                .serverName(dto.getServerName())
-                .template(dto.getTemplate())
-                .dockerImageName(dto.getDockerImageName())
-                .dockerImageTag(dto.getDockerImageTag())
-                .dockerExecutionCommand(dto.getExecutionCommand())
-                .dockerHardwareLimits(dto.getDockerHardwareLimits())
-                .environmentVariables(dto.getEnvironmentVariables())
-                .volumeMounts(
-                        dto.getVolumeMounts() != null
-                                ? dto.getVolumeMounts().stream()
-                                        .map(VolumeMountConfiguration::fromDto)
-                                        .toList()
-                                : List.of())
-                .portMappings(dto.getPortMappings() != null ? dto.getPortMappings() : List.of())
-                .build();
     }
 
     private <T> List<T> updateList(List<T> target, List<T> source, Supplier<List<T>> listSupplier) {

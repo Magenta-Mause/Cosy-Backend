@@ -3,12 +3,18 @@ package com.magentamause.cosybackend.dtos.actiondtos;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.annotations.uniqueElements.UniqueElementsBy;
+import com.magentamause.cosybackend.entities.GameEntity;
+import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
+import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
+import java.util.Optional;
+
 import lombok.Data;
 
 @Data
@@ -41,4 +47,26 @@ public class GameServerCreationDto {
             message = "duplicate volume mounts")
     @Valid
     private List<VolumeMountConfigurationCreationDto> volumeMounts;
+
+    public GameServerEntity toEntity(UserEntity user, Optional<GameEntity> game) {
+
+        return GameServerEntity.builder()
+                .game(game.orElse(null))
+                .owner(user)
+                .serverName(this.getServerName())
+                .template(this.getTemplate())
+                .dockerImageName(this.getDockerImageName())
+                .dockerImageTag(this.getDockerImageTag())
+                .dockerExecutionCommand(this.getExecutionCommand())
+                .dockerHardwareLimits(this.getDockerHardwareLimits())
+                .environmentVariables(this.getEnvironmentVariables())
+                .volumeMounts(
+                        this.getVolumeMounts() != null
+                                ? this.getVolumeMounts().stream()
+                                .map(VolumeMountConfiguration::fromDto)
+                                .toList()
+                                : List.of())
+                .portMappings(this.getPortMappings() != null ? this.getPortMappings() : List.of())
+                .build();
+    }
 }

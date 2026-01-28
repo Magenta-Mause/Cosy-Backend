@@ -54,15 +54,11 @@ public class GameServerController {
     @PostMapping
     @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
     public ResponseEntity<GameServerDto> createGameServer(
-            @Valid @RequestBody GameServerCreationDto gameServerCreationDto) {
-        log.info("Creating game server {}", gameServerCreationDto);
+            @Valid @RequestBody GameServerCreationDto gameServer) {
+        log.info("Creating game server {}", gameServer);
         UserEntity user = securityContextService.getUser();
 
-        GameServerEntity createdGameServer =
-                gameServerService.buildFromCreationDto(gameServerCreationDto);
-        createdGameServer.setOwner(user);
-
-        gameServerService.saveGameServer(createdGameServer);
+        GameServerEntity createdGameServer = gameServerService.createGameServer(user, gameServer);
         return ResponseEntity.status(201).body(createdGameServer.toDto());
     }
 
