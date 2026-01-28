@@ -38,6 +38,8 @@ cosy:
       - https://cosy-docker.pybay.de
   games-api:
     url: https://cosy-game-api.jannekeipert.de
+  templates-api:
+    url: https://cosy-templates.jannekeipert.de/templates
   loki:
     username: ${COSY_LOKI_USER:loki-user}
     password: ${COSY_LOKI_PASSWORD:loki-password}
@@ -51,6 +53,7 @@ cosy:
   engine:
     # Docker-specific configuration
     docker:
-      socket-path: ${COSY_DOCKER_SOCKET_PATH:unix:///var/run/docker.sock}  # Docker socket
-      tls: false                                # Whether to use TLS
-      cert-path: ""                             # Path to TLS certs if enabled
+      socket-path: ${COSY_DOCKER_SOCKET_PATH:unix:///var/run/docker.sock} # Docker socket
+      tls: false # Whether to use TLS
+      cert-path: "" # Path to TLS certs if enabled
+      volume-directory: ${COSY_DOCKER_VOLUME_DIRECTORY:./dummy/cosy/volume-mounts}

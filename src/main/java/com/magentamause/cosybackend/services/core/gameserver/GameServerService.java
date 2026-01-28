@@ -1,5 +1,6 @@
-package com.magentamause.cosybackend.services.gameserver;
+package com.magentamause.cosybackend.services.core.gameserver;
 
+import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
@@ -15,10 +16,17 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.services.core.games.GamesService;
+import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.docker.util.HardwareQuotaService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -41,13 +49,14 @@ import org.springframework.web.server.ResponseStatusException;
 public class GameServerService {
 
     private final GameServerRepository gameServerRepository;
-    private final GameEntityService gameEntityService;
     private final EngineManager engineManager;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
     private final GameServerStatusPublisher statusPublisher;
     private final GameServerDockerProgressPublisher dockerProgressPublisher;
     private final TransactionTemplate transactionTemplate;
     private final GameServerLogService gameServerLogService;
+    private final EngineProperties engineProperties;
+    private final GamesService gamesService;
     private final HardwareQuotaService hardwareQuotaService;
 
     @PostConstruct
@@ -131,11 +140,9 @@ public class GameServerService {
     }
 
     public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto dto) {
-        Optional<GameEntity> game =
-                dto.getGameUuid() != null
-                        ? gameEntityService.getGameFromUuid(dto.getGameUuid())
-                        : Optional.empty();
-        GameServerEntity created =  dto.toEntity(user, game);
+        GameEntity game = gamesService.getGameEntityByExternalId(dto.getExternalGameId(), true);
+
+        GameServerEntity created = dto.toEntity(user, game);
         return saveGameServer(created);
     }
 
@@ -145,7 +152,12 @@ public class GameServerService {
         entity.setUuid(null);
         entity.setStatus(GameServerDto.GameServerStatus.STOPPED);
         log.info("Saving game server {}", entity);
-        return gameServerRepository.save(entity);
+
+        GameServerEntity saved = gameServerRepository.save(entity);
+
+        ensureVolumeDirectoriesExist(saved);
+
+        return saved;
     }
 
     public void deleteGameServerById(String uuid) {
@@ -166,27 +178,13 @@ public class GameServerService {
     }
 
     public GameServerEntity updateGameServerConfiguration(String uuid, GameServerUpdateDto dto) {
-        GameServerEntity gameServer =
-                gameServerRepository
-                        .findById(uuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Game server with uuid " + uuid + " not found"));
+        GameServerEntity gameServer = getGameServerById(uuid);
 
         GameEntity game =
-                dto.getGameUuid() == null
+                dto.getExternalGameId() == null
                         ? null
-                        : gameEntityService
-                                .getGameFromUuid(dto.getGameUuid())
-                                .orElseThrow(
-                                        () ->
-                                                new ResponseStatusException(
-                                                        HttpStatus.NOT_FOUND,
-                                                        "Game with uuid "
-                                                                + dto.getGameUuid()
-                                                                + " not found"));
+                        : gamesService.getGameEntityByExternalId(dto.getExternalGameId(), true);
+
         gameServer.setGame(game);
 
         gameServer.setServerName(dto.getServerName());
@@ -212,7 +210,10 @@ public class GameServerService {
                                 : null,
                         ArrayList::new));
 
-        return gameServerRepository.save(gameServer);
+        GameServerEntity saved = gameServerRepository.save(gameServer);
+        ensureVolumeDirectoriesExist(saved);
+
+        return saved;
     }
 
     public void startServer(String gameServerUuid, UserEntity user) {
@@ -327,14 +328,14 @@ public class GameServerService {
         gameServerLogService.saveGameServerLog(logMessage);
     }
 
+    @Async
     public void stopServer(String serviceName) {
         GameServerEntity gameServer =
                 gameServerRepository
                         .findById(serviceName)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
+                                        new RuntimeException(
                                                 "Server '" + serviceName + "' not found"));
         enrichAndPublishLogMessage(
                 gameServer,
@@ -383,5 +384,49 @@ public class GameServerService {
             target.addAll(source);
         }
         return target;
+    }
+
+    private Path volumeBaseDir() {
+        String baseDir = engineProperties.docker().volumeDirectory();
+        if (baseDir == null || baseDir.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "cosy.engine.docker.volume-directory is not configured");
+        }
+        return Paths.get(baseDir).toAbsolutePath().normalize();
+    }
+
+    private void ensureVolumeDirectoriesExist(GameServerEntity server) {
+        if (server.getVolumeMounts() == null || server.getVolumeMounts().isEmpty()) {
+            return;
+        }
+
+        Path base = volumeBaseDir();
+
+        for (var vm : server.getVolumeMounts()) {
+            String id = vm.getUuid();
+            if (id == null || id.isBlank()) {
+                // Should not happen if server is saved, but guard anyway.
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "Volume mount uuid missing after save");
+            }
+            if (id.contains("/") || id.contains("\\") || id.contains("..")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
+            }
+
+            Path dir = base.resolve(id).normalize();
+            if (!dir.startsWith(base)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
+            }
+
+            try {
+                Files.createDirectories(dir);
+            } catch (IOException e) {
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Failed to create volume directory: " + dir,
+                        e);
+            }
+        }
     }
 }

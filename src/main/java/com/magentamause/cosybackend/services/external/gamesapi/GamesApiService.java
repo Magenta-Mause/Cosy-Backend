@@ -2,11 +2,10 @@ package com.magentamause.cosybackend.services.external.gamesapi;
 
 import com.magentamause.cosybackend.configs.properties.GamesApiProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
-import com.magentamause.cosybackend.dtos.gamesapi.GamesApiGamesResponse;
-import com.magentamause.cosybackend.entities.GameEntity;
+import com.magentamause.cosybackend.dtos.gamesapi.GamesApiFindGameByIdResponse;
+import com.magentamause.cosybackend.dtos.gamesapi.GamesApiFindGamesSearchResponse;
 import com.magentamause.cosybackend.exceptions.GamesApiError;
-import com.magentamause.cosybackend.repositories.GameRepository;
-import java.util.Collections;
+import com.magentamause.cosybackend.exceptions.gameapi.GameFetchException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +13,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
@@ -22,10 +22,9 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 public class GamesApiService {
 
     private final WebClient gamesApiWebClient;
-    private final GameRepository gameRepository;
 
-    private List<GameDto> queryGamesApi(String query) {
-        GamesApiGamesResponse response;
+    public Mono<List<GameDto>> queryGamesApi(String query, boolean includeAssets) {
+        Mono<GamesApiFindGamesSearchResponse> response;
         try {
             response =
                     gamesApiWebClient
@@ -35,51 +34,55 @@ public class GamesApiService {
                                             uriBuilder
                                                     .path("/games")
                                                     .queryParam("query", query)
-                                                    .queryParam("include_hero", "true")
-                                                    .queryParam("include_logo", "true")
+                                                    .queryParam("include_hero", includeAssets)
+                                                    .queryParam("include_logo", includeAssets)
                                                     .build())
                             .retrieve()
-                            .bodyToMono(GamesApiGamesResponse.class)
-                            .block();
+                            .bodyToMono(GamesApiFindGamesSearchResponse.class);
         } catch (WebClientRequestException e) {
             throw new GamesApiError("Failed to connect to Games API", e);
         } catch (RuntimeException e) {
             throw new GamesApiError("Unexpected error while calling Games API", e);
         }
-
-        if (response == null
-                || response.getData() == null
-                || response.getData().getGames() == null) {
-            return Collections.emptyList();
-        }
-
-        return response.getData().getGames().stream()
-                .map(GamesApiGamesResponse.DataPayload.GamesPayload::toDto)
-                .toList();
+        return response.map(
+                res ->
+                        res.getData() != null && res.getData().getGames() != null
+                                ? res.getData().getGames().stream()
+                                        .map(game -> game.toDto())
+                                        .toList()
+                                : List.of());
     }
 
-    public List<GameDto> query(String query) {
-        List<GameDto> apiGames;
-
-        try {
-            apiGames = queryGamesApi(query);
-        } catch (GamesApiError e) {
-            log.warn("Games API query failed, falling back to cached results");
-            List<GameDto> localGamesStream =
-                    gameRepository.findByNameContainingIgnoreCase(query).stream()
-                            .map(GameDto::fromEntity)
-                            .toList();
-            if (localGamesStream.isEmpty()) {
-                throw e;
-            }
-            return localGamesStream;
-        }
-
-        return apiGames.stream()
-                .map(
-                        g ->
-                                GameDto.fromEntity(
-                                        gameRepository.saveIfNotPresent(GameEntity.fromDto(g))))
-                .toList();
+    public Mono<GameDto> getByExternalId(int externalId) {
+        return gamesApiWebClient
+                .get()
+                .uri(
+                        uriBuilder ->
+                                uriBuilder
+                                        .path("/game")
+                                        .queryParam("id", externalId)
+                                        .queryParam("include_hero", true)
+                                        .queryParam("include_logo", true)
+                                        .build())
+                .retrieve()
+                .onStatus(
+                        status -> status.value() != 200,
+                        response ->
+                                response.bodyToMono(String.class)
+                                        .defaultIfEmpty("")
+                                        .map(
+                                                body ->
+                                                        new GameFetchException(
+                                                                "Games API returned status "
+                                                                        + response.statusCode()
+                                                                                .value()
+                                                                        + " for externalId="
+                                                                        + externalId
+                                                                        + (body.isBlank()
+                                                                                ? ""
+                                                                                : ", body="
+                                                                                        + body))))
+                .bodyToMono(GamesApiFindGameByIdResponse.class)
+                .map(response -> response.getData().toDto());
     }
 }

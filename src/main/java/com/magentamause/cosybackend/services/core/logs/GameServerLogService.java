@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services.gameserver;
+package com.magentamause.cosybackend.services.core.logs;
 
 import com.magentamause.cosybackend.dtos.loki.LokiLogQuery;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;

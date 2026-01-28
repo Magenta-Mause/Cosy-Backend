@@ -13,16 +13,13 @@ import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
-import java.util.Optional;
-
 import lombok.Data;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GameServerCreationDto {
-    private String gameUuid;
+    private Integer externalGameId;
     @NotBlank private String serverName;
-    @NotBlank private String template;
     @NotBlank private String dockerImageName;
     @NotBlank private String dockerImageTag;
 
@@ -48,13 +45,12 @@ public class GameServerCreationDto {
     @Valid
     private List<VolumeMountConfigurationCreationDto> volumeMounts;
 
-    public GameServerEntity toEntity(UserEntity user, Optional<GameEntity> game) {
+    public GameServerEntity toEntity(UserEntity user, GameEntity game) {
 
         return GameServerEntity.builder()
-                .game(game.orElse(null))
+                .game(game)
                 .owner(user)
                 .serverName(this.getServerName())
-                .template(this.getTemplate())
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
                 .dockerExecutionCommand(this.getExecutionCommand())
@@ -63,8 +59,8 @@ public class GameServerCreationDto {
                 .volumeMounts(
                         this.getVolumeMounts() != null
                                 ? this.getVolumeMounts().stream()
-                                .map(VolumeMountConfiguration::fromDto)
-                                .toList()
+                                        .map(VolumeMountConfiguration::fromDto)
+                                        .toList()
                                 : List.of())
                 .portMappings(this.getPortMappings() != null ? this.getPortMappings() : List.of())
                 .build();

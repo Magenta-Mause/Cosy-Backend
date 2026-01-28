@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services.metrics;
+package com.magentamause.cosybackend.services.core.metrics;
 
 import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.domain.WritePrecision;
@@ -11,6 +11,7 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,11 +28,10 @@ public class MetricsService {
 
     public Point convertMetricToPoint(Metric metrics) {
         return Point.measurement("metrics")
-                .addTag("container_uuid", metrics.getUuid())
-                .addTag("container_name", metrics.getName())
+                .addTag("game_server_uuid", metrics.getGameServerUuid().substring(5))
                 .addField(MetricType.CPU_PERCENT.getValue(), metrics.getCpuPercent())
                 .addField(MetricType.MEMORY_USAGE.getValue(), metrics.getMemoryUsage())
-                .addField(MetricType.MEMORY_USAGE.getValue(), metrics.getMemoryLimit())
+                .addField(MetricType.MEMORY_LIMIT.getValue(), metrics.getMemoryLimit())
                 .addField(MetricType.MEMORY_PERCENT.getValue(), metrics.getMemoryPercent())
                 .addField(MetricType.NETWORK_INPUT.getValue(), metrics.getNetworkInput())
                 .addField(MetricType.NETWORK_OUTPUT.getValue(), metrics.getNetworkOutput())
@@ -50,7 +50,7 @@ public class MetricsService {
         }
     }
 
-    @Scheduled(fixedRateString = "1s")
+    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.SECONDS)
     public void collectMetrics() {
         List<GameServerEntity> gameServers = gameServerRepository.findAll();
         try {

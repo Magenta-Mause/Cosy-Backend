@@ -6,6 +6,7 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.exception.InternalServerErrorException;
 import com.github.dockerjava.api.model.*;
+import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.PullProgressDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
@@ -14,19 +15,23 @@ import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
+import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
+import com.magentamause.cosybackend.services.core.gameserver.GameServerStatusUpdateEventType;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerHostConfigFactory;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerStatsMapper;
 import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
-import com.magentamause.cosybackend.services.gameserver.GameServerStatusUpdateEventType;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,6 +52,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     private final DockerClient client;
     private final StatsMapper statsMapper;
+    private final EngineProperties engineProperties;
 
     private final List<BiConsumer<GameServerStatusUpdateEventType, String>> statusListeners =
             new CopyOnWriteArrayList<>();
@@ -363,6 +369,42 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 .collect(Collectors.toList());
     }
 
+    private HostConfig buildHostConfig(GameServerEntity serverConfig) {
+        HostConfig hostConfig = HostConfig.newHostConfig();
+
+        if (serverConfig.getPortMappings() != null && !serverConfig.getPortMappings().isEmpty()) {
+            Ports portBindings = new Ports();
+            serverConfig
+                    .getPortMappings()
+                    .forEach(
+                            p -> {
+                                ExposedPort exposed = portMappingToExposedPort(p);
+                                portBindings.bind(
+                                        exposed, Ports.Binding.bindPort(p.getInstancePort()));
+                            });
+            hostConfig.withPortBindings(portBindings);
+        }
+
+        if (serverConfig.getVolumeMounts() != null && !serverConfig.getVolumeMounts().isEmpty()) {
+            List<Bind> binds =
+                    serverConfig.getVolumeMounts().stream()
+                            .map(
+                                    v -> {
+                                        String hostPath = resolveAndEnsureVolumeHostPath(v);
+
+                                        return new Bind(
+                                                hostPath,
+                                                new Volume(v.getContainerPath()),
+                                                AccessMode.rw);
+                                    })
+                            .toList();
+
+            hostConfig.withBinds(binds);
+        }
+
+        return hostConfig;
+    }
+
     private void ensureImagePresent(
             String image,
             Consumer<StartEventDto> progressListener,
@@ -370,6 +412,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
             Consumer<Void> imagePullStartCallback,
             Consumer<Void> imagePullEndCallback)
             throws DockerPullImageException {
+        // TODO: refactor
         boolean exists =
                 client.listImagesCmd().withImageNameFilter(image).exec().stream()
                         .anyMatch(
@@ -455,8 +498,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                             @Override
                             public void onNext(Statistics statistics) {
                                 Metric stats = statsMapper.mapStats(statistics);
-                                stats.setUuid(containerUuid);
-                                stats.setName(container.getName().replace("/", ""));
+                                stats.setGameServerUuid(container.getName().replace("/", ""));
                                 stats.setTime(Instant.now());
                                 statsRef.set(stats);
                                 try {
@@ -472,5 +514,39 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 .awaitCompletion();
 
         return Optional.ofNullable(statsRef.get());
+    }
+
+    private String resolveAndEnsureVolumeHostPath(VolumeMountConfiguration v) {
+        String baseDir =
+                Optional.ofNullable(engineProperties)
+                        .map(EngineProperties::docker)
+                        .map(EngineProperties.Docker::volumeDirectory)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "cosy.engine.docker.volume-directory is not configured"));
+
+        String uuid =
+                Optional.ofNullable(v.getUuid())
+                        .filter(s -> !s.isBlank())
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "VolumeMountConfiguration.uuid is null/blank; cannot resolve host path"));
+
+        if (uuid.contains("/") || uuid.contains("\\") || uuid.contains("..")) {
+            throw new IllegalArgumentException("Invalid volume uuid: " + uuid);
+        }
+
+        Path mountPath = Paths.get(baseDir).resolve(uuid).normalize();
+
+        try {
+            Files.createDirectories(mountPath);
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Failed to create volume mount directory: " + mountPath, e);
+        }
+
+        return mountPath.toAbsolutePath().toString();
     }
 }
