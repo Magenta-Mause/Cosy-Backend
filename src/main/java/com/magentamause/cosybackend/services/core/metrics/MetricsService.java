@@ -10,6 +10,7 @@ import com.magentamause.cosybackend.entities.metric.MetricType;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.websockets.GameServerMetricsPublisher;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -64,6 +65,21 @@ public class MetricsService {
                         writeToInfluxDB(point);
                         gameServerMetricsPublisher.publishMetrics(
                                 gameServer.getUuid(), metric.get().toDto());
+                    } else {
+                        gameServerMetricsPublisher.publishMetrics(
+                                gameServer.getUuid(),
+                                Metric.builder()
+                                        .cpuPercent(0.0)
+                                        .memoryLimit(0L)
+                                        .memoryUsage(0L)
+                                        .blockRead(0L)
+                                        .blockWrite(0L)
+                                        .networkInput(0L)
+                                        .networkOutput(0L)
+                                        .gameServerUuid(gameServer.getUuid())
+                                        .time(Instant.now())
+                                        .build()
+                                        .toDto());
                     }
                 } catch (Exception e) {
                     log.error(
