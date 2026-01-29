@@ -15,8 +15,8 @@ import lombok.NoArgsConstructor;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class MetricPointDto {
 
+    private String gameServerUuid;
     private Instant time;
-
     private MetricValues metricValues;
 
     @Data

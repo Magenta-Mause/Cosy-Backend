@@ -18,5 +18,7 @@ public final class WebSocketDestinations {
                 BROKER_PREFIX + "/game-servers/status/{serverId}";
         public static final String GAME_SERVER_DOCKER_PROGRESS =
                 BROKER_PREFIX + "/game-servers/docker-progress/{serverId}";
+        public static final String GAME_SERVER_METRICS =
+                BROKER_PREFIX + "/game-servers/metrics/{serverId}";
     }
 }

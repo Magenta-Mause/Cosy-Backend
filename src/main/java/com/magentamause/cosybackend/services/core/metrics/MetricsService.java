@@ -9,6 +9,8 @@ import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.entities.metric.MetricType;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.websockets.GameServerMetricsPublisher;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -25,10 +27,11 @@ public class MetricsService {
     private final InfluxProperties influxProperties;
     private final EngineManager engineManager;
     private final GameServerRepository gameServerRepository;
+    private final GameServerMetricsPublisher gameServerMetricsPublisher;
 
     public Point convertMetricToPoint(Metric metrics) {
         return Point.measurement("metrics")
-                .addTag("game_server_uuid", metrics.getGameServerUuid().substring(5))
+                .addTag("game_server_uuid", metrics.getGameServerUuid())
                 .addField(MetricType.CPU_PERCENT.getValue(), metrics.getCpuPercent())
                 .addField(MetricType.MEMORY_USAGE.getValue(), metrics.getMemoryUsage())
                 .addField(MetricType.MEMORY_LIMIT.getValue(), metrics.getMemoryLimit())
@@ -50,7 +53,7 @@ public class MetricsService {
         }
     }
 
-    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedRate = 5, timeUnit = TimeUnit.SECONDS)
     public void collectMetrics() {
         List<GameServerEntity> gameServers = gameServerRepository.findAll();
         try {
@@ -60,6 +63,23 @@ public class MetricsService {
                     if (metric.isPresent()) {
                         Point point = convertMetricToPoint(metric.get());
                         writeToInfluxDB(point);
+                        gameServerMetricsPublisher.publishMetrics(
+                                gameServer.getUuid(), metric.get().toDto());
+                    } else {
+                        gameServerMetricsPublisher.publishMetrics(
+                                gameServer.getUuid(),
+                                Metric.builder()
+                                        .cpuPercent(0.0)
+                                        .memoryLimit(0L)
+                                        .memoryUsage(0L)
+                                        .blockRead(0L)
+                                        .blockWrite(0L)
+                                        .networkInput(0L)
+                                        .networkOutput(0L)
+                                        .gameServerUuid(gameServer.getUuid())
+                                        .time(Instant.now())
+                                        .build()
+                                        .toDto());
                     }
                 } catch (Exception e) {
                     log.error(
