@@ -151,7 +151,7 @@ public class GameServerService {
 
         GameServerEntity saved = gameServerRepository.save(entity);
 
-        ensureVolumeDirectoriesExist(saved);
+        assertVolumeDirectoriesExist(saved);
 
         return saved;
     }
@@ -181,7 +181,7 @@ public class GameServerService {
         updateDto.applyToEntity(gameServer, game);
 
         GameServerEntity saved = gameServerRepository.save(gameServer);
-        ensureVolumeDirectoriesExist(saved);
+        assertVolumeDirectoriesExist(saved);
 
         return saved;
     }
@@ -354,7 +354,7 @@ public class GameServerService {
         return Paths.get(baseDir).toAbsolutePath().normalize();
     }
 
-    private void ensureVolumeDirectoriesExist(GameServerEntity server) {
+    private void assertVolumeDirectoriesExist(GameServerEntity server) {
         if (server.getVolumeMounts() == null || server.getVolumeMounts().isEmpty()) {
             return;
         }
