@@ -20,24 +20,25 @@ public class HardwareQuotaService {
         }
     }
 
-    public void assertHardwareLimitsPresent(UserEntity user, DockerHardwareLimits serverLimits) {
-        if (!hasHardwareLimits(user)) {
-            // No limits set for this user
+    public void assertHardwareLimitsPresent(DockerHardwareLimits userLimits, DockerHardwareLimits serverLimits) {
+        if (userLimits == null) {
+            // No need for further validation
             return;
         }
+
         if (serverLimits == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "Hardware limits are required for this user.");
         }
 
-        DockerHardwareLimits userLimits = user.getDockerHardwareLimits();
         assertCpuPresent(userLimits, serverLimits);
         assertMemoryPresent(userLimits, serverLimits);
     }
 
     public void assertSufficientQuota(GameServerEntity serverToStart) {
         UserEntity startedBy = serverToStart.getLastStartedBy();
-        if (!hasHardwareLimits(startedBy)) {
+        if (startedBy.getDockerHardwareLimits() == null) {
+            // No need for further validation
             return;
         }
 
@@ -51,6 +52,7 @@ public class HardwareQuotaService {
     private void assertCpuPresent(
             DockerHardwareLimits userLimits, DockerHardwareLimits serverLimits) {
         if (userLimits.getDockerMaxCpuCores() == null) {
+            // No need for further validation
             return;
         }
         if (serverLimits.getDockerMaxCpuCores() == null) {
@@ -62,6 +64,7 @@ public class HardwareQuotaService {
     private void assertMemoryPresent(
             DockerHardwareLimits userLimits, DockerHardwareLimits serverLimits) {
         if (userLimits.getDockerMemoryLimit() == null) {
+            // No need for further validation
             return;
         }
         if (serverLimits.getDockerMemoryLimit() == null) {
@@ -90,14 +93,7 @@ public class HardwareQuotaService {
                             MemoryUtils.formatBytesToReadableString(userLimits.memoryBytes)));
         }
         return sb.toString().trim();
-    }
 
-    private boolean hasHardwareLimits(UserEntity user) {
-        if (user == null || user.getDockerHardwareLimits() == null) {
-            return false;
-        }
-        DockerHardwareLimits limits = user.getDockerHardwareLimits();
-        return limits.getDockerMaxCpuCores() != null || limits.getDockerMemoryLimit() != null;
     }
 
     private ResourceUsage getUsageLimits(UserEntity user) {

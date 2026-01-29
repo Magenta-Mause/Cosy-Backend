@@ -145,7 +145,7 @@ public class GameServerService {
 
     public GameServerEntity saveGameServer(GameServerEntity entity) {
         hardwareQuotaService.assertHardwareLimitsPresent(
-                entity.getOwner(), entity.getDockerHardwareLimits());
+                entity.getOwner().getDockerHardwareLimits(), entity.getDockerHardwareLimits());
         entity.setUuid(null);
         entity.setStatus(GameServerDto.GameServerStatus.STOPPED);
         log.info("Saving game server {}", entity);
