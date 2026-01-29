@@ -136,7 +136,9 @@ public class GameServerService {
 
     public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto gameServerDto) {
         GameEntity game =
-                gamesService.getGameEntityByExternalId(gameServerDto.getExternalGameId(), true);
+                gamesService
+                        .getOptionalGameByExternalId(gameServerDto.getExternalGameId(), true)
+                        .orElse(null);
         GameServerEntity created = gameServerDto.toEntity(user, game);
         return saveGameServerConfiguration(created, true);
     }
