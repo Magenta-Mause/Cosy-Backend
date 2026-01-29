@@ -137,13 +137,14 @@ public class GameServerService {
     }
 
     public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto gameServerDto) {
-        GameEntity game = gamesService.getGameEntityByExternalId(gameServerDto.getExternalGameId(), true);
+        GameEntity game =
+                gamesService.getGameEntityByExternalId(gameServerDto.getExternalGameId(), true);
         GameServerEntity created = gameServerDto.toEntity(user, game);
         return saveGameServer(created);
     }
 
     public GameServerEntity saveGameServer(GameServerEntity entity) {
-        hardwareQuotaService.validateHardwareLimitsPresent(
+        hardwareQuotaService.assertHardwareLimitsPresent(
                 entity.getOwner(), entity.getDockerHardwareLimits());
         entity.setUuid(null);
         entity.setStatus(GameServerDto.GameServerStatus.STOPPED);
@@ -173,10 +174,12 @@ public class GameServerService {
         gameServerRepository.deleteById(uuid);
     }
 
-    public GameServerEntity updateGameServerConfiguration(String uuid, GameServerUpdateDto updateDto) {
+    public GameServerEntity updateGameServerConfiguration(
+            String uuid, GameServerUpdateDto updateDto) {
         GameServerEntity gameServer = getGameServerById(uuid);
 
-        GameEntity game = gamesService.getGameEntityByExternalId(updateDto.getExternalGameId(), true);
+        GameEntity game =
+                gamesService.getGameEntityByExternalId(updateDto.getExternalGameId(), true);
 
         updateDto.applyToEntity(gameServer, game);
 
