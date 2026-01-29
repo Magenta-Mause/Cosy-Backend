@@ -1,12 +1,11 @@
 package com.magentamause.cosybackend.services;
 
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.VolumeMountConfigurationCreationDto;
 import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
-import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
-import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.repositories.DummyInstantiatedPropertiesRepository;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import com.magentamause.cosybackend.services.user.UserEntityService;
@@ -28,7 +27,7 @@ public class DummyDataService {
     private final GameServerService gameServerService;
     private final DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository;
     private final UserEntityService userEntityService;
-    private List<GameServerEntity> dummyGameServers;
+    private List<GameServerCreationDto> dummyGameServers;
     private UserEntity adminUser;
 
     @Autowired
@@ -52,11 +51,8 @@ public class DummyDataService {
 
         this.dummyGameServers =
                 List.of(
-                        GameServerEntity.builder()
+                        GameServerCreationDto.builder()
                                 .serverName("TOSIOS - No Limits")
-                                .owner(adminUser)
-                                .lastStartedBy(null)
-                                .status(GameServerDto.GameServerStatus.STOPPED)
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
                                 .dockerHardwareLimits(DockerHardwareLimits.builder().build())
@@ -69,11 +65,8 @@ public class DummyDataService {
                                                         .build()))
                                 .environmentVariables(List.of())
                                 .build(),
-                        GameServerEntity.builder()
+                        GameServerCreationDto.builder()
                                 .serverName("TOSIOS - Memory Only")
-                                .owner(adminUser)
-                                .lastStartedBy(null)
-                                .status(GameServerDto.GameServerStatus.STOPPED)
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
                                 .dockerHardwareLimits(
@@ -89,11 +82,8 @@ public class DummyDataService {
                                                         .build()))
                                 .environmentVariables(List.of())
                                 .build(),
-                        GameServerEntity.builder()
+                        GameServerCreationDto.builder()
                                 .serverName("TOSIOS - CPU Only")
-                                .owner(adminUser)
-                                .lastStartedBy(null)
-                                .status(GameServerDto.GameServerStatus.STOPPED)
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
                                 .dockerHardwareLimits(
@@ -109,11 +99,8 @@ public class DummyDataService {
                                                         .build()))
                                 .environmentVariables(List.of())
                                 .build(),
-                        GameServerEntity.builder()
+                        GameServerCreationDto.builder()
                                 .serverName("TOSIOS - Memory and CPU")
-                                .owner(adminUser)
-                                .lastStartedBy(null)
-                                .status(GameServerDto.GameServerStatus.STOPPED)
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
                                 .dockerHardwareLimits(
@@ -131,7 +118,7 @@ public class DummyDataService {
                                 .environmentVariables(List.of())
                                 .volumeMounts(
                                         List.of(
-                                                VolumeMountConfiguration.builder()
+                                                VolumeMountConfigurationCreationDto.builder()
                                                         .containerPath("/app/data")
                                                         .build()))
                                 .build());
@@ -154,7 +141,8 @@ public class DummyDataService {
         }
 
         log.info("Populating dummy game servers");
-        this.dummyGameServers.forEach(gameServerService::saveGameServer);
+        this.dummyGameServers.forEach(
+                (gameServer) -> gameServerService.createGameServer(adminUser, gameServer));
 
         dummyInstantiatedPropertiesRepository.save(
                 DummyInstantiatedEntity.builder().key("dummy-game-servers").build());

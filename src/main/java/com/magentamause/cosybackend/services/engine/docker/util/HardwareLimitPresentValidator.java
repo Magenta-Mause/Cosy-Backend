@@ -8,7 +8,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class HardwareLimitPresentValidator {
 
-    public void validateHardwareLimitsPresent(DockerHardwareLimits userLimits, DockerHardwareLimits serverLimits) {
+    public void validateHardwareLimitsPresent(
+            DockerHardwareLimits userLimits, DockerHardwareLimits serverLimits) {
         if (userLimits == null) {
             // No present check needed because no limits set for user
             return;
