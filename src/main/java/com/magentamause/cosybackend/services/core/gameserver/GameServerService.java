@@ -10,7 +10,6 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
-import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
@@ -27,12 +26,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -139,10 +136,9 @@ public class GameServerService {
                                         "Game server with uuid " + uuid + " not found"));
     }
 
-    public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto dto) {
-        GameEntity game = gamesService.getGameEntityByExternalId(dto.getExternalGameId(), true);
-
-        GameServerEntity created = dto.toEntity(user, game);
+    public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto gameServerDto) {
+        GameEntity game = gamesService.getGameEntityByExternalId(gameServerDto.getExternalGameId(), true);
+        GameServerEntity created = gameServerDto.toEntity(user, game);
         return saveGameServer(created);
     }
 
@@ -177,38 +173,12 @@ public class GameServerService {
         gameServerRepository.deleteById(uuid);
     }
 
-    public GameServerEntity updateGameServerConfiguration(String uuid, GameServerUpdateDto dto) {
+    public GameServerEntity updateGameServerConfiguration(String uuid, GameServerUpdateDto updateDto) {
         GameServerEntity gameServer = getGameServerById(uuid);
 
-        GameEntity game =
-                dto.getExternalGameId() == null
-                        ? null
-                        : gamesService.getGameEntityByExternalId(dto.getExternalGameId(), true);
+        GameEntity game = gamesService.getGameEntityByExternalId(updateDto.getExternalGameId(), true);
 
-        gameServer.setGame(game);
-
-        gameServer.setServerName(dto.getServerName());
-        gameServer.setDockerImageName(dto.getDockerImageName());
-        gameServer.setDockerImageTag(dto.getDockerImageTag());
-        gameServer.setDockerExecutionCommand(dto.getExecutionCommand());
-        gameServer.setDockerHardwareLimits(dto.getDockerHardwareLimits());
-
-        gameServer.setPortMappings(
-                updateList(gameServer.getPortMappings(), dto.getPortMappings(), ArrayList::new));
-        gameServer.setEnvironmentVariables(
-                updateList(
-                        gameServer.getEnvironmentVariables(),
-                        dto.getEnvironmentVariables(),
-                        ArrayList::new));
-        gameServer.setVolumeMounts(
-                updateList(
-                        gameServer.getVolumeMounts(),
-                        dto.getVolumeMounts() != null
-                                ? dto.getVolumeMounts().stream()
-                                        .map(VolumeMountConfiguration::fromDto)
-                                        .toList()
-                                : null,
-                        ArrayList::new));
+        updateDto.applyToEntity(gameServer, game);
 
         GameServerEntity saved = gameServerRepository.save(gameServer);
         ensureVolumeDirectoriesExist(saved);
@@ -372,18 +342,6 @@ public class GameServerService {
                                                 "Server '" + serviceName + "' not found"));
 
         return server.getStatus();
-    }
-
-    private <T> List<T> updateList(List<T> target, List<T> source, Supplier<List<T>> listSupplier) {
-        if (target == null) {
-            target = listSupplier.get();
-        } else {
-            target.clear();
-        }
-        if (source != null) {
-            target.addAll(source);
-        }
-        return target;
     }
 
     private Path volumeBaseDir() {
