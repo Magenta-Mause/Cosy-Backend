@@ -84,10 +84,10 @@ public class MetricsQueryService {
     private List<MetricPointDto> generateZeroValueMetrics(
             String gameServerUuid, Instant start, Instant end, int pointCount) {
         List<MetricPointDto> zeroMetrics = new ArrayList<>();
-        
+
         long totalSeconds = end.getEpochSecond() - start.getEpochSecond();
         long intervalSeconds = totalSeconds / pointCount;
-        
+
         MetricPointDto.MetricValues zeroValues =
                 MetricPointDto.MetricValues.builder()
                         .cpuPercent(0.0)
@@ -99,7 +99,7 @@ public class MetricsQueryService {
                         .blockRead(0L)
                         .blockWrite(0L)
                         .build();
-        
+
         for (int i = 0; i < pointCount; i++) {
             Instant timestamp = start.plusSeconds(i * intervalSeconds);
             zeroMetrics.add(
@@ -109,7 +109,7 @@ public class MetricsQueryService {
                             .metricValues(zeroValues)
                             .build());
         }
-        
+
         return zeroMetrics;
     }
 }

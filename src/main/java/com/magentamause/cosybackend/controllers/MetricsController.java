@@ -49,6 +49,6 @@ public class MetricsController {
         }
 
         return ResponseEntity.ok(
-            queryService.queryMetrics(gameServerUuid, defaultStart, defaultEnd, pointCount));
+                queryService.queryMetrics(gameServerUuid, defaultStart, defaultEnd, pointCount));
     }
 }
