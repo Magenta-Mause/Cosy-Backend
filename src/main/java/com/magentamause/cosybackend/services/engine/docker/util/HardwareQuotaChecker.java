@@ -7,12 +7,10 @@ import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import java.util.List;
 import java.util.Objects;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
-public class HardwareQuotaService {
+public class HardwareQuotaChecker {
 
     private record ResourceUsage(double cpu, long memoryBytes) {
         public ResourceUsage add(ResourceUsage other) {
@@ -20,25 +18,10 @@ public class HardwareQuotaService {
         }
     }
 
-    public void assertHardwareLimitsPresent(DockerHardwareLimits userLimits, DockerHardwareLimits serverLimits) {
-        if (userLimits == null) {
-            // No need for further validation
-            return;
-        }
-
-        if (serverLimits == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Hardware limits are required for this user.");
-        }
-
-        assertCpuPresent(userLimits, serverLimits);
-        assertMemoryPresent(userLimits, serverLimits);
-    }
-
     public void assertSufficientQuota(GameServerEntity serverToStart) {
         UserEntity startedBy = serverToStart.getLastStartedBy();
         if (startedBy.getDockerHardwareLimits() == null) {
-            // No need for further validation
+            // No quota check needed because no limits set for user
             return;
         }
 
@@ -47,30 +30,6 @@ public class HardwareQuotaService {
         ResourceUsage requiredUsage = calculateServerUsage(serverToStart);
 
         checkUsageAgainstLimits(currentUsage.add(requiredUsage), getUsageLimits(startedBy));
-    }
-
-    private void assertCpuPresent(
-            DockerHardwareLimits userLimits, DockerHardwareLimits serverLimits) {
-        if (userLimits.getDockerMaxCpuCores() == null) {
-            // No need for further validation
-            return;
-        }
-        if (serverLimits.getDockerMaxCpuCores() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "CPU limit is required for this user.");
-        }
-    }
-
-    private void assertMemoryPresent(
-            DockerHardwareLimits userLimits, DockerHardwareLimits serverLimits) {
-        if (userLimits.getDockerMemoryLimit() == null) {
-            // No need for further validation
-            return;
-        }
-        if (serverLimits.getDockerMemoryLimit() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Memory limit is required for this user.");
-        }
     }
 
     private void checkUsageAgainstLimits(ResourceUsage totalUsage, ResourceUsage userLimits) {
@@ -93,7 +52,6 @@ public class HardwareQuotaService {
                             MemoryUtils.formatBytesToReadableString(userLimits.memoryBytes)));
         }
         return sb.toString().trim();
-
     }
 
     private ResourceUsage getUsageLimits(UserEntity user) {

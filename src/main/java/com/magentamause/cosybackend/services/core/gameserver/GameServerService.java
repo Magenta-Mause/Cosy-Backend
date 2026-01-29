@@ -1,6 +1,5 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
-import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
@@ -18,14 +17,12 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
-import com.magentamause.cosybackend.services.engine.docker.util.HardwareQuotaService;
+import com.magentamause.cosybackend.services.engine.docker.util.HardwareLimitPresentValidator;
+import com.magentamause.cosybackend.services.engine.docker.util.HardwareQuotaChecker;
+import com.magentamause.cosybackend.services.engine.docker.util.VolumeDirectoryService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -52,9 +49,10 @@ public class GameServerService {
     private final GameServerDockerProgressPublisher dockerProgressPublisher;
     private final TransactionTemplate transactionTemplate;
     private final GameServerLogService gameServerLogService;
-    private final EngineProperties engineProperties;
     private final GamesService gamesService;
-    private final HardwareQuotaService hardwareQuotaService;
+    private final HardwareLimitPresentValidator hardwareLimitValidator;
+    private final HardwareQuotaChecker hardwareQuotaChecker;
+    private final VolumeDirectoryService volumeDirectoryService;
 
     @PostConstruct
     public void init() {
@@ -140,20 +138,20 @@ public class GameServerService {
         GameEntity game =
                 gamesService.getGameEntityByExternalId(gameServerDto.getExternalGameId(), true);
         GameServerEntity created = gameServerDto.toEntity(user, game);
-        return saveGameServer(created);
+        return saveGameServerConfiguration(created, true);
     }
 
-    public GameServerEntity saveGameServer(GameServerEntity entity) {
-        hardwareQuotaService.assertHardwareLimitsPresent(
+    private GameServerEntity saveGameServerConfiguration(GameServerEntity entity, boolean isNew) {
+        hardwareLimitValidator.validateHardwareLimitsPresent(
                 entity.getOwner().getDockerHardwareLimits(), entity.getDockerHardwareLimits());
-        entity.setUuid(null);
-        entity.setStatus(GameServerDto.GameServerStatus.STOPPED);
+        if (isNew) {
+            entity.setUuid(null);
+            entity.setStatus(GameServerDto.GameServerStatus.STOPPED);
+        }
         log.info("Saving game server {}", entity);
 
         GameServerEntity saved = gameServerRepository.save(entity);
-
-        assertVolumeDirectoriesExist(saved);
-
+        volumeDirectoryService.assertVolumeDirectoriesExist(saved);
         return saved;
     }
 
@@ -183,10 +181,7 @@ public class GameServerService {
 
         updateDto.applyToEntity(gameServer, game);
 
-        GameServerEntity saved = gameServerRepository.save(gameServer);
-        assertVolumeDirectoriesExist(saved);
-
-        return saved;
+        return saveGameServerConfiguration(gameServer, false);
     }
 
     public void startServer(String gameServerUuid, UserEntity user) {
@@ -207,7 +202,7 @@ public class GameServerService {
                                 return entity;
                             });
 
-            hardwareQuotaService.assertSufficientQuota(serverConfig);
+            hardwareQuotaChecker.assertSufficientQuota(serverConfig);
 
             startServerAsync(gameServerUuid, serverConfig);
         } catch (HardwareLimitException e) {
@@ -345,49 +340,5 @@ public class GameServerService {
                                                 "Server '" + serviceName + "' not found"));
 
         return server.getStatus();
-    }
-
-    private Path volumeBaseDir() {
-        String baseDir = engineProperties.docker().volumeDirectory();
-        if (baseDir == null || baseDir.isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "cosy.engine.docker.volume-directory is not configured");
-        }
-        return Paths.get(baseDir).toAbsolutePath().normalize();
-    }
-
-    private void assertVolumeDirectoriesExist(GameServerEntity server) {
-        if (server.getVolumeMounts() == null || server.getVolumeMounts().isEmpty()) {
-            return;
-        }
-
-        Path base = volumeBaseDir();
-
-        for (var vm : server.getVolumeMounts()) {
-            String id = vm.getUuid();
-            if (id == null || id.isBlank()) {
-                // Should not happen if server is saved, but guard anyway.
-                throw new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR, "Volume mount uuid missing after save");
-            }
-            if (id.contains("/") || id.contains("\\") || id.contains("..")) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
-            }
-
-            Path dir = base.resolve(id).normalize();
-            if (!dir.startsWith(base)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
-            }
-
-            try {
-                Files.createDirectories(dir);
-            } catch (IOException e) {
-                throw new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Failed to create volume directory: " + dir,
-                        e);
-            }
-        }
     }
 }
