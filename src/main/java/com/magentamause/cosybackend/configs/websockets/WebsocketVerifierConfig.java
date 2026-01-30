@@ -33,6 +33,12 @@ public class WebsocketVerifierConfig {
                         new AccessManagementVerifier(
                                 WebSocketDestinations.Topics.GAME_SERVER_DOCKER_PROGRESS,
                                 Action.READ,
+                                Resource.GAME_SERVER))
+                .addVerifier(
+                        WebSocketDestinations.Topics.GAME_SERVER_METRICS,
+                        new AccessManagementVerifier(
+                                WebSocketDestinations.Topics.GAME_SERVER_METRICS,
+                                Action.READ,
                                 Resource.GAME_SERVER));
     }
 }
