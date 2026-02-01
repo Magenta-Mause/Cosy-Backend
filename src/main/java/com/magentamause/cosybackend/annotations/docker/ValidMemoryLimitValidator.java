@@ -3,7 +3,9 @@ package com.magentamause.cosybackend.annotations.docker;
 import com.magentamause.cosybackend.services.engine.docker.util.MemoryUtils;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ValidMemoryLimitValidator implements ConstraintValidator<ValidMemoryLimit, String> {
 
     private long minBytes;
@@ -21,6 +23,7 @@ public class ValidMemoryLimitValidator implements ConstraintValidator<ValidMemor
 
         try {
             long bytes = MemoryUtils.parseMemoryStringToBytes(value);
+            log.info("Memory limit: {} bytes", bytes);
             return bytes >= minBytes;
         } catch (IllegalArgumentException ex) {
             return false; // invalid format

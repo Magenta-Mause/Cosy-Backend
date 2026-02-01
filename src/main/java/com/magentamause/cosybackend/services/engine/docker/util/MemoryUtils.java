@@ -1,5 +1,8 @@
 package com.magentamause.cosybackend.services.engine.docker.util;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class MemoryUtils {
     private static final String GIGABYTE_SUFFIX = "GiB";
     private static final String MEGABYTE_SUFFIX = "MiB";
@@ -14,16 +17,15 @@ public class MemoryUtils {
 
         String trimmed = value.trim();
         if (trimmed.endsWith(MEGABYTE_SUFFIX)) {
-            long amount =
-                    Long.parseLong(
+            double amount =
+                    Double.parseDouble(
                             trimmed.substring(0, trimmed.length() - MEGABYTE_SUFFIX.length()));
-            return amount * MEGABYTE_IN_BYTES;
-        }
-        if (trimmed.endsWith(GIGABYTE_SUFFIX)) {
-            long amount =
-                    Long.parseLong(
+            return (long) amount * MEGABYTE_IN_BYTES;
+        } else if (trimmed.endsWith(GIGABYTE_SUFFIX)) {
+            double amount =
+                    Double.parseDouble(
                             trimmed.substring(0, trimmed.length() - GIGABYTE_SUFFIX.length()));
-            return amount * GIGABYTE_IN_BYTES;
+            return (long) amount * GIGABYTE_IN_BYTES;
         }
 
         throw new IllegalArgumentException("Invalid memory format: " + value);
