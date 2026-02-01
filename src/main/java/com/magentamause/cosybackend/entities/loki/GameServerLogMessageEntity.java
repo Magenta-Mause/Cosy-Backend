@@ -25,6 +25,15 @@ public class GameServerLogMessageEntity {
                 .build();
     }
 
+    public GameServerLogMessageEntity copy() {
+        return GameServerLogMessageEntity.builder()
+                .gameServerUuid(gameServerUuid)
+                .message(message)
+                .level(level)
+                .timestamp(timestamp)
+                .build();
+    }
+
     public enum LogLevel {
         INFO,
         ERROR,

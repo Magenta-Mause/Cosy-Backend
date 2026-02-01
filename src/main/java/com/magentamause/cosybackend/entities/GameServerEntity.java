@@ -49,7 +49,7 @@ public class GameServerEntity {
 
     private String template;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "docker_execution_command",
             joinColumns = @JoinColumn(name = "game_server_configuration_uuid"))
@@ -62,13 +62,13 @@ public class GameServerEntity {
             joinColumns = @JoinColumn(name = "game_server_configuration_uuid"))
     private List<PortMapping> portMappings;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "environment_variables",
             joinColumns = @JoinColumn(name = "game_server_configuration_uuid"))
     private List<EnvironmentVariableConfiguration> environmentVariables;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "game_server_configuration_uuid")
     private List<VolumeMountConfiguration> volumeMounts;
 

@@ -289,6 +289,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                                         ? GameServerLogMessageEntity.LogLevel.ERROR
                                                         : GameServerLogMessageEntity.LogLevel.INFO)
                                         .timestamp(Instant.now())
+                                        .gameServerUuid(serviceConfig.getUuid())
                                         .build();
 
                         listener.accept(logMessage);
@@ -300,6 +301,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                 GameServerLogMessageEntity.builder()
                                         .message(throwable.getMessage())
                                         .level(GameServerLogMessageEntity.LogLevel.ERROR)
+                                        .gameServerUuid(serviceConfig.getUuid())
                                         .timestamp(Instant.now())
                                         .build());
                     }

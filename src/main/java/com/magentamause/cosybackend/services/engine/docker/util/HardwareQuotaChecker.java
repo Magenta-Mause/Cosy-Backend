@@ -6,35 +6,33 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import java.util.List;
-import java.util.Objects;
 import org.springframework.stereotype.Service;
 
 @Service
 public class HardwareQuotaChecker {
 
-    private record ResourceUsage(double cpu, long memoryBytes) {
+    public record ResourceUsage(double cpu, long memoryBytes) {
         public ResourceUsage add(ResourceUsage other) {
             return new ResourceUsage(this.cpu + other.cpu, this.memoryBytes + other.memoryBytes);
         }
     }
 
-    public void assertSufficientQuota(GameServerEntity serverToStart) {
-        UserEntity startedBy = serverToStart.getLastStartedBy();
-        if (startedBy.getDockerHardwareLimits() == null) {
+    public void assertSufficientQuota(
+            UserEntity user, GameServerEntity serverToStart, List<GameServerEntity> servers) {
+        if (user.getDockerHardwareLimits() == null) {
             // No quota check needed because no limits set for user
             return;
         }
 
-        ResourceUsage currentUsage =
-                calculateRunningServersUsage(startedBy, serverToStart.getUuid());
+        ResourceUsage currentUsage = calculateRunningServersUsage(servers);
         ResourceUsage requiredUsage = calculateServerUsage(serverToStart);
 
-        checkUsageAgainstLimits(currentUsage.add(requiredUsage), getUsageLimits(startedBy));
+        checkUsageAgainstLimits(currentUsage.add(requiredUsage), getUsageLimits(user));
     }
 
     private void checkUsageAgainstLimits(ResourceUsage totalUsage, ResourceUsage userLimits) {
         if (totalUsage.cpu > userLimits.cpu || totalUsage.memoryBytes > userLimits.memoryBytes) {
-            throw new HardwareLimitException(createLimitExceededMessage(totalUsage, userLimits));
+            throw new HardwareLimitException(totalUsage, userLimits);
         }
     }
 
@@ -67,19 +65,15 @@ public class HardwareQuotaChecker {
         return new ResourceUsage(cpu, mem);
     }
 
-    private ResourceUsage calculateRunningServersUsage(UserEntity user, String excludeUuid) {
+    private ResourceUsage calculateRunningServersUsage(List<GameServerEntity> servers) {
         double totalCpu = 0.0;
         long totalMem = 0L;
 
-        List<GameServerEntity> servers = user.getStartedServers();
         if (servers == null) {
             return new ResourceUsage(0, 0);
         }
 
         for (GameServerEntity server : servers) {
-            if (Objects.equals(server.getUuid(), excludeUuid)) {
-                continue;
-            }
             if (isRunning(server)) {
                 ResourceUsage usage = calculateServerUsage(server);
                 totalCpu += usage.cpu;

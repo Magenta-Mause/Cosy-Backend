@@ -12,7 +12,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString(exclude = {"password", "invites", "gameServerConfigurationEntities", "startedServers"})
+@ToString(exclude = {"password", "invites", "gameServerConfigurationEntities"})
 public class UserEntity {
 
     @Id
@@ -36,9 +36,6 @@ public class UserEntity {
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GameServerEntity> gameServerConfigurationEntities;
-
-    @OneToMany(mappedBy = "lastStartedBy")
-    private List<GameServerEntity> startedServers;
 
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
