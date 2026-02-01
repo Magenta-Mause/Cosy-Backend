@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import lombok.Data;
 
@@ -46,8 +47,8 @@ public class GameServerUpdateDto {
     @Valid
     private List<VolumeMountConfigurationCreationDto> volumeMounts;
 
-    public void applyToEntity(GameServerEntity target, GameEntity game) {
-        target.setGame(game);
+    public void applyToEntity(GameServerEntity target, Function<Integer, GameEntity> gameProvider) {
+        target.setGame(gameProvider.apply(this.externalGameId));
         target.setServerName(this.getServerName());
         target.setDockerImageName(this.getDockerImageName());
         target.setDockerImageTag(this.getDockerImageTag());

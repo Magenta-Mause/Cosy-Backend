@@ -129,10 +129,8 @@ public class GameServerService {
     }
 
     public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto gameServerDto) {
-        Function<Integer, GameEntity> gameResolver = (externalGameId) ->
-                gamesService
-                        .getOptionalGameByExternalId(externalGameId, true)
-                        .orElse(null);
+        Function<Integer, GameEntity> gameResolver =
+                (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
 
         GameServerEntity created = gameServerDto.toEntity(user, gameResolver);
         return saveGameServerConfiguration(created, true);
@@ -173,10 +171,10 @@ public class GameServerService {
             String uuid, GameServerUpdateDto updateDto) {
         GameServerEntity gameServer = getGameServerById(uuid);
 
-        GameEntity game =
-                gamesService.getGameEntityByExternalId(updateDto.getExternalGameId(), true);
+        Function<Integer, GameEntity> gameResolver =
+                (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
 
-        updateDto.applyToEntity(gameServer, game);
+        updateDto.applyToEntity(gameServer, gameResolver);
 
         return saveGameServerConfiguration(gameServer, false);
     }
