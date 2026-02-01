@@ -36,22 +36,6 @@ public class HardwareQuotaChecker {
         }
     }
 
-    private String createLimitExceededMessage(ResourceUsage totalUsage, ResourceUsage userLimits) {
-        StringBuilder sb =
-                new StringBuilder("Could not start Server - user Hardware limit was reached:\n");
-        if (userLimits.cpu < Double.MAX_VALUE) {
-            sb.append(String.format("cpu-cores: %.2f/%.2f\n", totalUsage.cpu, userLimits.cpu));
-        }
-        if (userLimits.memoryBytes < Long.MAX_VALUE) {
-            sb.append(
-                    String.format(
-                            "memory: %s/%s",
-                            MemoryUtils.formatBytesToReadableString(totalUsage.memoryBytes),
-                            MemoryUtils.formatBytesToReadableString(userLimits.memoryBytes)));
-        }
-        return sb.toString().trim();
-    }
-
     private ResourceUsage getUsageLimits(UserEntity user) {
         DockerHardwareLimits limits = user.getDockerHardwareLimits();
         double cpu =
