@@ -38,8 +38,6 @@ public class GameServerDto {
 
     @Valid private DockerHardwareLimits dockerHardwareLimits;
 
-    private String template;
-
     private List<String> executionCommand;
 
     @NotNull @Valid private List<PortMapping> portMappings;

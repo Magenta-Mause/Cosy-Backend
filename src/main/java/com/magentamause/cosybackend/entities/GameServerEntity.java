@@ -47,8 +47,6 @@ public class GameServerEntity {
 
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
-    private String template;
-
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "docker_execution_command",
@@ -83,7 +81,6 @@ public class GameServerEntity {
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
                 .dockerHardwareLimits(this.getDockerHardwareLimits())
-                .template(this.getTemplate())
                 .executionCommand(this.getDockerExecutionCommand())
                 .portMappings(this.getPortMappings())
                 .environmentVariables(this.getEnvironmentVariables())
