@@ -14,6 +14,8 @@ import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
+import java.util.function.Function;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -53,10 +55,10 @@ public class GameServerCreationDto {
     @Valid
     private List<VolumeMountConfigurationCreationDto> volumeMounts;
 
-    public GameServerEntity toEntity(UserEntity user, GameEntity game) {
+    public GameServerEntity toEntity(UserEntity user, Function<Integer, GameEntity> gameProvider) {
 
         return GameServerEntity.builder()
-                .game(game)
+                .game(gameProvider.apply(this.externalGameId))
                 .owner(user)
                 .serverName(this.getServerName())
                 .dockerImageName(this.getDockerImageName())

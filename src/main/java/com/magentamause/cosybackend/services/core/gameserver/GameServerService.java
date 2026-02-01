@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -128,11 +129,12 @@ public class GameServerService {
     }
 
     public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto gameServerDto) {
-        GameEntity game =
+        Function<Integer, GameEntity> gameResolver = (externalGameId) ->
                 gamesService
-                        .getOptionalGameByExternalId(gameServerDto.getExternalGameId(), true)
+                        .getOptionalGameByExternalId(externalGameId, true)
                         .orElse(null);
-        GameServerEntity created = gameServerDto.toEntity(user, game);
+
+        GameServerEntity created = gameServerDto.toEntity(user, gameResolver);
         return saveGameServerConfiguration(created, true);
     }
 
