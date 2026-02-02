@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.controllers;
 
+import com.magentamause.cosybackend.dtos.actiondtos.PasswordUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
@@ -24,8 +25,7 @@ public class UserEntityController {
     @RequireAccess(action = Action.READ, resource = Resource.USER)
     public ResponseEntity<List<UserEntityDto>> getAllUserEntities() {
         List<UserEntity> users = userEntityService.getAllUsers();
-        List<UserEntityDto> userDTOs =
-                users.stream().map(userEntityService::convertToDTO).collect(Collectors.toList());
+        List<UserEntityDto> userDTOs = users.stream().map(UserEntity::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(userDTOs);
     }
 
@@ -33,7 +33,7 @@ public class UserEntityController {
     @RequireAccess(action = Action.READ, resource = Resource.USER)
     public ResponseEntity<UserEntityDto> getUserEntity(@PathVariable @ResourceId String uuid) {
         UserEntity user = userEntityService.getUserByUuid(uuid);
-        return ResponseEntity.ok(userEntityService.convertToDTO(user));
+        return ResponseEntity.ok(user.toDto());
     }
 
     @DeleteMapping("/{uuid}")
@@ -41,5 +41,13 @@ public class UserEntityController {
     public ResponseEntity<Void> deleteUserEntity(@PathVariable @ResourceId String uuid) {
         userEntityService.deleteUserByUuid(uuid);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{uuid}/change-password")
+    @RequireAccess(action = Action.UPDATE, resource = Resource.USER)
+    public ResponseEntity<UserEntityDto> changePassword(@RequestBody PasswordUpdateDto request, @PathVariable @ResourceId String uuid) {
+        UserEntity user = userEntityService.getUserByUuid(uuid);
+        UserEntity userWithChangedPassword = userEntityService.changePassword(user, request.getNewPassword());
+        return ResponseEntity.ok(userWithChangedPassword.toDto());
     }
 }

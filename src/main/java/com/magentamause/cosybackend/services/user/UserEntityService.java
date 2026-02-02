@@ -1,6 +1,5 @@
 package com.magentamause.cosybackend.services.user;
 
-import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.repositories.UserEntityRepository;
 import java.util.List;
@@ -8,6 +7,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -17,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class UserEntityService {
 
     private final UserEntityRepository userEntityRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public List<UserEntity> getAllUsers() {
         return userEntityRepository.findAll();
@@ -62,13 +63,9 @@ public class UserEntityService {
         userEntityRepository.delete(user);
     }
 
-    public UserEntityDto convertToDTO(UserEntity user) {
-        return UserEntityDto.builder()
-                .username(user.getUsername())
-                .role(user.getRole())
-                .uuid(user.getUuid())
-                .dockerHardwareLimits(user.getDockerHardwareLimits())
-                .build();
+    public UserEntity changePassword(UserEntity user, String newPassword) {
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return saveUserEntity(user);
     }
 
     public boolean existsByUsername(String username) {

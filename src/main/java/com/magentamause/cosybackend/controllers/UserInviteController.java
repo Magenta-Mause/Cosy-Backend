@@ -65,7 +65,7 @@ public class UserInviteController {
             @PathVariable("secretKey") String secretKey, @Valid @RequestBody UserCreationDto user) {
         UserEntity createdUser =
                 userInviteService.useInvite(secretKey, user.getUsername(), user.getPassword());
-        return ResponseEntity.ok(userEntityService.convertToDTO(createdUser));
+        return ResponseEntity.ok(createdUser.toDto());
     }
 
     @DeleteMapping("/{uuid}")
