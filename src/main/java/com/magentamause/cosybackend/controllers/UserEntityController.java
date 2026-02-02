@@ -45,7 +45,7 @@ public class UserEntityController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{uuid}/change-password")
+    @PatchMapping("/{uuid}/change-password")
     @RequireAccess(action = Action.UPDATE, resource = Resource.USER)
     public ResponseEntity<UserEntityDto> changePassword(
             @PathVariable @ResourceId String uuid, @Valid @RequestBody PasswordUpdateDto request) {
