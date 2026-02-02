@@ -25,7 +25,8 @@ public class UserEntityController {
     @RequireAccess(action = Action.READ, resource = Resource.USER)
     public ResponseEntity<List<UserEntityDto>> getAllUserEntities() {
         List<UserEntity> users = userEntityService.getAllUsers();
-        List<UserEntityDto> userDTOs = users.stream().map(UserEntity::toDto).collect(Collectors.toList());
+        List<UserEntityDto> userDTOs =
+                users.stream().map(UserEntity::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(userDTOs);
     }
 
@@ -45,9 +46,11 @@ public class UserEntityController {
 
     @PutMapping("/{uuid}/change-password")
     @RequireAccess(action = Action.UPDATE, resource = Resource.USER)
-    public ResponseEntity<UserEntityDto> changePassword(@RequestBody PasswordUpdateDto request, @PathVariable @ResourceId String uuid) {
+    public ResponseEntity<UserEntityDto> changePassword(
+            @RequestBody PasswordUpdateDto request, @PathVariable @ResourceId String uuid) {
         UserEntity user = userEntityService.getUserByUuid(uuid);
-        UserEntity userWithChangedPassword = userEntityService.changePassword(user, request.getNewPassword());
+        UserEntity userWithChangedPassword =
+                userEntityService.changePassword(user, request.getNewPassword());
         return ResponseEntity.ok(userWithChangedPassword.toDto());
     }
 }
