@@ -21,8 +21,9 @@ import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerStatusUpdateEventType;
 import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.docker.util.DockerHostConfigFactory;
+import com.magentamause.cosybackend.services.engine.docker.util.DockerStatsMapper;
 import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
-import com.magentamause.cosybackend.services.engine.util.DockerMappingUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.Closeable;
@@ -51,19 +52,11 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     private final DockerClient client;
     private final StatsMapper statsMapper;
-    private final DockerMappingUtils dockerMappingUtils;
     private final EngineProperties engineProperties;
 
     private final List<BiConsumer<GameServerStatusUpdateEventType, String>> statusListeners =
             new CopyOnWriteArrayList<>();
     private ResultCallback<Event> eventCallback;
-
-    private record StatusListenerContext(
-            Supplier<GameServerDto.GameServerStatus> currentStatusSupplier,
-            Consumer<GameServerDto.GameServerStatus> listener) {}
-
-    private final List<BiConsumer<GameServerStatusUpdateEventType, String>> failListeners =
-            new CopyOnWriteArrayList<>();
 
     private final Map<String, Supplier<GameServerDto.GameServerStatus>> statusSuppliers =
             new ConcurrentHashMap<>();
@@ -92,7 +85,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         Optional<Container> container = findContainer(serverConfig);
         if (container.isPresent()) {
             String state = container.get().getState();
-            return dockerMappingUtils.mapDockerStateToGameServerStatus(state);
+            return DockerStatsMapper.mapDockerStateToGameServerStatus(state);
         }
         return GameServerDto.GameServerStatus.STOPPED;
     }
@@ -209,7 +202,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
         String containerName = containerName(serverConfig);
 
         ensureImagePresent(
-                serverConfig,
                 image,
                 progressListener,
                 statusUpdater,
@@ -237,7 +229,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         .withCmd(cmd)
                         .withEnv(env)
                         .withExposedPorts(exposedPorts)
-                        .withHostConfig(buildHostConfig(serverConfig))
+                        .withHostConfig(DockerHostConfigFactory.buildHostConfig(serverConfig))
                         .exec();
 
         statusSuppliers.put(serverConfig.getUuid(), gameServerStatusSupplier);
@@ -297,6 +289,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                                         ? GameServerLogMessageEntity.LogLevel.ERROR
                                                         : GameServerLogMessageEntity.LogLevel.INFO)
                                         .timestamp(Instant.now())
+                                        .gameServerUuid(serviceConfig.getUuid())
                                         .build();
 
                         listener.accept(logMessage);
@@ -308,6 +301,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                                 GameServerLogMessageEntity.builder()
                                         .message(throwable.getMessage())
                                         .level(GameServerLogMessageEntity.LogLevel.ERROR)
+                                        .gameServerUuid(serviceConfig.getUuid())
                                         .timestamp(Instant.now())
                                         .build());
                     }
@@ -414,7 +408,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     private void ensureImagePresent(
-            GameServerEntity serverConfig,
             String image,
             Consumer<StartEventDto> progressListener,
             Consumer<GameServerDto.GameServerStatus> statusUpdater,
@@ -464,12 +457,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 throw new DockerPullImageException(image);
             }
         }
-    }
-
-    private List<Integer> getInstancePorts(GameServerEntity serverConfig) {
-        return Optional.ofNullable(serverConfig.getPortMappings()).orElse(List.of()).stream()
-                .map(PortMapping::getInstancePort)
-                .collect(Collectors.toList());
     }
 
     @Override

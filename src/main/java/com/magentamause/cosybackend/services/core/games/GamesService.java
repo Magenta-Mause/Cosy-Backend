@@ -77,6 +77,20 @@ public class GamesService {
         }
     }
 
+    public Optional<GameEntity> getOptionalGameByExternalId(Integer externalId, boolean storeInDb) {
+        if (externalId == null) {
+            return Optional.empty();
+        }
+        return getOptionalGameByExternalId(externalId.intValue(), storeInDb);
+    }
+
+    public GameEntity getGameEntityByExternalId(Integer externalId, boolean storeInDb) {
+        if (externalId == null) {
+            return null;
+        }
+        return getGameEntityByExternalId(externalId.intValue(), storeInDb);
+    }
+
     public GameEntity getGameEntityByExternalId(int externalId, boolean storeInDb) {
         Optional<GameEntity> game = gameRepository.findByExternalGameId(externalId);
         if (game.isPresent()) {

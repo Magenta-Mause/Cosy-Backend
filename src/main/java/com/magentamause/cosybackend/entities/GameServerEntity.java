@@ -3,6 +3,7 @@ package com.magentamause.cosybackend.entities;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
@@ -29,6 +30,8 @@ public class GameServerEntity {
 
     @ManyToOne private UserEntity owner;
 
+    @ManyToOne private UserEntity lastStartedBy;
+
     @Enumerated(EnumType.STRING)
     private GameServerDto.GameServerStatus status;
 
@@ -42,7 +45,9 @@ public class GameServerEntity {
 
     private String dockerImageTag;
 
-    @ElementCollection
+    @Embedded private DockerHardwareLimits dockerHardwareLimits;
+
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "docker_execution_command",
             joinColumns = @JoinColumn(name = "game_server_configuration_uuid"))
@@ -55,13 +60,13 @@ public class GameServerEntity {
             joinColumns = @JoinColumn(name = "game_server_configuration_uuid"))
     private List<PortMapping> portMappings;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "environment_variables",
             joinColumns = @JoinColumn(name = "game_server_configuration_uuid"))
     private List<EnvironmentVariableConfiguration> environmentVariables;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "game_server_configuration_uuid")
     private List<VolumeMountConfiguration> volumeMounts;
 
@@ -75,6 +80,7 @@ public class GameServerEntity {
                 .gameUuid(this.getGame() == null ? null : this.getGame().getUuid())
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
+                .dockerHardwareLimits(this.getDockerHardwareLimits())
                 .executionCommand(this.getDockerExecutionCommand())
                 .portMappings(this.getPortMappings())
                 .environmentVariables(this.getEnvironmentVariables())

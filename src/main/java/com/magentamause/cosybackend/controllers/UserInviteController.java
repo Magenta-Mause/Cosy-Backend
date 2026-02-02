@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/user-invites")
+@Slf4j
 public class UserInviteController {
 
     private final UserInviteService userInviteService;
@@ -49,6 +51,7 @@ public class UserInviteController {
     @RequireAccess(action = Action.CREATE, resource = Resource.USER_INVITE)
     public ResponseEntity<UserInviteDto> createInvite(
             @Valid @RequestBody UserInviteCreationDto userInviteCreationDto) {
+        log.info("Creating invite for {}", userInviteCreationDto);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(
                         userInviteService

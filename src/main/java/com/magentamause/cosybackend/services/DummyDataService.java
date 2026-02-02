@@ -1,15 +1,14 @@
 package com.magentamause.cosybackend.services;
 
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.VolumeMountConfigurationCreationDto;
 import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
-import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
-import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.repositories.DummyInstantiatedPropertiesRepository;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import com.magentamause.cosybackend.services.user.UserEntityService;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +27,7 @@ public class DummyDataService {
     private final GameServerService gameServerService;
     private final DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository;
     private final UserEntityService userEntityService;
-    private List<GameServerEntity> dummyGameServers;
+    private List<GameServerCreationDto> dummyGameServers;
     private UserEntity adminUser;
 
     @Autowired
@@ -52,13 +51,11 @@ public class DummyDataService {
 
         this.dummyGameServers =
                 List.of(
-                        GameServerEntity.builder()
-                                .serverName("TOSIOS")
-                                .owner(adminUser)
-                                .status(GameServerDto.GameServerStatus.STOPPED)
-                                .timestampLastStarted(LocalDateTime.now().minusHours(2))
+                        GameServerCreationDto.builder()
+                                .serverName("TOSIOS - No Limits")
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
+                                .dockerHardwareLimits(DockerHardwareLimits.builder().build())
                                 .portMappings(
                                         List.of(
                                                 PortMapping.builder()
@@ -67,9 +64,61 @@ public class DummyDataService {
                                                         .protocol(PortMapping.PortProtocol.TCP)
                                                         .build()))
                                 .environmentVariables(List.of())
+                                .build(),
+                        GameServerCreationDto.builder()
+                                .serverName("TOSIOS - Memory Only")
+                                .dockerImageName("halftheopposite/tosios")
+                                .dockerImageTag("latest")
+                                .dockerHardwareLimits(
+                                        DockerHardwareLimits.builder()
+                                                .dockerMemoryLimit("512MiB")
+                                                .build())
+                                .portMappings(
+                                        List.of(
+                                                PortMapping.builder()
+                                                        .instancePort(3002)
+                                                        .containerPort(3001)
+                                                        .protocol(PortMapping.PortProtocol.TCP)
+                                                        .build()))
+                                .environmentVariables(List.of())
+                                .build(),
+                        GameServerCreationDto.builder()
+                                .serverName("TOSIOS - CPU Only")
+                                .dockerImageName("halftheopposite/tosios")
+                                .dockerImageTag("latest")
+                                .dockerHardwareLimits(
+                                        DockerHardwareLimits.builder()
+                                                .dockerMaxCpuCores(2f)
+                                                .build())
+                                .portMappings(
+                                        List.of(
+                                                PortMapping.builder()
+                                                        .instancePort(3003)
+                                                        .containerPort(3001)
+                                                        .protocol(PortMapping.PortProtocol.TCP)
+                                                        .build()))
+                                .environmentVariables(List.of())
+                                .build(),
+                        GameServerCreationDto.builder()
+                                .serverName("TOSIOS - Memory and CPU")
+                                .dockerImageName("halftheopposite/tosios")
+                                .dockerImageTag("latest")
+                                .dockerHardwareLimits(
+                                        DockerHardwareLimits.builder()
+                                                .dockerMemoryLimit("512MiB")
+                                                .dockerMaxCpuCores(2f)
+                                                .build())
+                                .portMappings(
+                                        List.of(
+                                                PortMapping.builder()
+                                                        .instancePort(3004)
+                                                        .containerPort(3001)
+                                                        .protocol(PortMapping.PortProtocol.TCP)
+                                                        .build()))
+                                .environmentVariables(List.of())
                                 .volumeMounts(
                                         List.of(
-                                                VolumeMountConfiguration.builder()
+                                                VolumeMountConfigurationCreationDto.builder()
                                                         .containerPath("/app/data")
                                                         .build()))
                                 .build());
@@ -92,7 +141,8 @@ public class DummyDataService {
         }
 
         log.info("Populating dummy game servers");
-        this.dummyGameServers.forEach(gameServerService::saveGameServer);
+        this.dummyGameServers.forEach(
+                (gameServer) -> gameServerService.createGameServer(adminUser, gameServer));
 
         dummyInstantiatedPropertiesRepository.save(
                 DummyInstantiatedEntity.builder().key("dummy-game-servers").build());

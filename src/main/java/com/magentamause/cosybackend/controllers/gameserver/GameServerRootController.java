@@ -54,15 +54,11 @@ public class GameServerRootController {
     @PostMapping
     @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
     public ResponseEntity<GameServerDto> createGameServer(
-            @Valid @RequestBody GameServerCreationDto gameServerCreationDto) {
-        log.info("Creating game server {}", gameServerCreationDto);
+            @Valid @RequestBody GameServerCreationDto gameServer) {
+        log.info("Creating game server {}", gameServer);
         UserEntity user = securityContextService.getUser();
 
-        GameServerEntity createdGameServer =
-                gameServerService.convertDtoToEntity(gameServerCreationDto);
-        createdGameServer.setOwner(user);
-
-        gameServerService.saveGameServer(createdGameServer);
+        GameServerEntity createdGameServer = gameServerService.createGameServer(user, gameServer);
         return ResponseEntity.status(201).body(createdGameServer.toDto());
     }
 
@@ -71,7 +67,7 @@ public class GameServerRootController {
     public ResponseEntity<GameServerDto> updateGameServer(
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody GameServerUpdateDto updateDto) {
-        log.info("Received request to update the game server with id {}", uuid);
+        log.info("Updating game server {} with {}", uuid, updateDto);
 
         GameServerEntity updated = gameServerService.updateGameServerConfiguration(uuid, updateDto);
 
@@ -88,7 +84,7 @@ public class GameServerRootController {
     @PostMapping(value = "/{uuid}/start")
     @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
     public ResponseEntity<Void> startService(@PathVariable @ResourceId String uuid) {
-        gameServerService.startServer(uuid);
+        gameServerService.startServer(uuid, securityContextService.getUser());
 
         return ResponseEntity.accepted().build();
     }

@@ -42,11 +42,9 @@ public class UserInviteService {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "Invite with the given username already exists");
             }
-            if (userEntityService.existsByUsername(userInviteCreationDto.getUsername())) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT, "A user with the given username already exists");
-            }
         }
+
+        log.info("Creating Invite for User: {}", userInviteCreationDto);
 
         UserInviteEntity invite =
                 UserInviteEntity.builder()
@@ -54,8 +52,7 @@ public class UserInviteService {
                         .secretKey(generateRandomKey())
                         .username(userInviteCreationDto.getUsername())
                         .role(userInviteCreationDto.getRole())
-                        .maxMemory(userInviteCreationDto.getMaxMemory())
-                        .maxCpu(userInviteCreationDto.getMaxCpu())
+                        .dockerHardwareLimits(userInviteCreationDto.getDockerHardwareLimits())
                         .build();
 
         return userInviteRepository.save(invite);
@@ -103,8 +100,7 @@ public class UserInviteService {
                 UserEntity.builder()
                         .role(inviteRole)
                         .password(passwordEncoder.encode(password))
-                        .maxMemory(invite.getMaxMemory())
-                        .maxCpu(invite.getMaxCpu())
+                        .dockerHardwareLimits(invite.getDockerHardwareLimits())
                         .defaultPasswordReset(true);
 
         if (Objects.isNull(invite.getUsername())) {

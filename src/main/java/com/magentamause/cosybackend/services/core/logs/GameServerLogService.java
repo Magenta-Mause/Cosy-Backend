@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.services.core.logs;
 
 import com.magentamause.cosybackend.dtos.loki.LokiLogQuery;
+import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.services.external.loki.LokiQueryService;
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
@@ -27,12 +28,33 @@ public class GameServerLogService {
                 LokiLogQuery.builder().gameServerUuid(serverId).limit(limit).build(), since);
     }
 
-    public void saveGameServerLog(GameServerLogMessageEntity logEntity) {
-        if (logEntity.getLevel() == GameServerLogMessageEntity.LogLevel.INFO
-                && LOG_ERROR_DETECTION_REGEX.matcher(logEntity.getMessage()).find()) {
-            logEntity.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);
+    public GameServerLogMessageEntity.LogLevel detectErrorLogLevel(String message) {
+        return LOG_ERROR_DETECTION_REGEX.matcher(message).find()
+                ? GameServerLogMessageEntity.LogLevel.ERROR
+                : GameServerLogMessageEntity.LogLevel.INFO;
+    }
+
+    public GameServerLogMessageEntity publishAndSaveLog(
+            GameServerLogMessageEntity logEntity, boolean parseErrorLogLevel) {
+        GameServerLogMessageEntity copy = logEntity.copy();
+        if (parseErrorLogLevel
+                && detectErrorLogLevel(logEntity.getMessage())
+                        == GameServerLogMessageEntity.LogLevel.ERROR) {
+            copy.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);
         }
-        lokiQueryService.saveGameServerLog(logEntity);
-        gameServerLogWebsocketPublisher.publishLog(logEntity.getGameServerUuid(), logEntity);
+        lokiQueryService.saveGameServerLog(copy);
+        gameServerLogWebsocketPublisher.publishLog(copy.getGameServerUuid(), logEntity);
+        return copy;
+    }
+
+    public GameServerLogMessageEntity publishAndSaveLog(
+            GameServerEntity gameServer,
+            GameServerLogMessageEntity.LogLevel logLevel,
+            String message,
+            boolean parseErrorLogLevel) {
+        GameServerLogMessageEntity logEntity =
+                GameServerLogMessageEntity.of(gameServer.getUuid(), message, logLevel);
+
+        return publishAndSaveLog(logEntity, parseErrorLogLevel);
     }
 }

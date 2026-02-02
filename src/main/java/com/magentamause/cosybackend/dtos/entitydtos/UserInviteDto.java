@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import java.time.Instant;
 import lombok.*;
 
@@ -22,6 +23,5 @@ public class UserInviteDto {
     private String secretKey;
     private Instant createdAt;
     private UserEntity.Role role;
-    private Long maxMemory;
-    private Long maxCpu;
+    private DockerHardwareLimits dockerHardwareLimits;
 }

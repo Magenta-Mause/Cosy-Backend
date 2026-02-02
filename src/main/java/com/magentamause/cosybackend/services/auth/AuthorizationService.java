@@ -5,6 +5,7 @@ import com.magentamause.cosybackend.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosybackend.security.jwtfilter.JwtUtils;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import io.jsonwebtoken.Claims;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -47,17 +48,32 @@ public class AuthorizationService {
     }
 
     public String generateIdentityToken(String userId) {
-        return jwtUtils.generateIdentityToken(getClaimsFromUserId(userId), userId);
+        return jwtUtils.generateIdentityToken(
+                getClaimsFromUserId(userId, JwtTokenBody.TokenType.IDENTITY_TOKEN), userId);
     }
 
     public String generateRefreshToken(String userId) {
-        return jwtUtils.generateRefreshToken(getClaimsFromUserId(userId), userId);
+        return jwtUtils.generateRefreshToken(
+                getClaimsFromUserId(userId, JwtTokenBody.TokenType.REFRESH_TOKEN), userId);
     }
 
-    private Map<String, Object> getClaimsFromUserId(String userId) {
+    private Map<String, Object> getClaimsFromUserId(
+            String userId, JwtTokenBody.TokenType tokenType) {
         UserEntity user = userEntityService.getUserByUuid(userId);
-        return Map.of(
-                "username", user.getUsername(),
-                "role", user.getRole());
+
+        Map<String, Object> userClaims =
+                new HashMap<>(
+                        Map.of(
+                                "username", user.getUsername(),
+                                "role", user.getRole()));
+
+        if (tokenType == JwtTokenBody.TokenType.IDENTITY_TOKEN) {
+            var limits = user.getDockerHardwareLimits();
+            userClaims.put(
+                    "cpu_cores_limit", limits != null ? limits.getDockerMaxCpuCores() : null);
+            userClaims.put("memory_limit", limits != null ? limits.getDockerMemoryLimit() : null);
+        }
+
+        return userClaims;
     }
 }
