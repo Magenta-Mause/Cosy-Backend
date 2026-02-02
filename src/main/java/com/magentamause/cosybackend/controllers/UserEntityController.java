@@ -8,10 +8,9 @@ import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.user.UserEntityService;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -49,7 +48,7 @@ public class UserEntityController {
     @PutMapping("/{uuid}/change-password")
     @RequireAccess(action = Action.UPDATE, resource = Resource.USER)
     public ResponseEntity<UserEntityDto> changePassword(
-            @Valid @RequestBody PasswordUpdateDto request, @PathVariable @ResourceId String uuid) {
+            @PathVariable @ResourceId String uuid, @Valid @RequestBody PasswordUpdateDto request) {
         UserEntity user = userEntityService.getUserByUuid(uuid);
         UserEntity userWithChangedPassword =
                 userEntityService.changePassword(user, request.getNewPassword());
