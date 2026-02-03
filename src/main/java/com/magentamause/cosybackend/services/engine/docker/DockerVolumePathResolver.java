@@ -10,9 +10,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/**
- * Service for resolving and creating volume mount paths on the host system.
- */
+/** Service for resolving and creating volume mount paths on the host system. */
 @Component
 @RequiredArgsConstructor
 public class DockerVolumePathResolver {
@@ -22,7 +20,7 @@ public class DockerVolumePathResolver {
     public String resolveAndEnsureVolumeHostPath(VolumeMountConfiguration volumeConfig) {
         String baseDir = getBaseDirectory();
         String uuid = getValidatedUuid(volumeConfig);
-        
+
         Path mountPath = Paths.get(baseDir).resolve(uuid).normalize();
 
         ensureDirectoryExists(mountPath);

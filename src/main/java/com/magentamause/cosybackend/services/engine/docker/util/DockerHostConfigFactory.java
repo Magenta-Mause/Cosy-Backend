@@ -55,7 +55,9 @@ public class DockerHostConfigFactory {
                     serverConfig.getVolumeMounts().stream()
                             .map(
                                     v -> {
-                                        String hostPath = volumePathResolver.resolveAndEnsureVolumeHostPath(v);
+                                        String hostPath =
+                                                volumePathResolver.resolveAndEnsureVolumeHostPath(
+                                                        v);
                                         return new Bind(
                                                 hostPath,
                                                 new Volume(v.getContainerPath()),

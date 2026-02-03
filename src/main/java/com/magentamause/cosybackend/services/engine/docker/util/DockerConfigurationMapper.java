@@ -7,9 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * Utility class for mapping domain entities to Docker API model objects.
- */
+/** Utility class for mapping domain entities to Docker API model objects. */
 public final class DockerConfigurationMapper {
 
     private DockerConfigurationMapper() {

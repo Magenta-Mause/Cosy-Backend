@@ -2,9 +2,7 @@ package com.magentamause.cosybackend.services.engine.docker.util;
 
 import com.magentamause.cosybackend.entities.GameServerEntity;
 
-/**
- * Utility class for resolving Docker container names following the "cosy-" naming convention.
- */
+/** Utility class for resolving Docker container names following the "cosy-" naming convention. */
 public final class DockerContainerNameResolver {
 
     private static final String CONTAINER_NAME_PREFIX = "cosy-";

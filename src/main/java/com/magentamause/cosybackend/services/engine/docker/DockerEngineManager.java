@@ -34,8 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * Main orchestrator for Docker container management.
- * Delegates specific responsibilities to specialized components.
+ * Main orchestrator for Docker container management. Delegates specific responsibilities to
+ * specialized components.
  */
 @Slf4j
 @Component
@@ -89,7 +89,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 "Starting Docker container for server: {} with config: {}",
                 serverConfig.getServerName(),
                 serverConfig);
-        
+
         Optional<Container> container = containerFinder.findContainer(serverConfig);
 
         if (container.isPresent()) {
@@ -106,9 +106,12 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 imagePullStartCallback,
                 imagePullEndCallback);
 
-        List<String> cmd = Optional.ofNullable(serverConfig.getDockerExecutionCommand()).orElse(List.of());
-        List<String> env = DockerConfigurationMapper.mapEnvironment(serverConfig.getEnvironmentVariables());
-        List<ExposedPort> exposedPorts = DockerConfigurationMapper.mapExposedPorts(serverConfig.getPortMappings());
+        List<String> cmd =
+                Optional.ofNullable(serverConfig.getDockerExecutionCommand()).orElse(List.of());
+        List<String> env =
+                DockerConfigurationMapper.mapEnvironment(serverConfig.getEnvironmentVariables());
+        List<ExposedPort> exposedPorts =
+                DockerConfigurationMapper.mapExposedPorts(serverConfig.getPortMappings());
 
         CreateContainerResponse response =
                 client.createContainerCmd(image)
@@ -120,7 +123,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         .exec();
 
         eventHandler.attachStatusSupplier(serverConfig.getUuid(), gameServerStatusSupplier);
-        
+
         try {
             client.startContainerCmd(response.getId()).exec();
         } catch (InternalServerErrorException e) {
@@ -153,7 +156,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
     @Override
     public void stopAndRemove(GameServerEntity serverConfig) {
         Container container =
-                containerFinder.findContainer(serverConfig)
+                containerFinder
+                        .findContainer(serverConfig)
                         .orElseThrow(
                                 () ->
                                         new ServerAlreadyStoppedException(
@@ -172,7 +176,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     public void remove(String uuid) {
-        containerFinder.findContainer(uuid)
+        containerFinder
+                .findContainer(uuid)
                 .ifPresent(
                         container -> {
                             client.removeContainerCmd(container.getId()).withForce(true).exec();

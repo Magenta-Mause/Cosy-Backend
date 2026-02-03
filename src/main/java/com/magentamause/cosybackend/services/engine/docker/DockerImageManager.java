@@ -13,9 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * Service for managing Docker images including pulling and verification.
- */
+/** Service for managing Docker images including pulling and verification. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -30,11 +28,16 @@ public class DockerImageManager {
             Consumer<Void> imagePullStartCallback,
             Consumer<Void> imagePullEndCallback)
             throws DockerPullImageException {
-        
+
         boolean exists = imageExists(image);
 
         if (!exists) {
-            pullImage(image, progressListener, statusUpdater, imagePullStartCallback, imagePullEndCallback);
+            pullImage(
+                    image,
+                    progressListener,
+                    statusUpdater,
+                    imagePullStartCallback,
+                    imagePullEndCallback);
         }
     }
 
@@ -54,10 +57,10 @@ public class DockerImageManager {
             Consumer<Void> imagePullStartCallback,
             Consumer<Void> imagePullEndCallback)
             throws DockerPullImageException {
-        
+
         imagePullStartCallback.accept(null);
         statusUpdater.accept(GameServerDto.GameServerStatus.PULLING_IMAGE);
-        
+
         try {
             ResultCallback.Adapter<PullResponseItem> callback =
                     new ResultCallback.Adapter<>() {

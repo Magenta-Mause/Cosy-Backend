@@ -20,9 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * Service for handling Docker events and managing status listeners.
- */
+/** Service for handling Docker events and managing status listeners. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -34,7 +32,7 @@ public class DockerEventHandler implements Closeable {
             new CopyOnWriteArrayList<>();
     private final Map<String, Supplier<GameServerDto.GameServerStatus>> statusSuppliers =
             new ConcurrentHashMap<>();
-    
+
     private ResultCallback<Event> eventCallback;
 
     @PostConstruct
@@ -112,7 +110,7 @@ public class DockerEventHandler implements Closeable {
         if (!statusSuppliers.containsKey(uuid)) {
             log.warn("No status supplier for server with uuid: {} found", uuid);
         }
-        
+
         if (statusSuppliers.containsKey(uuid)
                 && statusSuppliers
                         .get(uuid)

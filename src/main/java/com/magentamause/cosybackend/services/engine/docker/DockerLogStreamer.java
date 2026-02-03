@@ -15,9 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * Service for streaming logs from Docker containers.
- */
+/** Service for streaming logs from Docker containers. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
