@@ -5,9 +5,7 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/**
- * Service for resolving Docker container names with a configurable prefix.
- */
+/** Service for resolving Docker container names with a configurable prefix. */
 @Component
 @RequiredArgsConstructor
 public class DockerContainerNameResolver {
