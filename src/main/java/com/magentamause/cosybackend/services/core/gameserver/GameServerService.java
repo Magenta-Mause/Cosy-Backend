@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
+import com.magentamause.cosybackend.entities.utility.RCONConfiguration;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
@@ -323,5 +324,15 @@ public class GameServerService {
 
     private List<GameServerEntity> getGameServersStartedByUser(String userUuid) {
         return gameServerRepository.findByLastStartedBy_Uuid(userUuid);
+    }
+
+    public GameServerEntity updateRconConfig(String uuid, RCONConfiguration updateDto) {
+        GameServerEntity gameServer = getGameServerById(uuid);
+        gameServer.setRconConfiguration(updateDto);
+        return saveGameServerConfiguration(gameServer, false);
+    }
+
+    public void sendCommand(String uuid, String command) {
+        log.info("Sending command '{}' to server {}", command, uuid);
     }
 }

@@ -13,8 +13,10 @@ import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+
 import java.util.List;
 import java.util.function.Function;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,15 +30,16 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GameServerCreationDto {
     private Integer externalGameId;
-    @NotBlank private String serverName;
-    @NotBlank private String dockerImageName;
-    @NotBlank private String dockerImageTag;
+    @NotBlank
+    private String serverName;
+    @NotBlank
+    private String dockerImageName;
+    @NotBlank
+    private String dockerImageTag;
 
-    @Valid private DockerHardwareLimits dockerHardwareLimits;
+    @Valid
+    private DockerHardwareLimits dockerHardwareLimits;
 
-    @UniqueElementsBy(
-            fieldNames = {"instancePort", "containerPort"},
-            message = "duplicate port mapping")
     @Valid
     private List<PortMapping> portMappings;
 
@@ -68,8 +71,8 @@ public class GameServerCreationDto {
                 .volumeMounts(
                         this.getVolumeMounts() != null
                                 ? this.getVolumeMounts().stream()
-                                        .map(VolumeMountConfiguration::fromDto)
-                                        .toList()
+                                .map(VolumeMountConfiguration::fromDto)
+                                .toList()
                                 : List.of())
                 .portMappings(this.getPortMappings() != null ? this.getPortMappings() : List.of())
                 .build();

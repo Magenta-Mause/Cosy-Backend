@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.annotations.uniqueElements.UniqueElementsBy;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
-import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
-import com.magentamause.cosybackend.entities.utility.PortMapping;
-import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
+import com.magentamause.cosybackend.entities.utility.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.ArrayList;
@@ -25,11 +22,10 @@ public class GameServerUpdateDto {
     @NotBlank private String dockerImageName;
     @NotBlank private String dockerImageTag;
 
+    private RCONConfiguration rconConfiguration;
+
     @Valid private DockerHardwareLimits dockerHardwareLimits;
 
-    @UniqueElementsBy(
-            fieldNames = {"instancePort", "containerPort"},
-            message = "duplicate port mapping")
     @Valid
     private List<PortMapping> portMappings;
 
@@ -53,6 +49,7 @@ public class GameServerUpdateDto {
         target.setDockerImageName(this.getDockerImageName());
         target.setDockerImageTag(this.getDockerImageTag());
         target.setDockerExecutionCommand(this.getExecutionCommand());
+        target.setRconConfiguration(this.getRconConfiguration());
         target.setDockerHardwareLimits(this.getDockerHardwareLimits());
 
         target.setPortMappings(

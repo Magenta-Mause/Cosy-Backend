@@ -3,10 +3,7 @@ package com.magentamause.cosybackend.entities;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
-import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
-import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
-import com.magentamause.cosybackend.entities.utility.PortMapping;
-import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
+import com.magentamause.cosybackend.entities.utility.*;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,6 +44,8 @@ public class GameServerEntity {
 
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
+    @Embedded private RCONConfiguration rconConfiguration;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "docker_execution_command",
@@ -78,6 +77,7 @@ public class GameServerEntity {
                 .status(this.getStatus())
                 .timestampLastStarted(this.getTimestampLastStarted())
                 .gameUuid(this.getGame() == null ? null : this.getGame().getUuid())
+                .rconConfiguration(this.getRconConfiguration())
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
                 .dockerHardwareLimits(this.getDockerHardwareLimits())
