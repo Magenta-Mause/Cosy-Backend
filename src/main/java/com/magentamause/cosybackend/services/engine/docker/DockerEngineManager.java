@@ -1,10 +1,14 @@
 package com.magentamause.cosybackend.services.engine.docker;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.AttachContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.exception.InternalServerErrorException;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Frame;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
@@ -24,6 +28,9 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -121,6 +128,9 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         .withEnv(env)
                         .withExposedPorts(exposedPorts)
                         .withHostConfig(hostConfigFactory.buildHostConfig(serverConfig))
+                        .withTty(true)
+                        .withStdinOpen(true)
+                        .withAttachStdin(true)
                         .exec();
 
         eventHandler.attachStatusSupplier(serverConfig.getUuid(), gameServerStatusSupplier);
@@ -207,5 +217,37 @@ public class DockerEngineManager implements EngineManager, Closeable {
     @Override
     public Optional<Metric> collectMetric(GameServerEntity gameServer) throws InterruptedException {
         return metricsCollector.collectMetric(gameServer);
+    }
+
+    @Override
+    public void sendCommand(GameServerEntity serverConfig, String command) throws IOException {
+        Container container =
+                containerFinder
+                        .findContainer(serverConfig)
+                        .orElseThrow(
+                                () ->
+                                        new IOException(
+                                                "Container not found for server: "
+                                                        + serverConfig.getServerName()));
+
+        if (!"running".equalsIgnoreCase(container.getState())) {
+            throw new IOException(
+                    "Container is not running for server: " + serverConfig.getServerName());
+        }
+
+        PipedOutputStream stdinWriter = logStreamer.getStdinWriter(serverConfig.getUuid());
+        if (stdinWriter == null) {
+            throw new IOException(
+                    "No active log attachment found for server: "
+                            + serverConfig.getServerName()
+                            + ". Ensure logs are being streamed before sending commands.");
+        }
+
+        try {
+            stdinWriter.write((command + "\n").getBytes(StandardCharsets.UTF_8));
+            stdinWriter.flush();
+        } catch (IOException e) {
+            throw new IOException("Failed to send command to container", e);
+        }
     }
 }

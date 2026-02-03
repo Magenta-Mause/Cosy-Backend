@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.controllers.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.SendCommandDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
@@ -106,9 +107,10 @@ public class GameServerRootController {
     }
 
     @PostMapping("/{uuid}/send-command")
-    @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER) // TODO: Change this as soon as we refactor access validation logic to something more specific like "send command"
-    public ResponseEntity<Void> sendCommand(@PathVariable @ResourceId String uuid, @RequestBody String command) {
-        gameServerService.sendCommand(uuid, command);
+    @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
+    // TODO: Change this as soon as we refactor access validation logic to something more specific like "send command"
+    public ResponseEntity<Void> sendCommand(@PathVariable @ResourceId String uuid, @RequestBody SendCommandDto command) {
+        gameServerService.sendCommand(uuid, command.getCommand());
         return ResponseEntity.noContent().build();
     }
 }

@@ -3,9 +3,11 @@ package com.magentamause.cosybackend.services.external.loki;
 import com.magentamause.cosybackend.dtos.loki.LokiQueryResponse;
 import com.magentamause.cosybackend.dtos.loki.LokiStreamResult;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,13 +37,20 @@ public class LokiMapper {
                 .message(message)
                 .gameServerUuid(serverUuid)
                 .timestamp(parseTimestamp(value.get(0)))
-                .level(
-                        "ERROR".equals(level)
-                                ? GameServerLogMessageEntity.LogLevel.ERROR
-                                : "INFO".equals(level)
-                                        ? GameServerLogMessageEntity.LogLevel.INFO
-                                        : GameServerLogMessageEntity.LogLevel.COSY_DEBUG)
+                .level(parseLogLevel(level))
                 .build();
+    }
+
+    private static GameServerLogMessageEntity.LogLevel parseLogLevel(String logLevel) {
+        return switch (logLevel) {
+            case "ERROR" -> GameServerLogMessageEntity.LogLevel.ERROR;
+            case "INFO" -> GameServerLogMessageEntity.LogLevel.INFO;
+            case "INPUT" -> GameServerLogMessageEntity.LogLevel.INPUT;
+            case "COSY_INFO" -> GameServerLogMessageEntity.LogLevel.COSY_INFO;
+            case "COSY_ERROR" -> GameServerLogMessageEntity.LogLevel.COSY_ERROR;
+            case "COSY_DEBUG" -> GameServerLogMessageEntity.LogLevel.COSY_DEBUG;
+            default -> GameServerLogMessageEntity.LogLevel.COSY_DEBUG;
+        };
     }
 
     private static Instant parseTimestamp(String timestamp) {

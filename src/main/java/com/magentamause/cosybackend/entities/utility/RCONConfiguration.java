@@ -16,6 +16,7 @@ import lombok.*;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ToString
 public class RCONConfiguration {
-    int port;
+    boolean enabled;
+    Integer port;
     String password;
 }
