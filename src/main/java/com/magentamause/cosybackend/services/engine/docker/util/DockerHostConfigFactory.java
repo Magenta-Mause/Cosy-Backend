@@ -8,14 +8,18 @@ import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.Volume;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
-import com.magentamause.cosybackend.services.engine.docker.DockerEngineManager;
+import com.magentamause.cosybackend.services.engine.docker.DockerVolumePathResolver;
 import java.util.List;
-import lombok.experimental.UtilityClass;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 @Slf4j
-@UtilityClass
+@Component
+@RequiredArgsConstructor
 public class DockerHostConfigFactory {
+
+    private final DockerVolumePathResolver volumePathResolver;
 
     public HostConfig buildHostConfig(GameServerEntity serverConfig) {
         HostConfig hostConfig = HostConfig.newHostConfig();
@@ -37,7 +41,7 @@ public class DockerHostConfigFactory {
                     .forEach(
                             p -> {
                                 ExposedPort exposed =
-                                        DockerEngineManager.portMappingToExposedPort(p);
+                                        DockerConfigurationMapper.portMappingToExposedPort(p);
                                 portBindings.bind(
                                         exposed, Ports.Binding.bindPort(p.getInstancePort()));
                             });
@@ -50,11 +54,13 @@ public class DockerHostConfigFactory {
             List<Bind> binds =
                     serverConfig.getVolumeMounts().stream()
                             .map(
-                                    v ->
-                                            new Bind(
-                                                    v.getHostPath(),
-                                                    new Volume(v.getContainerPath()),
-                                                    AccessMode.rw))
+                                    v -> {
+                                        String hostPath = volumePathResolver.resolveAndEnsureVolumeHostPath(v);
+                                        return new Bind(
+                                                hostPath,
+                                                new Volume(v.getContainerPath()),
+                                                AccessMode.rw);
+                                    })
                             .toList();
             hostConfig.withBinds(binds);
         }
