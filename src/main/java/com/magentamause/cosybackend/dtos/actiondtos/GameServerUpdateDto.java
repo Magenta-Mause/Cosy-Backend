@@ -26,8 +26,7 @@ public class GameServerUpdateDto {
 
     @Valid private DockerHardwareLimits dockerHardwareLimits;
 
-    @Valid
-    private List<PortMapping> portMappings;
+    @Valid private List<PortMapping> portMappings;
 
     private List<@NotBlank String> executionCommand;
 

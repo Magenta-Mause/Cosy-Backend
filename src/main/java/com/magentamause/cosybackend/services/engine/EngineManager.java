@@ -8,7 +8,6 @@ import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerStatusUpdateEventType;
-
 import java.io.IOException;
 import java.util.Optional;
 import java.util.function.BiConsumer;

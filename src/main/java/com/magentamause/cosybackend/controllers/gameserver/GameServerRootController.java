@@ -14,9 +14,7 @@ import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import jakarta.validation.Valid;
-
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -102,14 +100,17 @@ public class GameServerRootController {
 
     @PatchMapping("/{uuid}/rcon-configuration")
     @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER)
-    public ResponseEntity<GameServerDto> updateRconConfiguration(@PathVariable @ResourceId String uuid, @RequestBody RCONConfiguration updateDto) {
+    public ResponseEntity<GameServerDto> updateRconConfiguration(
+            @PathVariable @ResourceId String uuid, @RequestBody RCONConfiguration updateDto) {
         return ResponseEntity.ok(gameServerService.updateRconConfig(uuid, updateDto).toDto());
     }
 
     @PostMapping("/{uuid}/send-command")
     @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
-    // TODO: Change this as soon as we refactor access validation logic to something more specific like "send command"
-    public ResponseEntity<Void> sendCommand(@PathVariable @ResourceId String uuid, @RequestBody SendCommandDto command) {
+    // TODO: Change this as soon as we refactor access validation logic to something more specific
+    // like "send command"
+    public ResponseEntity<Void> sendCommand(
+            @PathVariable @ResourceId String uuid, @RequestBody SendCommandDto command) {
         gameServerService.sendCommand(uuid, command.getCommand());
         return ResponseEntity.noContent().build();
     }

@@ -27,7 +27,6 @@ import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -76,7 +74,8 @@ public class GameServerService {
                     log.info("Re-attaching log listener for running server {}", server.getUuid());
                     engineManager.attachLogListener(
                             server,
-                            (logMessage) -> gameServerLogService.publishAndSaveLog(logMessage, true));
+                            (logMessage) ->
+                                    gameServerLogService.publishAndSaveLog(logMessage, true));
                 } catch (Exception e) {
                     log.warn("Failed to re-attach log listener for server {}", server.getUuid(), e);
                 }
@@ -348,10 +347,12 @@ public class GameServerService {
     public GameServerEntity updateRconConfig(String uuid, RCONConfiguration updateDto) {
         if (updateDto.isEnabled()) {
             if (updateDto.getPassword() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password is required if rcon is enabled");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Password is required if rcon is enabled");
             }
             if (updateDto.getPort() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Port is required if rcon is enabled");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Port is required if rcon is enabled");
             }
         }
         GameServerEntity gameServer = getGameServerById(uuid);
@@ -361,20 +362,44 @@ public class GameServerService {
 
     public void sendCommand(String uuid, String command) {
         GameServerEntity gameServer = getGameServerById(uuid);
-        gameServerLogService.publishAndSaveLog(gameServer, GameServerLogMessageEntity.LogLevel.INPUT, command, false);
+        gameServerLogService.publishAndSaveLog(
+                gameServer, GameServerLogMessageEntity.LogLevel.INPUT, command, false);
         try {
-            if (gameServer.getRconConfiguration() != null && gameServer.getRconConfiguration().isEnabled()) {
-                Consumer<String> logCallback = (log) -> gameServerLogService.publishAndSaveLog(gameServer, GameServerLogMessageEntity.LogLevel.INFO, log, true);
-                rCONService.sendCommand(gameServer.getRconConfiguration().getPort(), gameServer.getRconConfiguration().getPassword(), command, logCallback);
+            if (gameServer.getRconConfiguration() != null
+                    && gameServer.getRconConfiguration().isEnabled()) {
+                Consumer<String> logCallback =
+                        (log) ->
+                                gameServerLogService.publishAndSaveLog(
+                                        gameServer,
+                                        GameServerLogMessageEntity.LogLevel.INFO,
+                                        log,
+                                        true);
+                rCONService.sendCommand(
+                        gameServer.getRconConfiguration().getPort(),
+                        gameServer.getRconConfiguration().getPassword(),
+                        command,
+                        logCallback);
             } else {
                 engineManager.sendCommand(gameServer, command);
             }
         } catch (IOException e) {
-            gameServerLogService.publishAndSaveLog(gameServer, GameServerLogMessageEntity.LogLevel.COSY_ERROR, "Docker attach exception: " + e.getMessage(), false);
+            gameServerLogService.publishAndSaveLog(
+                    gameServer,
+                    GameServerLogMessageEntity.LogLevel.COSY_ERROR,
+                    "Docker attach exception: " + e.getMessage(),
+                    false);
         } catch (RconBadAuthorizationException e) {
-            gameServerLogService.publishAndSaveLog(gameServer, GameServerLogMessageEntity.LogLevel.COSY_ERROR, "RCON authorization exception: " + e.getMessage(), false);
+            gameServerLogService.publishAndSaveLog(
+                    gameServer,
+                    GameServerLogMessageEntity.LogLevel.COSY_ERROR,
+                    "RCON authorization exception: " + e.getMessage(),
+                    false);
         } catch (RconException e) {
-            gameServerLogService.publishAndSaveLog(gameServer, GameServerLogMessageEntity.LogLevel.COSY_ERROR, "RCON IO exception: " + e.getMessage(), false);
+            gameServerLogService.publishAndSaveLog(
+                    gameServer,
+                    GameServerLogMessageEntity.LogLevel.COSY_ERROR,
+                    "RCON IO exception: " + e.getMessage(),
+                    false);
         }
         log.info("Sending command '{}' to server {}", command, uuid);
     }

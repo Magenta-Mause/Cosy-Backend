@@ -2,9 +2,7 @@ package com.magentamause.cosybackend.entities.loki;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-
 import java.time.Instant;
-
 import lombok.Builder;
 import lombok.Data;
 

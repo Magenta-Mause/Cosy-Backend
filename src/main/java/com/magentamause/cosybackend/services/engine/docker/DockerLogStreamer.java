@@ -7,7 +7,6 @@ import com.github.dockerjava.api.model.StreamType;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerContainerNameResolver;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -17,14 +16,11 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * Service for streaming logs from Docker containers.
- */
+/** Service for streaming logs from Docker containers. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -32,7 +28,7 @@ public class DockerLogStreamer {
 
     private final DockerClient client;
     private final DockerContainerNameResolver containerNameResolver;
-    
+
     private final Map<String, ContainerAttachment> attachments = new ConcurrentHashMap<>();
 
     public void attachLogListener(
@@ -53,8 +49,10 @@ public class DockerLogStreamer {
                                             .message(message)
                                             .level(
                                                     frame.getStreamType() == StreamType.STDERR
-                                                            ? GameServerLogMessageEntity.LogLevel.ERROR
-                                                            : GameServerLogMessageEntity.LogLevel.INFO)
+                                                            ? GameServerLogMessageEntity.LogLevel
+                                                                    .ERROR
+                                                            : GameServerLogMessageEntity.LogLevel
+                                                                    .INFO)
                                             .timestamp(Instant.now())
                                             .gameServerUuid(serviceConfig.getUuid())
                                             .build();
@@ -86,25 +84,27 @@ public class DockerLogStreamer {
                         }
                     };
 
-            Closeable attachCloseable = client.attachContainerCmd(containerName)
-                    .withStdIn(stdinPipe)
-                    .withStdOut(true)
-                    .withStdErr(true)
-                    .withFollowStream(true)
-                    .withLogs(true)
-                    .exec(callback);
+            Closeable attachCloseable =
+                    client.attachContainerCmd(containerName)
+                            .withStdIn(stdinPipe)
+                            .withStdOut(true)
+                            .withStdErr(true)
+                            .withFollowStream(true)
+                            .withLogs(true)
+                            .exec(callback);
 
-            attachments.put(serviceConfig.getUuid(), new ContainerAttachment(stdinWriter, attachCloseable));
-            
+            attachments.put(
+                    serviceConfig.getUuid(), new ContainerAttachment(stdinWriter, attachCloseable));
+
         } catch (IOException e) {
             log.error("Failed to attach to container {}", containerName, e);
         }
     }
-    
+
     public PipedOutputStream getStdinWriter(String uuid) {
         ContainerAttachment attachment = attachments.get(uuid);
         return attachment != null ? attachment.stdinWriter : null;
     }
-    
+
     private record ContainerAttachment(PipedOutputStream stdinWriter, Closeable attachCloseable) {}
 }
