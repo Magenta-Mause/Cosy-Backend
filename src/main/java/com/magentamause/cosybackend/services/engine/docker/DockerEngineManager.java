@@ -49,6 +49,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     private final DockerMetricsCollector metricsCollector;
     private final DockerLogStreamer logStreamer;
     private final DockerHostConfigFactory hostConfigFactory;
+    private final DockerContainerNameResolver containerNameResolver;
 
     @PostConstruct
     public void init() {
@@ -97,7 +98,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         }
 
         String image = DockerImageNameBuilder.buildImageName(serverConfig);
-        String containerName = DockerContainerNameResolver.containerName(serverConfig);
+        String containerName = containerNameResolver.containerName(serverConfig);
 
         imageManager.ensureImagePresent(
                 image,

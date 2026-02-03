@@ -10,5 +10,6 @@ public record EngineProperties(Docker docker) {
             String apiVersion,
             boolean tls,
             String certPath,
-            String volumeDirectory) {}
+            String volumeDirectory,
+            String containerNamePrefix) {}
 }

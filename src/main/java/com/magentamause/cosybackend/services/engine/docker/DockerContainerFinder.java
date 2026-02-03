@@ -17,13 +17,14 @@ import org.springframework.stereotype.Component;
 public class DockerContainerFinder {
 
     private final DockerClient client;
+    private final DockerContainerNameResolver containerNameResolver;
 
     public Optional<Container> findContainer(GameServerEntity serverConfig) {
         return findContainer(serverConfig.getUuid());
     }
 
     public Optional<Container> findContainer(String serverUuid) {
-        String nameToMatch = DockerContainerNameResolver.containerNameWithSlash(serverUuid);
+        String nameToMatch = containerNameResolver.containerNameWithSlash(serverUuid);
 
         return client.listContainersCmd().withShowAll(true).exec().stream()
                 .filter(

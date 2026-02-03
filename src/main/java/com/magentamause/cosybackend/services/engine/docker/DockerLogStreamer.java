@@ -22,10 +22,11 @@ import org.springframework.stereotype.Component;
 public class DockerLogStreamer {
 
     private final DockerClient client;
+    private final DockerContainerNameResolver containerNameResolver;
 
     public void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener) {
-        String containerName = DockerContainerNameResolver.containerName(serviceConfig);
+        String containerName = containerNameResolver.containerName(serviceConfig);
 
         ResultCallback.Adapter<Frame> callback =
                 new ResultCallback.Adapter<>() {

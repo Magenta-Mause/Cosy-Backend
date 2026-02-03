@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 public class DockerEventHandler implements Closeable {
 
     private final DockerClient client;
+    private final DockerContainerNameResolver containerNameResolver;
 
     private final List<BiConsumer<GameServerStatusUpdateEventType, String>> statusListeners =
             new CopyOnWriteArrayList<>();
@@ -79,11 +80,12 @@ public class DockerEventHandler implements Closeable {
         }
 
         String containerName = event.getActor().getAttributes().get("name");
-        if (containerName == null || !containerName.startsWith("cosy-")) {
+        String prefix = containerNameResolver.getPrefix();
+        if (containerName == null || !containerName.startsWith(prefix)) {
             return;
         }
 
-        String uuid = DockerContainerNameResolver.extractUuidFromContainerName(containerName);
+        String uuid = containerNameResolver.extractUuidFromContainerName(containerName);
         String eventName = event.getAction();
 
         log.info("Handling Docker event: {} for server {}", eventName, uuid);
