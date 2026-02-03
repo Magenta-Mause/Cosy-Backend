@@ -65,8 +65,7 @@ public class UserEntityService {
 
     public UserEntity changePassword(UserEntity user, String oldPassword, String newPassword) {
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED, "Old password is incorrect");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Old password is incorrect");
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         return saveUserEntity(user);
