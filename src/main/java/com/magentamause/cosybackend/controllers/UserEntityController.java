@@ -51,7 +51,8 @@ public class UserEntityController {
             @PathVariable @ResourceId String uuid, @Valid @RequestBody PasswordUpdateDto request) {
         UserEntity user = userEntityService.getUserByUuid(uuid);
         UserEntity userWithChangedPassword =
-                userEntityService.changePassword(user, request.getNewPassword());
+                userEntityService.changePassword(
+                        user, request.getOldPassword(), request.getNewPassword());
         return ResponseEntity.ok(userWithChangedPassword.toDto());
     }
 }

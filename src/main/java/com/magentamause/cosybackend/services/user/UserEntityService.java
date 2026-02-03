@@ -63,7 +63,11 @@ public class UserEntityService {
         userEntityRepository.delete(user);
     }
 
-    public UserEntity changePassword(UserEntity user, String newPassword) {
+    public UserEntity changePassword(UserEntity user, String oldPassword, String newPassword) {
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED, "Old password is incorrect");
+        }
         user.setPassword(passwordEncoder.encode(newPassword));
         return saveUserEntity(user);
     }
