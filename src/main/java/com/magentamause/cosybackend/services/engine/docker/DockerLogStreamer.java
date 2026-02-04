@@ -109,6 +109,18 @@ public class DockerLogStreamer {
         return attachment != null ? attachment.stdinWriter : null;
     }
 
+    /**
+     * Cleans up a broken attachment so it can be recreated.
+     * Called when stdin write fails (e.g. after system sleep).
+     */
+    public void cleanupAttachment(String uuid) {
+        log.info("Cleaning up attachment for server {}", uuid);
+        ContainerAttachment attachment = attachments.remove(uuid);
+        if (attachment != null) {
+            closeAttachment(attachment);
+        }
+    }
+
     public void detachLogListener(String uuid) {
         ContainerAttachment attachment = attachments.remove(uuid);
         if (attachment != null) {
