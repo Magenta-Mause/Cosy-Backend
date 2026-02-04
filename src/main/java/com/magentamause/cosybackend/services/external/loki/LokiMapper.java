@@ -3,9 +3,11 @@ package com.magentamause.cosybackend.services.external.loki;
 import com.magentamause.cosybackend.dtos.loki.LokiQueryResponse;
 import com.magentamause.cosybackend.dtos.loki.LokiStreamResult;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -40,6 +42,9 @@ public class LokiMapper {
     }
 
     private static GameServerLogMessageEntity.LogLevel parseLogLevel(String logLevel) {
+        if (logLevel == null) {
+            return GameServerLogMessageEntity.LogLevel.COSY_DEBUG;
+        }
         return switch (logLevel) {
             case "ERROR" -> GameServerLogMessageEntity.LogLevel.ERROR;
             case "INFO" -> GameServerLogMessageEntity.LogLevel.INFO;
