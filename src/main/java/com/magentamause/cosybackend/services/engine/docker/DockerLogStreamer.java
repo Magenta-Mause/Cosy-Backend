@@ -110,8 +110,8 @@ public class DockerLogStreamer {
     }
 
     /**
-     * Cleans up a broken attachment so it can be recreated.
-     * Called when stdin write fails (e.g. after system sleep).
+     * Cleans up a broken attachment so it can be recreated. Called when stdin write fails (e.g.
+     * after system sleep).
      */
     public void cleanupAttachment(String uuid) {
         log.info("Cleaning up attachment for server {}", uuid);
