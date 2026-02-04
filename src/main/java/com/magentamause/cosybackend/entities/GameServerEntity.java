@@ -3,6 +3,7 @@ package com.magentamause.cosybackend.entities;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
@@ -70,6 +71,10 @@ public class GameServerEntity {
     @JoinColumn(name = "game_server_configuration_uuid")
     private List<VolumeMountConfiguration> volumeMounts;
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "metric_layout_uuid")
+    private List<MetricLayout> metricLayout;
+
     public GameServerDto toDto() {
         return GameServerDto.builder()
                 .uuid(this.getUuid())
@@ -85,6 +90,7 @@ public class GameServerEntity {
                 .portMappings(this.getPortMappings())
                 .environmentVariables(this.getEnvironmentVariables())
                 .volumeMounts(this.getVolumeMounts())
+                .metricLayout(this.getMetricLayout())
                 .build();
     }
 }

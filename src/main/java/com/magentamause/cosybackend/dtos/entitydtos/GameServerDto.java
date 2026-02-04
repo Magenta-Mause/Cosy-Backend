@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
@@ -45,6 +46,8 @@ public class GameServerDto {
     @NotNull @Valid private List<EnvironmentVariableConfiguration> environmentVariables;
 
     @NotNull @Valid private List<VolumeMountConfiguration> volumeMounts;
+
+    @NotNull private List<MetricLayout> metricLayout;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     public enum GameServerStatus {
