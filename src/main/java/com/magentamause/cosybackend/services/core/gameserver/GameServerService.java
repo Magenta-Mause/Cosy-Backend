@@ -27,7 +27,6 @@ import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -352,7 +350,9 @@ public class GameServerService {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "Password is required if rcon is enabled");
             }
-            if (updateDto.getPort() == null || updateDto.getPort() < 0 || updateDto.getPort() > 65535) {
+            if (updateDto.getPort() == null
+                    || updateDto.getPort() < 0
+                    || updateDto.getPort() > 65535) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "Port is required if rcon is enabled");
             }

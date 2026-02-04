@@ -141,7 +141,5 @@ public class DockerLogStreamer {
     }
 
     private record ContainerAttachment(
-            PipedInputStream stdinPipe,
-            PipedOutputStream stdinWriter,
-            Closeable attachCloseable) {}
+            PipedInputStream stdinPipe, PipedOutputStream stdinWriter, Closeable attachCloseable) {}
 }
