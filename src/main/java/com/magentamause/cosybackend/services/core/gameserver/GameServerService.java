@@ -27,6 +27,7 @@ import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -365,6 +367,7 @@ public class GameServerService {
         gameServerLogService.publishAndSaveLog(
                 gameServer, GameServerLogMessageEntity.LogLevel.INPUT, command, false);
         try {
+            log.info("Sending command '{}' to server {}", command, uuid);
             if (gameServer.getRconConfiguration() != null
                     && gameServer.getRconConfiguration().isEnabled()) {
                 Consumer<String> logCallback =
@@ -401,6 +404,5 @@ public class GameServerService {
                     "RCON IO exception: " + e.getMessage(),
                     false);
         }
-        log.info("Sending command '{}' to server {}", command, uuid);
     }
 }
