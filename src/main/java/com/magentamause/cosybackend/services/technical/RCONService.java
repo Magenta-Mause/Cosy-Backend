@@ -16,8 +16,7 @@ public class RCONService {
     public void sendCommand(
             int port, String password, String command, Consumer<String> responseCallback)
             throws RconBadAuthorizationException, RconException {
-        try {
-            Rcon rcon = new Rcon("127.0.0.1", port, password);
+        try (Rcon rcon = new Rcon("127.0.0.1", port, password)) {
             String response = rcon.command(command);
             responseCallback.accept(response);
         } catch (IOException e) {
