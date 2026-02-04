@@ -7,6 +7,7 @@ import com.github.dockerjava.api.model.StreamType;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerContainerNameResolver;
+import jakarta.annotation.PreDestroy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -69,12 +70,13 @@ public class DockerLogStreamer {
                                             .gameServerUuid(serviceConfig.getUuid())
                                             .timestamp(Instant.now())
                                             .build());
+                            detachLogListener(serviceConfig.getUuid());
                         }
 
                         @Override
                         public void onComplete() {
                             log.debug("Log listener for container {} completed", containerName);
-                            attachments.remove(serviceConfig.getUuid());
+                            detachLogListener(serviceConfig.getUuid());
                         }
 
                         @Override
@@ -94,7 +96,8 @@ public class DockerLogStreamer {
                             .exec(callback);
 
             attachments.put(
-                    serviceConfig.getUuid(), new ContainerAttachment(stdinWriter, attachCloseable));
+                    serviceConfig.getUuid(),
+                    new ContainerAttachment(stdinPipe, stdinWriter, attachCloseable));
 
         } catch (IOException e) {
             log.error("Failed to attach to container {}", containerName, e);
@@ -106,5 +109,39 @@ public class DockerLogStreamer {
         return attachment != null ? attachment.stdinWriter : null;
     }
 
-    private record ContainerAttachment(PipedOutputStream stdinWriter, Closeable attachCloseable) {}
+    public void detachLogListener(String uuid) {
+        ContainerAttachment attachment = attachments.remove(uuid);
+        if (attachment != null) {
+            closeAttachment(attachment);
+        }
+    }
+
+    @PreDestroy
+    public void cleanup() {
+        log.info("Closing all active log attachments on shutdown");
+        attachments.values().forEach(this::closeAttachment);
+        attachments.clear();
+    }
+
+    private void closeAttachment(ContainerAttachment attachment) {
+        closeResource(attachment.stdinWriter, "PipedOutputStream");
+        closeResource(attachment.stdinPipe, "PipedInputStream");
+        closeResource(attachment.attachCloseable, "Docker attachment");
+    }
+
+    private void closeResource(Closeable resource, String resourceName) {
+        if (resource != null) {
+            try {
+                resource.close();
+                log.debug("Successfully closed {}", resourceName);
+            } catch (IOException e) {
+                log.warn("Failed to close {}: {}", resourceName, e.getMessage());
+            }
+        }
+    }
+
+    private record ContainerAttachment(
+            PipedInputStream stdinPipe,
+            PipedOutputStream stdinWriter,
+            Closeable attachCloseable) {}
 }

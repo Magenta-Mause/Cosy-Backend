@@ -24,8 +24,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.PipedOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -50,6 +48,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     private final DockerContainerFinder containerFinder;
     private final DockerMetricsCollector metricsCollector;
     private final DockerLogStreamer logStreamer;
+    private final DockerCommandSender commandSender;
     private final DockerHostConfigFactory hostConfigFactory;
     private final DockerContainerNameResolver containerNameResolver;
 
@@ -173,11 +172,13 @@ public class DockerEngineManager implements EngineManager, Closeable {
             throw new ServerAlreadyStoppedException(serverConfig.getServerName());
         }
 
+        logStreamer.detachLogListener(serverConfig.getUuid());
         client.stopContainerCmd(container.getId()).exec();
         remove(serverConfig);
     }
 
     public void remove(GameServerEntity serverConfig) {
+        logStreamer.detachLogListener(serverConfig.getUuid());
         remove(serverConfig.getUuid());
     }
 
@@ -216,33 +217,6 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     @Override
     public void sendCommand(GameServerEntity serverConfig, String command) throws IOException {
-        Container container =
-                containerFinder
-                        .findContainer(serverConfig)
-                        .orElseThrow(
-                                () ->
-                                        new IOException(
-                                                "Container not found for server: "
-                                                        + serverConfig.getServerName()));
-
-        if (!"running".equalsIgnoreCase(container.getState())) {
-            throw new IOException(
-                    "Container is not running for server: " + serverConfig.getServerName());
-        }
-
-        PipedOutputStream stdinWriter = logStreamer.getStdinWriter(serverConfig.getUuid());
-        if (stdinWriter == null) {
-            throw new IOException(
-                    "No active log attachment found for server: "
-                            + serverConfig.getServerName()
-                            + ". Ensure logs are being streamed before sending commands.");
-        }
-
-        try {
-            stdinWriter.write((command + "\n").getBytes(StandardCharsets.UTF_8));
-            stdinWriter.flush();
-        } catch (IOException e) {
-            throw new IOException("Failed to send command to container", e);
-        }
+        commandSender.sendCommand(serverConfig, command);
     }
 }

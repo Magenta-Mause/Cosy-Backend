@@ -51,7 +51,6 @@ public class LokiQueryService {
     }
 
     public void saveGameServerLog(GameServerLogMessageEntity logEntity) {
-
         long timestampNs = logEntity.getTimestamp().toEpochMilli() * 1_000_000;
 
         Map<String, String> labels = new java.util.HashMap<>();
@@ -62,6 +61,7 @@ public class LokiQueryService {
             labels.put("server_uuid", logEntity.getGameServerUuid());
         }
 
+        log.info("Saving log message {} to loki", logEntity);
         LokiPushRequest payload =
                 new LokiPushRequest(
                         List.of(
