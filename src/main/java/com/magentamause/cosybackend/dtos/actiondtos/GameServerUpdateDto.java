@@ -22,7 +22,7 @@ public class GameServerUpdateDto {
     @NotBlank private String dockerImageName;
     @NotBlank private String dockerImageTag;
 
-    private RCONConfiguration rconConfiguration;
+    @Valid private RCONConfiguration rconConfiguration;
 
     @Valid private DockerHardwareLimits dockerHardwareLimits;
 
