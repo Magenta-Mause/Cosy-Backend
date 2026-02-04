@@ -9,6 +9,8 @@ import lombok.Data;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class PasswordUpdateDto {
+    @NotBlank private String oldPassword;
+
     @NotBlank
     @Size(min = 8, message = "Password must be at least 8 characters long")
     private String newPassword;

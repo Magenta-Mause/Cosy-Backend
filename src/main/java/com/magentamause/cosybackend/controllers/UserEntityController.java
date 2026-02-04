@@ -12,12 +12,14 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("user-entity")
+@Slf4j
 public class UserEntityController {
 
     private final UserEntityService userEntityService;
@@ -49,9 +51,11 @@ public class UserEntityController {
     @RequireAccess(action = Action.UPDATE, resource = Resource.USER)
     public ResponseEntity<UserEntityDto> changePassword(
             @PathVariable @ResourceId String uuid, @Valid @RequestBody PasswordUpdateDto request) {
+        log.info("Changing password for user with UUID: {}", uuid);
         UserEntity user = userEntityService.getUserByUuid(uuid);
         UserEntity userWithChangedPassword =
-                userEntityService.changePassword(user, request.getNewPassword());
+                userEntityService.changePassword(
+                        user, request.getOldPassword(), request.getNewPassword());
         return ResponseEntity.ok(userWithChangedPassword.toDto());
     }
 }
