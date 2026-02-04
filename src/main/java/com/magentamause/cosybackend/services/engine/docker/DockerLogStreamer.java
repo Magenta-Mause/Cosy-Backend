@@ -92,7 +92,7 @@ public class DockerLogStreamer {
                             .withStdOut(true)
                             .withStdErr(true)
                             .withFollowStream(true)
-                            .withLogs(true)
+                            .withLogs(false)
                             .exec(callback);
 
             attachments.put(
