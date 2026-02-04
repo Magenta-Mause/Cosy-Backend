@@ -350,7 +350,7 @@ public class GameServerService {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "Password is required if rcon is enabled");
             }
-            if (updateDto.getPort() == null) {
+            if (updateDto.getPort() == null || updateDto.getPort() < 0 || updateDto.getPort() > 65535) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "Port is required if rcon is enabled");
             }
