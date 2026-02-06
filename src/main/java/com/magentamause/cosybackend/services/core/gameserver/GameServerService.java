@@ -283,8 +283,11 @@ public class GameServerService {
             } catch (Exception e) {
                 updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
                 log.error("Error starting server '{}'", gameServerUuid, e);
-                throw new RuntimeException(
-                        "Error while starting docker container: " + e.getMessage(), e);
+                gameServerLogService.publishAndSaveLog(
+                        serverConfig,
+                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
+                        "Failed to pull Docker Image: " + e.getMessage(),
+                        false);
             }
         } finally {
             startingServers.remove(gameServerUuid);
