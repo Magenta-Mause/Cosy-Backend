@@ -2,8 +2,7 @@ package com.magentamause.cosybackend.entities.layout;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,7 +11,9 @@ import lombok.Setter;
 @Entity
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Layout {
-    @Id private String uuid;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String uuid;
 
-    private int size;
+    private Size size;
 }
