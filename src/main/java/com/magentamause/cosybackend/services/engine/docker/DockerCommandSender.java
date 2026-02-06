@@ -15,10 +15,19 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class DockerCommandSender {
 
+    private static final int MAX_RETRIES = 2;
+    private static final long REATTACH_DELAY_MS = 500;
+    private static final String RUNNING_STATE = "running";
+
     private final DockerContainerFinder containerFinder;
     private final DockerLogStreamer logStreamer;
 
     public void sendCommand(GameServerEntity serverConfig, String command) throws IOException {
+        validateContainerRunning(serverConfig);
+        sendCommandWithRetry(serverConfig, command);
+    }
+
+    private void validateContainerRunning(GameServerEntity serverConfig) throws IOException {
         Container container =
                 containerFinder
                         .findContainer(serverConfig)
@@ -28,19 +37,20 @@ public class DockerCommandSender {
                                                 "Container not found for server: "
                                                         + serverConfig.getServerName()));
 
-        if (!"running".equalsIgnoreCase(container.getState())) {
+        if (!RUNNING_STATE.equalsIgnoreCase(container.getState())) {
             throw new IOException(
                     "Container is not running for server: " + serverConfig.getServerName());
         }
+    }
 
-        // Try sending command with automatic retry on connection failure
-        int maxRetries = 2;
+    private void sendCommandWithRetry(GameServerEntity serverConfig, String command)
+            throws IOException {
         IOException lastException = null;
 
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
                 sendCommandInternal(serverConfig, command, attempt);
-                return; // Success!
+                return;
             } catch (IOException e) {
                 lastException = e;
                 log.warn(
@@ -49,29 +59,26 @@ public class DockerCommandSender {
                         serverConfig.getServerName(),
                         e.getMessage());
 
-                if (attempt < maxRetries) {
-                    // Clean up broken connection and let logStreamer recreate on next log request
-                    log.info("Cleaning up broken stdin connection, will be recreated on retry...");
-                    logStreamer.cleanupAttachment(serverConfig.getUuid());
-
-                    // Re-attach by requesting logs again (which creates the stdin connection)
-                    try {
-                        logStreamer.attachLogListener(
-                                serverConfig,
-                                msg -> {
-                                    // Dummy listener to trigger re-attachment
-                                });
-                        Thread.sleep(500); // Wait for attachment to establish
-                    } catch (Exception ie) {
-                        log.warn("Failed to re-establish connection: {}", ie.getMessage());
-                    }
+                if (attempt < MAX_RETRIES) {
+                    reestablishConnection(serverConfig);
                 }
             }
         }
 
-        // All retries failed
         throw new IOException(
-                "Failed to send command after " + maxRetries + " attempts", lastException);
+                "Failed to send command after " + MAX_RETRIES + " attempts", lastException);
+    }
+
+    private void reestablishConnection(GameServerEntity serverConfig) {
+        log.info("Cleaning up broken stdin connection, will be recreated on retry...");
+        logStreamer.cleanupAttachment(serverConfig.getUuid());
+
+        try {
+            logStreamer.attachLogListener(serverConfig, msg -> {});
+            Thread.sleep(REATTACH_DELAY_MS);
+        } catch (Exception e) {
+            log.warn("Failed to re-establish connection: {}", e.getMessage());
+        }
     }
 
     private void sendCommandInternal(GameServerEntity serverConfig, String command, int attempt)
