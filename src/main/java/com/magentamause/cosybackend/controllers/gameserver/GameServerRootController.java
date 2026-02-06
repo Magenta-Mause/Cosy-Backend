@@ -101,7 +101,7 @@ public class GameServerRootController {
     @PatchMapping("/{uuid}/rcon-configuration")
     @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER)
     public ResponseEntity<GameServerDto> updateRconConfiguration(
-            @PathVariable @ResourceId String uuid, @RequestBody RCONConfiguration updateDto) {
+            @PathVariable @ResourceId String uuid, @RequestBody @Valid RCONConfiguration updateDto) {
         return ResponseEntity.ok(gameServerService.updateRconConfig(uuid, updateDto).toDto());
     }
 

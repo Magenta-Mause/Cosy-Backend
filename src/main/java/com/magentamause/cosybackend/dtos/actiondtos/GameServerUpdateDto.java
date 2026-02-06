@@ -22,8 +22,6 @@ public class GameServerUpdateDto {
     @NotBlank private String dockerImageName;
     @NotBlank private String dockerImageTag;
 
-    @Valid private RCONConfiguration rconConfiguration;
-
     @Valid private DockerHardwareLimits dockerHardwareLimits;
 
     @Valid private List<PortMapping> portMappings;
@@ -48,7 +46,6 @@ public class GameServerUpdateDto {
         target.setDockerImageName(this.getDockerImageName());
         target.setDockerImageTag(this.getDockerImageTag());
         target.setDockerExecutionCommand(this.getExecutionCommand());
-        target.setRconConfiguration(this.getRconConfiguration());
         target.setDockerHardwareLimits(this.getDockerHardwareLimits());
 
         target.setPortMappings(
