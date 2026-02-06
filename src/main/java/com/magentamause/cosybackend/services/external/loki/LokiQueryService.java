@@ -61,7 +61,6 @@ public class LokiQueryService {
             labels.put("server_uuid", logEntity.getGameServerUuid());
         }
 
-        log.info("Saving log message {} to loki", logEntity);
         LokiPushRequest payload =
                 new LokiPushRequest(
                         List.of(
