@@ -27,7 +27,7 @@ public class GameServerDto {
 
     @NotNull @Valid private LocalDateTime timestampLastStarted;
 
-    private RCONConfiguration rconConfiguration;
+    @Valid private RCONConfiguration rconConfiguration;
 
     @NotBlank private String gameUuid;
 
