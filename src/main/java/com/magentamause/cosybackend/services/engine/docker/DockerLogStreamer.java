@@ -3,12 +3,10 @@ package com.magentamause.cosybackend.services.engine.docker;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Frame;
-import com.github.dockerjava.api.model.StreamType;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerContainerNameResolver;
 import jakarta.annotation.PreDestroy;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -18,14 +16,11 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * Service for streaming logs from Docker containers.
- */
+/** Service for streaming logs from Docker containers. */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -52,7 +47,8 @@ public class DockerLogStreamer {
                             GameServerLogMessageEntity logMessage =
                                     GameServerLogMessageEntity.builder()
                                             .message(message)
-                                            .level(GameServerLogMessageEntity.LogLevel
+                                            .level(
+                                                    GameServerLogMessageEntity.LogLevel
                                                             .ofStreamType(frame.getStreamType()))
                                             .timestamp(Instant.now())
                                             .gameServerUuid(serviceConfig.getUuid())
@@ -153,6 +149,5 @@ public class DockerLogStreamer {
     }
 
     private record ContainerAttachment(
-            PipedInputStream stdinPipe, PipedOutputStream stdinWriter, Closeable attachCloseable) {
-    }
+            PipedInputStream stdinPipe, PipedOutputStream stdinWriter, Closeable attachCloseable) {}
 }
