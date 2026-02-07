@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
+import com.magentamause.cosybackend.entities.utility.*;
 import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
@@ -30,6 +31,8 @@ public class GameServerDto {
     @NotNull @Valid private GameServerStatus status;
 
     @NotNull @Valid private LocalDateTime timestampLastStarted;
+
+    @Valid private RCONConfiguration rconConfiguration;
 
     @NotBlank private String gameUuid;
 

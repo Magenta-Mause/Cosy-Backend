@@ -51,7 +51,6 @@ public class LokiQueryService {
     }
 
     public void saveGameServerLog(GameServerLogMessageEntity logEntity) {
-
         long timestampNs = logEntity.getTimestamp().toEpochMilli() * 1_000_000;
 
         Map<String, String> labels = new java.util.HashMap<>();

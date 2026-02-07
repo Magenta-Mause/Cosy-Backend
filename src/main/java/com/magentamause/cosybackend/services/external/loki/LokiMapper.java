@@ -35,13 +35,23 @@ public class LokiMapper {
                 .message(message)
                 .gameServerUuid(serverUuid)
                 .timestamp(parseTimestamp(value.get(0)))
-                .level(
-                        "ERROR".equals(level)
-                                ? GameServerLogMessageEntity.LogLevel.ERROR
-                                : "INFO".equals(level)
-                                        ? GameServerLogMessageEntity.LogLevel.INFO
-                                        : GameServerLogMessageEntity.LogLevel.COSY_DEBUG)
+                .level(parseLogLevel(level))
                 .build();
+    }
+
+    private static GameServerLogMessageEntity.LogLevel parseLogLevel(String logLevel) {
+        if (logLevel == null) {
+            return GameServerLogMessageEntity.LogLevel.COSY_DEBUG;
+        }
+        return switch (logLevel) {
+            case "ERROR" -> GameServerLogMessageEntity.LogLevel.ERROR;
+            case "INFO" -> GameServerLogMessageEntity.LogLevel.INFO;
+            case "INPUT" -> GameServerLogMessageEntity.LogLevel.INPUT;
+            case "COSY_INFO" -> GameServerLogMessageEntity.LogLevel.COSY_INFO;
+            case "COSY_ERROR" -> GameServerLogMessageEntity.LogLevel.COSY_ERROR;
+            case "COSY_DEBUG" -> GameServerLogMessageEntity.LogLevel.COSY_DEBUG;
+            default -> GameServerLogMessageEntity.LogLevel.COSY_DEBUG;
+        };
     }
 
     private static Instant parseTimestamp(String timestamp) {

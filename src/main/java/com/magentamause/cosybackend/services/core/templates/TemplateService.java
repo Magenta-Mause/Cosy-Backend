@@ -42,7 +42,7 @@ public class TemplateService {
                     templates.stream().map(TemplateEntity::ofDto).toList());
         } catch (Exception e) {
             log.error("Failed to refresh templates: {}", e.getMessage(), e);
-            throw e;
+            return null;
         }
     }
 
