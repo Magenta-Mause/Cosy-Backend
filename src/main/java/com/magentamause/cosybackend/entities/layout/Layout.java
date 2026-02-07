@@ -15,5 +15,7 @@ public class Layout {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String uuid;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Size size;
 }
