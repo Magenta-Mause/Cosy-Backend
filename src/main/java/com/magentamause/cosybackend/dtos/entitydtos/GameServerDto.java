@@ -4,10 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
-import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
-import com.magentamause.cosybackend.entities.utility.PortMapping;
-import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
+import com.magentamause.cosybackend.entities.utility.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -29,6 +26,8 @@ public class GameServerDto {
     @NotNull @Valid private GameServerStatus status;
 
     @NotNull @Valid private LocalDateTime timestampLastStarted;
+
+    @Valid private RCONConfiguration rconConfiguration;
 
     @NotBlank private String gameUuid;
 

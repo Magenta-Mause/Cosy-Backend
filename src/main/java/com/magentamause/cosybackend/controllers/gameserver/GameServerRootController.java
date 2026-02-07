@@ -2,9 +2,11 @@ package com.magentamause.cosybackend.controllers.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.SendCommandDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.utility.RCONConfiguration;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
@@ -94,5 +96,24 @@ public class GameServerRootController {
     public ResponseEntity<Void> stopService(@PathVariable @ResourceId String uuid) {
         gameServerService.stopServer(uuid);
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{uuid}/rcon-configuration")
+    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER)
+    public ResponseEntity<GameServerDto> updateRconConfiguration(
+            @PathVariable @ResourceId String uuid,
+            @RequestBody @Valid RCONConfiguration updateDto) {
+        GameServerEntity gameServer = gameServerService.updateRconConfig(uuid, updateDto);
+        return ResponseEntity.ok(gameServer.toDto());
+    }
+
+    @PostMapping("/{uuid}/send-command")
+    @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
+    // TODO: Change this as soon as we refactor access validation logic to something more specific
+    // like "send command"
+    public ResponseEntity<Void> sendCommand(
+            @PathVariable @ResourceId String uuid, @RequestBody SendCommandDto command) {
+        gameServerService.sendCommand(uuid, command.getCommand());
+        return ResponseEntity.noContent().build();
     }
 }

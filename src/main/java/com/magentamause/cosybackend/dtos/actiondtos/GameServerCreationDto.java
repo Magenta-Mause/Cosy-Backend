@@ -34,11 +34,7 @@ public class GameServerCreationDto {
 
     @Valid private DockerHardwareLimits dockerHardwareLimits;
 
-    @UniqueElementsBy(
-            fieldNames = {"instancePort", "containerPort"},
-            message = "duplicate port mapping")
-    @Valid
-    private List<PortMapping> portMappings;
+    @Valid private List<PortMapping> portMappings;
 
     private List<@NotBlank String> executionCommand;
 

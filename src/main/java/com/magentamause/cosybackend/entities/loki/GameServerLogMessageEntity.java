@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.entities.loki;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.github.dockerjava.api.model.StreamType;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Data;
@@ -37,8 +38,17 @@ public class GameServerLogMessageEntity {
     public enum LogLevel {
         INFO,
         ERROR,
+        INPUT,
         COSY_INFO,
         COSY_DEBUG,
-        COSY_ERROR
+        COSY_ERROR;
+
+        public static LogLevel ofStreamType(StreamType streamType) {
+            return switch (streamType) {
+                case STDOUT -> INFO;
+                case STDERR -> ERROR;
+                default -> INFO;
+            };
+        }
     }
 }

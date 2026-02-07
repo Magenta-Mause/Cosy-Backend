@@ -9,7 +9,10 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
+import com.magentamause.cosybackend.entities.utility.RCONConfiguration;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
+import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
+import com.magentamause.cosybackend.exceptions.RconException;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
@@ -20,13 +23,16 @@ import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.docker.util.HardwareLimitPresentValidator;
 import com.magentamause.cosybackend.services.engine.docker.util.HardwareQuotaChecker;
 import com.magentamause.cosybackend.services.engine.docker.util.VolumeDirectoryService;
+import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +57,7 @@ public class GameServerService {
     private final HardwareLimitPresentValidator hardwareLimitValidator;
     private final HardwareQuotaChecker hardwareQuotaChecker;
     private final VolumeDirectoryService volumeDirectoryService;
+    private final RCONService rCONService;
 
     @PostConstruct
     public void init() {
@@ -61,6 +68,18 @@ public class GameServerService {
             engineManager.attachStatusSupplier(
                     server.getUuid(), () -> getStatusFromEntity(server.getUuid()));
             log.info("Setting status of server {} to {} ", server.getUuid(), status);
+
+            if (status == GameServerDto.GameServerStatus.RUNNING) {
+                try {
+                    log.info("Re-attaching log listener for running server {}", server.getUuid());
+                    engineManager.attachLogListener(
+                            server,
+                            (logMessage) ->
+                                    gameServerLogService.publishAndSaveLog(logMessage, true));
+                } catch (Exception e) {
+                    log.warn("Failed to re-attach log listener for server {}", server.getUuid(), e);
+                }
+            }
         }
     }
 
@@ -264,8 +283,11 @@ public class GameServerService {
             } catch (Exception e) {
                 updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
                 log.error("Error starting server '{}'", gameServerUuid, e);
-                throw new RuntimeException(
-                        "Error while starting docker container: " + e.getMessage(), e);
+                gameServerLogService.publishAndSaveLog(
+                        serverConfig,
+                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
+                        "Failed to pull Docker Image: " + e.getMessage(),
+                        false);
             }
         } finally {
             startingServers.remove(gameServerUuid);
@@ -323,5 +345,55 @@ public class GameServerService {
 
     private List<GameServerEntity> getGameServersStartedByUser(String userUuid) {
         return gameServerRepository.findByLastStartedBy_Uuid(userUuid);
+    }
+
+    public GameServerEntity updateRconConfig(String uuid, RCONConfiguration updateDto) {
+        GameServerEntity gameServer = getGameServerById(uuid);
+        gameServer.setRconConfiguration(updateDto);
+        return saveGameServerConfiguration(gameServer, false);
+    }
+
+    public void sendCommand(String uuid, String command) {
+        GameServerEntity gameServer = getGameServerById(uuid);
+        gameServerLogService.publishAndSaveLog(
+                gameServer, GameServerLogMessageEntity.LogLevel.INPUT, command, false);
+        try {
+            log.info("Sending command '{}' to server {}", command, uuid);
+            if (gameServer.getRconConfiguration() != null
+                    && gameServer.getRconConfiguration().isEnabled()) {
+                Consumer<String> logCallback =
+                        (log) ->
+                                gameServerLogService.publishAndSaveLog(
+                                        gameServer,
+                                        GameServerLogMessageEntity.LogLevel.INFO,
+                                        log,
+                                        true);
+                rCONService.sendCommand(
+                        gameServer.getRconConfiguration().getPort(),
+                        gameServer.getRconConfiguration().getPassword(),
+                        command,
+                        logCallback);
+            } else {
+                engineManager.sendCommand(gameServer, command);
+            }
+        } catch (IOException e) {
+            gameServerLogService.publishAndSaveLog(
+                    gameServer,
+                    GameServerLogMessageEntity.LogLevel.COSY_ERROR,
+                    "Docker attach exception: " + e.getMessage(),
+                    false);
+        } catch (RconBadAuthorizationException e) {
+            gameServerLogService.publishAndSaveLog(
+                    gameServer,
+                    GameServerLogMessageEntity.LogLevel.COSY_ERROR,
+                    "RCON authorization exception: " + e.getMessage(),
+                    false);
+        } catch (RconException e) {
+            gameServerLogService.publishAndSaveLog(
+                    gameServer,
+                    GameServerLogMessageEntity.LogLevel.COSY_ERROR,
+                    "RCON IO exception: " + e.getMessage(),
+                    false);
+        }
     }
 }

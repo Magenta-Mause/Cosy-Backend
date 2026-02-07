@@ -48,6 +48,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     private final DockerContainerFinder containerFinder;
     private final DockerMetricsCollector metricsCollector;
     private final DockerLogStreamer logStreamer;
+    private final DockerCommandSender commandSender;
     private final DockerHostConfigFactory hostConfigFactory;
     private final DockerContainerNameResolver containerNameResolver;
 
@@ -121,6 +122,9 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         .withEnv(env)
                         .withExposedPorts(exposedPorts)
                         .withHostConfig(hostConfigFactory.buildHostConfig(serverConfig))
+                        .withTty(true)
+                        .withStdinOpen(true)
+                        .withAttachStdin(true)
                         .exec();
 
         eventHandler.attachStatusSupplier(serverConfig.getUuid(), gameServerStatusSupplier);
@@ -168,11 +172,13 @@ public class DockerEngineManager implements EngineManager, Closeable {
             throw new ServerAlreadyStoppedException(serverConfig.getServerName());
         }
 
+        logStreamer.detachLogListener(serverConfig.getUuid());
         client.stopContainerCmd(container.getId()).exec();
         remove(serverConfig);
     }
 
     public void remove(GameServerEntity serverConfig) {
+        logStreamer.detachLogListener(serverConfig.getUuid());
         remove(serverConfig.getUuid());
     }
 
@@ -207,5 +213,10 @@ public class DockerEngineManager implements EngineManager, Closeable {
     @Override
     public Optional<Metric> collectMetric(GameServerEntity gameServer) throws InterruptedException {
         return metricsCollector.collectMetric(gameServer);
+    }
+
+    @Override
+    public void sendCommand(GameServerEntity serverConfig, String command) throws IOException {
+        commandSender.sendCommand(serverConfig, command);
     }
 }

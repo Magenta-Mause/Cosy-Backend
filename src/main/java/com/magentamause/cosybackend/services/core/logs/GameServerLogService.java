@@ -38,6 +38,7 @@ public class GameServerLogService {
             GameServerLogMessageEntity logEntity, boolean parseErrorLogLevel) {
         GameServerLogMessageEntity copy = logEntity.copy();
         if (parseErrorLogLevel
+                && logEntity.getMessage() != null
                 && detectErrorLogLevel(logEntity.getMessage())
                         == GameServerLogMessageEntity.LogLevel.ERROR) {
             copy.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);
