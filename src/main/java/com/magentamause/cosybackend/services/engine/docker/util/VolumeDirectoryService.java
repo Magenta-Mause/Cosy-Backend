@@ -51,6 +51,56 @@ public class VolumeDirectoryService {
         }
     }
 
+    public void deleteVolumeDirectories(GameServerEntity server) {
+        if (server.getVolumeMounts() == null || server.getVolumeMounts().isEmpty()) {
+            return;
+        }
+
+        Path base = volumeBaseDir();
+
+        for (var vm : server.getVolumeMounts()) {
+            String id = vm.getUuid();
+            if (id == null || id.isBlank()) {
+                continue;
+            }
+
+            Path dir = base.resolve(id).normalize();
+            if (!dir.startsWith(base)) {
+                continue;
+            }
+
+            try {
+                if (Files.exists(dir)) {
+                    deleteDirectoryRecursive(dir);
+                }
+            } catch (IOException e) {
+                throw new ResponseStatusException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Failed to delete volume directory: " + dir,
+                        e);
+            }
+        }
+    }
+
+    private void deleteDirectoryRecursive(Path path) throws IOException {
+        if (Files.isDirectory(path)) {
+            try (var stream = Files.walk(path)) {
+                stream.sorted((a, b) -> b.compareTo(a))
+                        .forEach(
+                                p -> {
+                                    try {
+                                        Files.delete(p);
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(
+                                                "Failed to delete: " + p, e);
+                                    }
+                                });
+            }
+        } else {
+            Files.delete(path);
+        }
+    }
+
     private Path volumeBaseDir() {
         String baseDir = engineProperties.docker().volumeDirectory();
         if (baseDir == null || baseDir.isBlank()) {
