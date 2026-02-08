@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,8 +33,7 @@ public class VolumeDirectoryService {
 
         Path base = volumeBaseDir();
 
-
-        for (var vm : server.getVolumeMounts()) {
+        for (VolumeMountConfiguration vm : server.getVolumeMounts()) {
             String volume_uuid = vm.getUuid();
             if (volume_uuid == null || volume_uuid.isBlank()) {
                 // Should not happen if server is saved, but guard anyway.
@@ -130,7 +130,7 @@ public class VolumeDirectoryService {
         }
 
         if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
-            try (var stream = Files.walk(path)) {
+            try (Stream<Path> stream = Files.walk(path)) {
                 stream.sorted(Comparator.reverseOrder())
                         .forEach(
                                 p -> {
