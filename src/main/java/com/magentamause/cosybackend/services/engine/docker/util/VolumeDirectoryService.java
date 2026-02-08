@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -85,14 +86,13 @@ public class VolumeDirectoryService {
     private void deleteDirectoryRecursive(Path path) throws IOException {
         if (Files.isDirectory(path)) {
             try (var stream = Files.walk(path)) {
-                stream.sorted((a, b) -> b.compareTo(a))
+                stream.sorted(Comparator.reverseOrder())
                         .forEach(
                                 p -> {
                                     try {
                                         Files.delete(p);
                                     } catch (IOException e) {
-                                        throw new RuntimeException(
-                                                "Failed to delete: " + p, e);
+                                        throw new RuntimeException("Failed to delete: " + p, e);
                                     }
                                 });
             }
