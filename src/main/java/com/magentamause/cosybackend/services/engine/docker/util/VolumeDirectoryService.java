@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 @Slf4j
 public class VolumeDirectoryService {
+
+    private static final Pattern INVALID_PATH_PATTERN = Pattern.compile("[/\\\\]|\\.\\.");
 
     private final EngineProperties engineProperties;
 
@@ -38,7 +41,7 @@ public class VolumeDirectoryService {
                 throw new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR, "Volume mount uuid missing after save");
             }
-            if (id.contains("/") || id.contains("\\") || id.contains("..")) {
+            if (INVALID_PATH_PATTERN.matcher(id).find()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
             }
 
@@ -73,7 +76,7 @@ public class VolumeDirectoryService {
                         "Skipping volume with null or blank UUID for server: {}", server.getUuid());
                 continue;
             }
-            if (id.contains("/") || id.contains("\\") || id.contains("..")) {
+            if (INVALID_PATH_PATTERN.matcher(id).find()) {
                 log.warn(
                         "Skipping volume with invalid UUID '{}' for server: {}",
                         id,
