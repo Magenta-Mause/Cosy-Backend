@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,8 +23,6 @@ import org.springframework.web.server.ResponseStatusException;
 @Slf4j
 public class VolumeDirectoryService {
 
-    private static final Pattern INVALID_PATH_PATTERN = Pattern.compile("[/\\\\]|\\.\\.");
-
     private final EngineProperties engineProperties;
 
     public void assertVolumeDirectoriesExist(GameServerEntity server) {
@@ -34,18 +32,18 @@ public class VolumeDirectoryService {
 
         Path base = volumeBaseDir();
 
+
         for (var vm : server.getVolumeMounts()) {
-            String id = vm.getUuid();
-            if (id == null || id.isBlank()) {
+            String volume_uuid = vm.getUuid();
+            if (volume_uuid == null || volume_uuid.isBlank()) {
                 // Should not happen if server is saved, but guard anyway.
                 throw new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR, "Volume mount uuid missing after save");
             }
-            if (INVALID_PATH_PATTERN.matcher(id).find()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
-            }
 
-            Path dir = base.resolve(id).normalize();
+            assertValidUuidOrThrow(volume_uuid, HttpStatus.BAD_REQUEST, "Invalid volume uuid");
+
+            Path dir = base.resolve(volume_uuid).normalize();
             if (!dir.startsWith(base)) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
             }
@@ -76,7 +74,8 @@ public class VolumeDirectoryService {
                         "Skipping volume with null or blank UUID for server: {}", server.getUuid());
                 continue;
             }
-            if (INVALID_PATH_PATTERN.matcher(id).find()) {
+
+            if (!isValidUuid(id)) {
                 log.warn(
                         "Skipping volume with invalid UUID '{}' for server: {}",
                         id,
@@ -104,6 +103,23 @@ public class VolumeDirectoryService {
                         server.getUuid(),
                         e);
             }
+        }
+    }
+
+    private static void assertValidUuidOrThrow(String value, HttpStatus status, String message) {
+        try {
+            UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(status, message);
+        }
+    }
+
+    private static boolean isValidUuid(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 
