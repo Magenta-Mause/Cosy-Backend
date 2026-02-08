@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.services.engine.docker.util;
 
 import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -9,6 +10,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -63,7 +65,8 @@ public class VolumeDirectoryService {
 
         Path base = volumeBaseDir();
 
-        for (var vm : server.getVolumeMounts()) {
+        List<VolumeMountConfiguration> volumeMounts = server.getVolumeMounts();
+        for (VolumeMountConfiguration vm : volumeMounts) {
             String id = vm.getUuid();
             if (id == null || id.isBlank()) {
                 log.warn(
