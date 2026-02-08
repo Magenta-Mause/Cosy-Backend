@@ -34,16 +34,16 @@ public class VolumeDirectoryService {
         Path base = volumeBaseDir();
 
         for (VolumeMountConfiguration vm : server.getVolumeMounts()) {
-            String volume_uuid = vm.getUuid();
-            if (volume_uuid == null || volume_uuid.isBlank()) {
+            String volumeUuid = vm.getUuid();
+            if (volumeUuid == null || volumeUuid.isBlank()) {
                 // Should not happen if server is saved, but guard anyway.
                 throw new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR, "Volume mount uuid missing after save");
             }
 
-            assertValidUuidOrThrow(volume_uuid, HttpStatus.BAD_REQUEST, "Invalid volume uuid");
+            assertValidUuidOrThrow(volumeUuid, HttpStatus.BAD_REQUEST, "Invalid volume uuid");
 
-            Path dir = base.resolve(volume_uuid).normalize();
+            Path dir = base.resolve(volumeUuid).normalize();
             if (!dir.startsWith(base)) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
             }
