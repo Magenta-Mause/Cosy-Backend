@@ -3,17 +3,21 @@ package com.magentamause.cosybackend.services.engine.docker.util;
 import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VolumeDirectoryService {
 
     private final EngineProperties engineProperties;
@@ -62,29 +66,48 @@ public class VolumeDirectoryService {
         for (var vm : server.getVolumeMounts()) {
             String id = vm.getUuid();
             if (id == null || id.isBlank()) {
+                log.warn(
+                        "Skipping volume with null or blank UUID for server: {}", server.getUuid());
+                continue;
+            }
+            if (id.contains("/") || id.contains("\\") || id.contains("..")) {
+                log.warn(
+                        "Skipping volume with invalid UUID '{}' for server: {}",
+                        id,
+                        server.getUuid());
                 continue;
             }
 
             Path dir = base.resolve(id).normalize();
             if (!dir.startsWith(base)) {
+                log.warn(
+                        "Skipping volume with invalid path '{}' for server: {}",
+                        dir,
+                        server.getUuid());
                 continue;
             }
 
             try {
-                if (Files.exists(dir)) {
+                if (Files.exists(dir, LinkOption.NOFOLLOW_LINKS)) {
                     deleteDirectoryRecursive(dir);
                 }
             } catch (IOException e) {
-                throw new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Failed to delete volume directory: " + dir,
+                log.error(
+                        "Failed to delete volume directory '{}' for server: {}",
+                        dir,
+                        server.getUuid(),
                         e);
             }
         }
     }
 
     private void deleteDirectoryRecursive(Path path) throws IOException {
-        if (Files.isDirectory(path)) {
+        if (Files.isSymbolicLink(path)) {
+            Files.delete(path);
+            return;
+        }
+
+        if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
             try (var stream = Files.walk(path)) {
                 stream.sorted(Comparator.reverseOrder())
                         .forEach(
@@ -92,9 +115,11 @@ public class VolumeDirectoryService {
                                     try {
                                         Files.delete(p);
                                     } catch (IOException e) {
-                                        throw new RuntimeException("Failed to delete: " + p, e);
+                                        throw new UncheckedIOException(e);
                                     }
                                 });
+            } catch (UncheckedIOException e) {
+                throw e.getCause();
             }
         } else {
             Files.delete(path);
