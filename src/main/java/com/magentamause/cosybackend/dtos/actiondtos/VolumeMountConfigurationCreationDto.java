@@ -14,10 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class VolumeMountConfigurationCreationDto {
-    // kept for legacy purposes.
-    // TODO: remove when host path is fully removed from
-    // frontend
-    @NotBlank private String hostPath;
-
     @NotBlank private String containerPath;
+
+    private String uuid;
 }

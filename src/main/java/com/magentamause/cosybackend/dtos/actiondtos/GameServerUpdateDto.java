@@ -35,7 +35,7 @@ public class GameServerUpdateDto {
     private List<EnvironmentVariableConfiguration> environmentVariables;
 
     @UniqueElementsBy(
-            fieldNames = {"hostPath", "containerPath"},
+            fieldNames = {"containerPath"},
             message = "duplicate volume mounts")
     @Valid
     private List<VolumeMountConfigurationCreationDto> volumeMounts;
