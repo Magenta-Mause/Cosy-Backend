@@ -6,6 +6,7 @@ import com.magentamause.cosybackend.dtos.actiondtos.SendCommandDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.utility.RCONConfiguration;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
@@ -115,5 +116,14 @@ public class GameServerRootController {
             @PathVariable @ResourceId String uuid, @RequestBody SendCommandDto command) {
         gameServerService.sendCommand(uuid, command.getCommand());
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("{uuid}/layout/metric")
+    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER)
+    public ResponseEntity<Void> updateMetricLayout(
+            @PathVariable @ResourceId String uuid,
+            @Valid @RequestBody List<MetricLayout> metricLayout) {
+        gameServerService.updateMetricLayout(uuid, metricLayout);
+        return ResponseEntity.ok().build();
     }
 }
