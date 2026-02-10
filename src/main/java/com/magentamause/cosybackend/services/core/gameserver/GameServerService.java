@@ -185,6 +185,7 @@ public class GameServerService {
             log.debug("Server '{}' was already stopped when attempting to delete", uuid, e);
         }
         gameServerRepository.deleteById(uuid);
+        volumeDirectoryService.deleteVolumeDirectories(gameServer);
     }
 
     public GameServerEntity updateGameServerConfiguration(
