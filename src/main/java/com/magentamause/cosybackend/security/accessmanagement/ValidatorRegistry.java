@@ -10,8 +10,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 /**
- * Registry that maps operations to their validator methods.
- * Scans all Spring beans on first access for methods annotated with {@link Validates}.
+ * Registry that maps operations to their validator methods. Scans all Spring beans on first access
+ * for methods annotated with {@link Validates}.
  */
 @Slf4j
 @Component
@@ -50,16 +50,23 @@ public class ValidatorRegistry {
     private void registerValidator(Operation operation, Method method, Object bean) {
         if (validators.containsKey(operation)) {
             throw new IllegalStateException(
-                    "Duplicate validator for operation: " + operation
-                            + ". Found in both " + validators.get(operation).method().getName()
-                            + " and " + method.getName());
+                    "Duplicate validator for operation: "
+                            + operation
+                            + ". Found in both "
+                            + validators.get(operation).method().getName()
+                            + " and "
+                            + method.getName());
         }
 
         validateMethodSignature(method);
         method.setAccessible(true);
 
         validators.put(operation, new ValidatorEntry(bean, method));
-        log.debug("Registered validator for {}: {}.{}", operation, bean.getClass().getSimpleName(), method.getName());
+        log.debug(
+                "Registered validator for {}: {}.{}",
+                operation,
+                bean.getClass().getSimpleName(),
+                method.getName());
     }
 
     private void validateMethodSignature(Method method) {
@@ -69,7 +76,8 @@ public class ValidatorRegistry {
                 || !Object.class.isAssignableFrom(params[1])
                 || !UserEntity.class.isAssignableFrom(params[2])) {
             throw new IllegalStateException(
-                    "Validator method " + method.getName()
+                    "Validator method "
+                            + method.getName()
                             + " must have signature (ResourceResolver, Object, UserEntity) -> boolean");
         }
         if (method.getReturnType() != boolean.class && method.getReturnType() != Boolean.class) {

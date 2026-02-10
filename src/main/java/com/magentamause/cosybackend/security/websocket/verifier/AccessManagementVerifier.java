@@ -40,7 +40,9 @@ public class AccessManagementVerifier implements WebsocketEndpointVerifier {
         Matcher matcher = pathPattern.matcher(url);
         if (matcher.matches()) {
             final String serverId = matcher.group(1);
-            return validatorRegistrySupplier.get().getValidator(operation)
+            return validatorRegistrySupplier
+                    .get()
+                    .getValidator(operation)
                     .invoke(resourceResolverSupplier.get(), serverId, user);
         }
         return false;

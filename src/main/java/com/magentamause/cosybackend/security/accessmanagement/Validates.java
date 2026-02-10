@@ -8,13 +8,14 @@ import java.lang.annotation.Target;
 /**
  * Marks a method as the validator for a specific operation.
  *
- * <p>The annotated method must have the signature:
- * {@code boolean methodName(ResourceResolver, Object referenceId, UserEntity user)}
+ * <p>The annotated method must have the signature: {@code boolean methodName(ResourceResolver,
+ * Object referenceId, UserEntity user)}
  *
- * <p>Each operation must have exactly one validator. Duplicate validators for the same
- * operation will cause a startup failure.
+ * <p>Each operation must have exactly one validator. Duplicate validators for the same operation
+ * will cause a startup failure.
  *
  * <p>Example:
+ *
  * <pre>{@code
  * @Component
  * public class UserPolicy {

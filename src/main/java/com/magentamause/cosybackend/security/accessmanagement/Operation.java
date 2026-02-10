@@ -1,8 +1,8 @@
 package com.magentamause.cosybackend.security.accessmanagement;
 
 /**
- * Defines all authorization operations.
- * Each operation represents a specific action that can be performed on a resource.
+ * Defines all authorization operations. Each operation represents a specific action that can be
+ * performed on a resource.
  */
 public enum Operation {
     // User operations

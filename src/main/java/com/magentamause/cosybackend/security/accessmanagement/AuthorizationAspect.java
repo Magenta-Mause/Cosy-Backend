@@ -2,9 +2,7 @@ package com.magentamause.cosybackend.security.accessmanagement;
 
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
-
 import java.lang.annotation.Annotation;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;

@@ -1,12 +1,12 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
+import static com.magentamause.cosybackend.security.accessmanagement.policies.UtilPolicies.IS_GAMESERVER_OWNER;
+
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.Validates;
 import org.springframework.stereotype.Component;
-
-import static com.magentamause.cosybackend.security.accessmanagement.policies.UtilPolicies.IS_GAMESERVER_OWNER;
 
 @Component
 public class GameServerPolicy {
@@ -60,5 +60,4 @@ public class GameServerPolicy {
             ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
         return IS_GAMESERVER_OWNER(resourceResolver, referenceId, user);
     }
-
 }
