@@ -8,9 +8,8 @@ import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.utility.RCONConfiguration;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
+import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
@@ -31,7 +30,7 @@ public class GameServerRootController {
     private final SecurityContextService securityContextService;
 
     @GetMapping
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
+    @NeedsValidation(Operation.GAME_SERVER_GET_ALL)
     public ResponseEntity<List<GameServerDto>> getAllGameServers() {
         List<GameServerDto> dtos =
                 gameServerService.getAllGameServers().stream()
@@ -41,21 +40,21 @@ public class GameServerRootController {
     }
 
     @GetMapping("/{uuid}")
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
+    @NeedsValidation(Operation.GAME_SERVER_GET)
     public ResponseEntity<GameServerDto> getGameServerById(@PathVariable @ResourceId String uuid) {
         GameServerEntity entity = gameServerService.getGameServerById(uuid);
         return ResponseEntity.ok(entity.toDto());
     }
 
     @DeleteMapping("/{uuid}")
-    @RequireAccess(action = Action.DELETE, resource = Resource.GAME_SERVER)
+    @NeedsValidation(Operation.GAME_SERVER_DELETE)
     public ResponseEntity<Void> deleteGameServerById(@PathVariable @ResourceId String uuid) {
         gameServerService.deleteGameServerById(uuid);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping
-    @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
+    @NeedsValidation(Operation.GAME_SERVER_CREATE)
     public ResponseEntity<GameServerDto> createGameServer(
             @Valid @RequestBody GameServerCreationDto gameServer) {
         log.info("Creating game server {}", gameServer);
@@ -66,7 +65,7 @@ public class GameServerRootController {
     }
 
     @PutMapping("/{uuid}")
-    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER)
+    @NeedsValidation(Operation.GAME_SERVER_UPDATE)
     public ResponseEntity<GameServerDto> updateGameServer(
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody GameServerUpdateDto updateDto) {
@@ -78,14 +77,14 @@ public class GameServerRootController {
     }
 
     @GetMapping("/{uuid}/status")
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
+    @NeedsValidation(Operation.GAME_SERVER_GET)
     public ResponseEntity<GameServerDto.GameServerStatus> getServiceInfo(
-            @PathVariable String uuid) {
+            @PathVariable @ResourceId String uuid) {
         return ResponseEntity.ok(gameServerService.getStatus(uuid));
     }
 
     @PostMapping(value = "/{uuid}/start")
-    @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
+    @NeedsValidation(Operation.GAME_SERVER_START_STOP)
     public ResponseEntity<Void> startService(@PathVariable @ResourceId String uuid) {
         gameServerService.startServer(uuid, securityContextService.getUser());
 
@@ -93,14 +92,14 @@ public class GameServerRootController {
     }
 
     @PostMapping("/{uuid}/stop")
-    @RequireAccess(action = Action.START_STOP, resource = Resource.GAME_SERVER)
+    @NeedsValidation(Operation.GAME_SERVER_START_STOP)
     public ResponseEntity<Void> stopService(@PathVariable @ResourceId String uuid) {
         gameServerService.stopServer(uuid);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{uuid}/rcon-configuration")
-    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER)
+    @NeedsValidation(Operation.GAME_SERVER_UPDATE)
     public ResponseEntity<GameServerDto> updateRconConfiguration(
             @PathVariable @ResourceId String uuid,
             @RequestBody @Valid RCONConfiguration updateDto) {
@@ -109,9 +108,7 @@ public class GameServerRootController {
     }
 
     @PostMapping("/{uuid}/send-command")
-    @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
-    // TODO: Change this as soon as we refactor access validation logic to something more specific
-    // like "send command"
+    @NeedsValidation(Operation.GAME_SERVER_SEND_COMMAND)
     public ResponseEntity<Void> sendCommand(
             @PathVariable @ResourceId String uuid, @RequestBody SendCommandDto command) {
         gameServerService.sendCommand(uuid, command.getCommand());
@@ -119,7 +116,7 @@ public class GameServerRootController {
     }
 
     @PutMapping("{uuid}/layout/metric")
-    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER)
+    @NeedsValidation(Operation.GAME_SERVER_UPDATE)
     public ResponseEntity<Void> updateMetricLayout(
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody List<MetricLayout> metricLayout) {

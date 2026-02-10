@@ -1,59 +1,64 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
-import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.repositories.GameServerRepository;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
+import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
+import com.magentamause.cosybackend.security.accessmanagement.Validates;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
-@Slf4j
+import static com.magentamause.cosybackend.security.accessmanagement.policies.UtilPolicies.IS_GAMESERVER_OWNER;
+
 @Component
-@RequiredArgsConstructor
-public class GameServerPolicy implements AccessPolicy {
+public class GameServerPolicy {
 
-    private final GameServerRepository gameServerRepository;
-
-    @Override
-    public Resource resource() {
-        return Resource.GAME_SERVER;
+    @Validates(Operation.GAME_SERVER_CREATE)
+    public boolean createGameServer(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        return true;
     }
 
-    @Override
-    public boolean can(UserEntity user, Action action, Object referenceId) {
-        if (user.getRole().isAdmin()) {
-            return true;
-        }
-
-        if (action == Action.CREATE) {
-            return true;
-        }
-
-        if (!(referenceId instanceof String)) {
-            return action == Action.READ;
-        }
-
-        GameServerEntity gameServerEntity =
-                gameServerRepository
-                        .findById((String) referenceId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Game server with uuid "
-                                                        + referenceId
-                                                        + " not found"));
-
-        return switch (action) {
-            case READ, DELETE, UPDATE, START_STOP -> gameServerEntity
-                    .getOwner()
-                    .getUuid()
-                    .equals(user.getUuid());
-            default -> throw new IllegalStateException("Unexpected value: " + action);
-        };
+    @Validates(Operation.GAME_SERVER_DELETE)
+    public boolean deleteGameServer(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        return IS_GAMESERVER_OWNER(resourceResolver, referenceId, user);
     }
+
+    @Validates(Operation.GAME_SERVER_START_STOP)
+    public boolean startStopGameServer(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        return IS_GAMESERVER_OWNER(resourceResolver, referenceId, user);
+    }
+
+    @Validates(Operation.GAME_SERVER_UPDATE)
+    public boolean updateGameServer(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        return IS_GAMESERVER_OWNER(resourceResolver, referenceId, user);
+    }
+
+    @Validates(Operation.GAME_SERVER_GET)
+    public boolean getGameServer(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        // TODO: As soon as public dashboard configuration is being done, add check here:
+        // gameServer.publicDashboardConfiguration.enabled = true -> true
+        return IS_GAMESERVER_OWNER(resourceResolver, referenceId, user);
+    }
+
+    @Validates(Operation.GAME_SERVER_GET_ALL)
+    public boolean getAllGameServers(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        return false;
+    }
+
+    @Validates(Operation.GAME_SERVER_SEND_COMMAND)
+    public boolean sendCommandToGameServer(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        return IS_GAMESERVER_OWNER(resourceResolver, referenceId, user);
+    }
+
+    @Validates(Operation.GAME_SERVER_GET_LOGS)
+    public boolean getGameServerLogs(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        return IS_GAMESERVER_OWNER(resourceResolver, referenceId, user);
+    }
+
 }

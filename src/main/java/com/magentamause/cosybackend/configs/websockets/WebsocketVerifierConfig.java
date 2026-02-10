@@ -1,11 +1,13 @@
 package com.magentamause.cosybackend.configs.websockets;
 
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
+import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
+import com.magentamause.cosybackend.security.accessmanagement.ValidatorRegistry;
 import com.magentamause.cosybackend.security.websocket.WebsocketVerifier;
 import com.magentamause.cosybackend.security.websocket.verifier.AccessManagementVerifier;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.user.UserEntityService;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,31 +16,38 @@ public class WebsocketVerifierConfig {
 
     @Bean
     public WebsocketVerifier websocketVerifier(
-            SecurityContextService securityContextService, UserEntityService userEntityService) {
+            SecurityContextService securityContextService,
+            UserEntityService userEntityService,
+            ObjectProvider<ValidatorRegistry> validatorRegistryProvider,
+            ObjectProvider<ResourceResolver> resourceResolverProvider) {
         return new WebsocketVerifier(securityContextService, userEntityService)
                 .addVerifier(
                         WebSocketDestinations.Topics.GAME_SERVER_LOGS_CREATION,
                         new AccessManagementVerifier(
                                 WebSocketDestinations.Topics.GAME_SERVER_LOGS_CREATION,
-                                Action.READ,
-                                Resource.GAME_SERVER_LOG))
+                                Operation.GAME_SERVER_LOG_READ,
+                                validatorRegistryProvider::getObject,
+                                resourceResolverProvider::getObject))
                 .addVerifier(
                         WebSocketDestinations.Topics.GAME_SERVER_STATUS,
                         new AccessManagementVerifier(
                                 WebSocketDestinations.Topics.GAME_SERVER_STATUS,
-                                Action.READ,
-                                Resource.GAME_SERVER))
+                                Operation.GAME_SERVER_GET,
+                                validatorRegistryProvider::getObject,
+                                resourceResolverProvider::getObject))
                 .addVerifier(
                         WebSocketDestinations.Topics.GAME_SERVER_DOCKER_PROGRESS,
                         new AccessManagementVerifier(
                                 WebSocketDestinations.Topics.GAME_SERVER_DOCKER_PROGRESS,
-                                Action.READ,
-                                Resource.GAME_SERVER))
+                                Operation.GAME_SERVER_GET,
+                                validatorRegistryProvider::getObject,
+                                resourceResolverProvider::getObject))
                 .addVerifier(
                         WebSocketDestinations.Topics.GAME_SERVER_METRICS,
                         new AccessManagementVerifier(
                                 WebSocketDestinations.Topics.GAME_SERVER_METRICS,
-                                Action.READ,
-                                Resource.GAME_SERVER));
+                                Operation.GAME_SERVER_METRIC_READ,
+                                validatorRegistryProvider::getObject,
+                                resourceResolverProvider::getObject));
     }
 }

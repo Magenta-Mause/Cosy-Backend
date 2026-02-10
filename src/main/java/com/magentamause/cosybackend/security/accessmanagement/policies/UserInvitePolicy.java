@@ -1,20 +1,31 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
+import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
+import com.magentamause.cosybackend.security.accessmanagement.Validates;
 import org.springframework.stereotype.Component;
 
 @Component
-public class UserInvitePolicy implements AccessPolicy {
+public class UserInvitePolicy {
 
-    @Override
-    public Resource resource() {
-        return Resource.USER_INVITE;
+    @Validates(Operation.USER_INVITE_CREATE)
+    public boolean canCreateInvite(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        // every non-admin should not be able to create an invite - admins have permission to
+        // override all policies anyways so no need to check here
+        return false;
     }
 
-    @Override
-    public boolean can(UserEntity user, Action action, Object referenceId) {
-        return user.getRole().isAdmin();
+    @Validates(Operation.USER_INVITE_READ)
+    public boolean canReadInvite(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        return false;
+    }
+
+    @Validates(Operation.USER_INVITE_DELETE)
+    public boolean canDeleteInvite(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        return false;
     }
 }

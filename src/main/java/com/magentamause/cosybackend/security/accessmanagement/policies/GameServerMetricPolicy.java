@@ -1,45 +1,28 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
-import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.repositories.GameServerRepository;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
+import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
+import com.magentamause.cosybackend.security.accessmanagement.Validates;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
+
+import static com.magentamause.cosybackend.security.accessmanagement.policies.UtilPolicies.IS_GAMESERVER_OWNER;
 
 @Component
 @RequiredArgsConstructor
-public class GameServerMetricPolicy implements AccessPolicy {
-    private final GameServerRepository gameServerRepository;
+public class GameServerMetricPolicy {
 
-    @Override
-    public Resource resource() {
-        return Resource.GAME_SERVER_METRIC;
-    }
-
-    @Override
-    public boolean can(UserEntity user, Action action, Object referenceId) {
-        if (user.getRole().isAdmin()) {
-            return true;
-        }
-
-        GameServerEntity gameServerEntity =
-                gameServerRepository
-                        .findById((String) referenceId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Game server with uuid "
-                                                        + referenceId
-                                                        + " not found"));
-
-        if (action == Action.READ) {
-            return gameServerEntity.getOwner().getUuid().equals(user.getUuid());
-        }
-        throw new IllegalStateException("Unexpected value: " + action);
+    @Validates(Operation.GAME_SERVER_METRIC_READ)
+    public boolean getGameServerMetrics(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        // TODO: For metrics we should not just expose every metric but check which metrics are
+        // TODO: configured to be exposed publicly and add a check here for the game server and for the
+        // TODO: metric
+        // TODO: Hint for implementation: change the @ResourceId annotation to allow for more then
+        // TODO: one parameter of a methode to be annotated with @ResourceId, then the ReferenceId passed
+        // TODO: into these policy methods should be an array of x entries where each entry is one
+        // TODO: ResourceId passed into the method
+        return IS_GAMESERVER_OWNER(resourceResolver, referenceId, user);
     }
 }

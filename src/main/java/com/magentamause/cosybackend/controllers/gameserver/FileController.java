@@ -1,12 +1,10 @@
 package com.magentamause.cosybackend.controllers.gameserver;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerFileSystemDto;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
+import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerMountService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -34,7 +32,7 @@ public class FileController {
     private final GameServerMountService gameServerMountService;
 
     @GetMapping("/")
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_FILES)
+    @NeedsValidation(Operation.GAME_SERVER_FILES_READ)
     public ResponseEntity<GameServerFileSystemDto> getFileSystemForVolume(
             @PathVariable @ResourceId String uuid,
             @RequestParam(name = "path", required = false, defaultValue = "") String path,
@@ -50,10 +48,10 @@ public class FileController {
             value = "/file",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_FILES)
+    @NeedsValidation(Operation.GAME_SERVER_FILES_READ)
     // We have to specify this so orval generates reasonable typescript types for
     // this response
-    @Operation(
+    @io.swagger.v3.oas.annotations.Operation(
             summary = "Read a file from a bind mount volume",
             responses = {
                 @ApiResponse(
@@ -78,8 +76,8 @@ public class FileController {
             value = "/upload",
             method = RequestMethod.POST,
             consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER_FILES)
-    @Operation(
+    @NeedsValidation(Operation.GAME_SERVER_FILES_UPDATE)
+    @io.swagger.v3.oas.annotations.Operation(
             summary = "Upload a file to a bind mount volume",
             requestBody =
                     @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -106,7 +104,7 @@ public class FileController {
     }
 
     @PostMapping("/mkdir")
-    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER_FILES)
+    @NeedsValidation(Operation.GAME_SERVER_FILES_UPDATE)
     public ResponseEntity<Void> createDirectoryInVolume(
             @PathVariable @ResourceId String uuid, @RequestParam("path") @NotBlank String path) {
         gameServerMountService.createDirectoryInBindMountVolume(uuid, path);
@@ -114,7 +112,7 @@ public class FileController {
     }
 
     @PostMapping("/rename")
-    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER_FILES)
+    @NeedsValidation(Operation.GAME_SERVER_FILES_UPDATE)
     public ResponseEntity<Void> renameInVolume(
             @PathVariable @ResourceId String uuid,
             @RequestParam("oldPath") @NotBlank String oldPath,
@@ -124,7 +122,7 @@ public class FileController {
     }
 
     @PostMapping("/delete")
-    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER_FILES)
+    @NeedsValidation(Operation.GAME_SERVER_FILES_UPDATE)
     public ResponseEntity<Void> deleteInVolume(
             @PathVariable @ResourceId String uuid, @RequestParam("path") @NotBlank String path) {
         gameServerMountService.deleteInBindMountVolume(uuid, path);

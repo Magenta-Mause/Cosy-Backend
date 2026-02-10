@@ -1,51 +1,26 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
-import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.repositories.GameServerRepository;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
-import lombok.RequiredArgsConstructor;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
+import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
+import com.magentamause.cosybackend.security.accessmanagement.Validates;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
+
+import static com.magentamause.cosybackend.security.accessmanagement.policies.UtilPolicies.IS_GAMESERVER_OWNER;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class GameServerFilesPolicy implements AccessPolicy {
+public class GameServerFilesPolicy {
 
-    private final GameServerRepository gameServerRepository;
-
-    @Override
-    public Resource resource() {
-        return Resource.GAME_SERVER_FILES;
+    @Validates(Operation.GAME_SERVER_FILES_READ)
+    public boolean getGameServerFiles(ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        return IS_GAMESERVER_OWNER(resourceResolver, referenceId, user);
     }
 
-    @Override
-    public boolean can(UserEntity user, Action action, Object referenceId) {
-        if (user.getRole().isAdmin()) {
-            return true;
-        }
-
-        GameServerEntity gameServerEntity =
-                gameServerRepository
-                        .findById((String) referenceId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Game server with uuid "
-                                                        + referenceId
-                                                        + " not found"));
-
-        return switch (action) {
-            case READ, DELETE, UPDATE -> gameServerEntity
-                    .getOwner()
-                    .getUuid()
-                    .equals(user.getUuid());
-            default -> throw new IllegalStateException("Unexpected value: " + action);
-        };
+    @Validates(Operation.GAME_SERVER_FILES_UPDATE)
+    public boolean changeFilesFromGameServer(ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+        return IS_GAMESERVER_OWNER(resourceResolver, referenceId, user);
     }
+
 }

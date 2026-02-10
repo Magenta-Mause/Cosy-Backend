@@ -1,9 +1,8 @@
 package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
+import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.core.metrics.MetricsQueryService;
 import java.time.Duration;
@@ -24,7 +23,7 @@ public class MetricsController {
     private final MetricsQueryService queryService;
 
     @GetMapping("/{gameServerUuid}")
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_METRIC)
+    @NeedsValidation(Operation.GAME_SERVER_METRIC_READ)
     public ResponseEntity<List<MetricPointDto>> getMetrics(
             @ResourceId @PathVariable String gameServerUuid,
             @RequestParam(required = false) Instant end,

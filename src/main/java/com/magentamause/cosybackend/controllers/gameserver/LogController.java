@@ -1,9 +1,8 @@
 package com.magentamause.cosybackend.controllers.gameserver;
 
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
+import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import jakarta.validation.constraints.Max;
@@ -22,7 +21,7 @@ public class LogController {
     private final GameServerLogService gameServerLogService;
 
     @GetMapping
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER_LOG)
+    @NeedsValidation(Operation.GAME_SERVER_LOG_READ)
     public ResponseEntity<List<GameServerLogMessageEntity>> getLogs(
             @ResourceId @PathVariable String gameServerUuid,
             @RequestParam(defaultValue = "500", required = false) @Min(1) @Max(2000) int limit,

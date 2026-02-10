@@ -139,13 +139,16 @@ public class GameServerService {
     }
 
     public GameServerEntity getGameServerById(String uuid) {
-        return gameServerRepository
-                .findById(uuid)
+        return getGameServerOptionalById(uuid)
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(
                                         HttpStatus.NOT_FOUND,
                                         "Game server with uuid " + uuid + " not found"));
+    }
+
+    public Optional<GameServerEntity> getGameServerOptionalById(String uuid) {
+        return gameServerRepository.findById(uuid);
     }
 
     public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto gameServerDto) {
