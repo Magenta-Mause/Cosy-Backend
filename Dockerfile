@@ -12,6 +12,9 @@ RUN mvn clean package -DskipTests -B
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+# Install libgcc required by Netty QUIC native library
+RUN apk add --no-cache libgcc
+
 # Copy the fat jar (Spring Boot creates a runnable jar under target/)
 COPY --from=builder /app/target/*.jar app.jar
 RUN chown -R 1000:1000 /app
