@@ -1,7 +1,5 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
-import static com.magentamause.cosybackend.security.accessmanagement.policies.UtilPolicies.IS_GAMESERVER_OWNER;
-
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
@@ -26,6 +24,10 @@ public class GameServerMetricPolicy {
         // TODO: passed
         // TODO: into these policy methods should be an array of x entries where each entry is one
         // TODO: ResourceId passed into the method
-        return UtilPolicies.IS_GAMESERVER_OWNER_OR_HAS_PERMISSION(resourceResolver, referenceId, user, GameServerAccessPermission.READ_SERVER_METRICS);
+        return UtilPolicies.IS_GAMESERVER_OWNER_OR_HAS_PERMISSION(
+                resourceResolver,
+                referenceId,
+                user,
+                GameServerAccessPermission.READ_SERVER_METRICS);
     }
 }

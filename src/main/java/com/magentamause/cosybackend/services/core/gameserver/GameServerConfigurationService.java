@@ -1,6 +1,5 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
-import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupUpdateDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
@@ -10,12 +9,11 @@ import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.user.UserEntityService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +45,8 @@ public class GameServerConfigurationService {
         gameServerRepository.save(gameServer);
     }
 
-    public GameServerAccessGroup createAccessGroup(String gameServerUuid, AccessGroupCreationDto accessGroupCreationDto) {
+    public GameServerAccessGroup createAccessGroup(
+            String gameServerUuid, AccessGroupCreationDto accessGroupCreationDto) {
         GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
         GameServerAccessGroup accessGroup = new GameServerAccessGroup();
         accessGroup.setGameServer(gameServer);
@@ -56,18 +55,24 @@ public class GameServerConfigurationService {
         return gameServerAccessGroupRepository.save(accessGroup);
     }
 
-    public List<GameServerAccessGroup> updateAccessGroup(String gameServerUuid, String accessGroupUuid, AccessGroupUpdateDto updateDto) {
+    public List<GameServerAccessGroup> updateAccessGroup(
+            String gameServerUuid, String accessGroupUuid, AccessGroupUpdateDto updateDto) {
         GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
         List<GameServerAccessGroup> accessGroups = gameServer.getAccessGroups();
         GameServerAccessGroup accessGroupToUpdate = getAccessGroup(accessGroupUuid);
-        if (
-                accessGroupToUpdate.getGameServer() == null
-                        || !accessGroupToUpdate.getGameServer().getUuid().equals(gameServerUuid)
-                        || accessGroups.stream().noneMatch(g -> g.getUuid().equals(accessGroupUuid))
-        ) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Access group '" + accessGroupUuid + "' is not assigned to server '" + gameServerUuid + "'");
+        if (accessGroupToUpdate.getGameServer() == null
+                || !accessGroupToUpdate.getGameServer().getUuid().equals(gameServerUuid)
+                || accessGroups.stream().noneMatch(g -> g.getUuid().equals(accessGroupUuid))) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Access group '"
+                            + accessGroupUuid
+                            + "' is not assigned to server '"
+                            + gameServerUuid
+                            + "'");
         }
-        GameServerAccessGroup updatedAccessGroup = updateDto.applyOnEntity(accessGroupToUpdate, userEntityService::getUserByUsername);
+        GameServerAccessGroup updatedAccessGroup =
+                updateDto.applyOnEntity(accessGroupToUpdate, userEntityService::getUserByUsername);
         gameServerAccessGroupRepository.save(updatedAccessGroup);
         return gameServerService.getOrThrow(gameServerUuid).getAccessGroups();
     }
@@ -75,14 +80,27 @@ public class GameServerConfigurationService {
     public void deleteAccessGroup(String gameServerUuid, String accessGroupUuid) {
         GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
         GameServerAccessGroup accessGroupToDelete = getAccessGroup(accessGroupUuid);
-        if (accessGroupToDelete.getGameServer() == null || !accessGroupToDelete.getGameServer().getUuid().equals(gameServerUuid)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Access group '" + accessGroupUuid + "' is not assigned to server '" + gameServerUuid + "'");
+        if (accessGroupToDelete.getGameServer() == null
+                || !accessGroupToDelete.getGameServer().getUuid().equals(gameServerUuid)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Access group '"
+                            + accessGroupUuid
+                            + "' is not assigned to server '"
+                            + gameServerUuid
+                            + "'");
         }
         gameServer.getAccessGroups().remove(accessGroupToDelete);
         gameServerRepository.save(gameServer);
     }
 
     private GameServerAccessGroup getAccessGroup(String accessGroupUuid) {
-        return gameServerAccessGroupRepository.findById(accessGroupUuid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Access group '" + accessGroupUuid + "' not found"));
+        return gameServerAccessGroupRepository
+                .findById(accessGroupUuid)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Access group '" + accessGroupUuid + "' not found"));
     }
 }

@@ -16,7 +16,6 @@ public enum GameServerAccessPermission {
     CHANGE_PERMISSIONS_SETTINGS,
     CHANGE_RCON_SETTINGS,
 
-
     // Server Actions
     START_STOP_SERVER,
     SEND_COMMANDS,

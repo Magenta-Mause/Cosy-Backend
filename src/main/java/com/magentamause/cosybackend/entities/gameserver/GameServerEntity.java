@@ -77,9 +77,12 @@ public class GameServerEntity {
     @JoinColumn(name = "metric_layout_uuid")
     private List<MetricLayout> metricLayout;
 
-    @OneToMany(mappedBy = "gameServer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(
+            mappedBy = "gameServer",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.EAGER)
     private List<GameServerAccessGroup> accessGroups;
-
 
     public GameServerDto toDto() {
         return GameServerDto.builder()

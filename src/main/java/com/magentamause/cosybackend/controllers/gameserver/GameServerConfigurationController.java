@@ -11,13 +11,11 @@ import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerConfigurationService;
-import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,7 +37,8 @@ public class GameServerConfigurationController {
     public ResponseEntity<GameServerDto> updateRconConfiguration(
             @PathVariable @ResourceId String uuid,
             @RequestBody @Valid RCONConfiguration updateDto) {
-        GameServerEntity gameServer = gameServerConfigurationService.updateRconConfig(uuid, updateDto);
+        GameServerEntity gameServer =
+                gameServerConfigurationService.updateRconConfig(uuid, updateDto);
         return ResponseEntity.ok(gameServer.toDto());
     }
 
@@ -47,17 +46,16 @@ public class GameServerConfigurationController {
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
     public ResponseEntity<GameServerAccessGroup> createGameServerAccessGroup(
             @PathVariable("game_server_uuid") @ResourceId String gameServerUuid,
-            @RequestBody AccessGroupCreationDto creationDto
-    ) {
-        return ResponseEntity.ok(gameServerConfigurationService.createAccessGroup(gameServerUuid, creationDto));
+            @RequestBody AccessGroupCreationDto creationDto) {
+        return ResponseEntity.ok(
+                gameServerConfigurationService.createAccessGroup(gameServerUuid, creationDto));
     }
 
     @DeleteMapping("/{game_server_uuid}/access-groups/{access_group_uuid}")
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
     public ResponseEntity<Void> deleteGameServerAccessGroup(
             @PathVariable("game_server_uuid") @ResourceId String gameServerUuid,
-            @PathVariable("access_group_uuid") String accessGroupUuid
-    ) {
+            @PathVariable("access_group_uuid") String accessGroupUuid) {
         gameServerConfigurationService.deleteAccessGroup(gameServerUuid, accessGroupUuid);
         return ResponseEntity.noContent().build();
     }
@@ -67,8 +65,9 @@ public class GameServerConfigurationController {
     public ResponseEntity<List<GameServerAccessGroup>> updateGameServerAccessGroups(
             @PathVariable("game_server_uuid") @ResourceId String gameServerUuid,
             @PathVariable("access_group_uuid") String accessGroupUuid,
-            @RequestBody AccessGroupUpdateDto updateDto
-    ) {
-        return ResponseEntity.ok(gameServerConfigurationService.updateAccessGroup(gameServerUuid, accessGroupUuid, updateDto));
+            @RequestBody AccessGroupUpdateDto updateDto) {
+        return ResponseEntity.ok(
+                gameServerConfigurationService.updateAccessGroup(
+                        gameServerUuid, accessGroupUuid, updateDto));
     }
 }

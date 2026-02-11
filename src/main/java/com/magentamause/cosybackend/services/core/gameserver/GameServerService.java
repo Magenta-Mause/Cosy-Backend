@@ -5,10 +5,10 @@ import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerUpdateD
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameEntity;
-import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
+import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
 import com.magentamause.cosybackend.exceptions.RconException;
@@ -26,7 +26,6 @@ import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -352,7 +350,6 @@ public class GameServerService {
         return gameServerRepository.findByLastStartedBy_Uuid(userUuid);
     }
 
-
     public void sendCommand(String uuid, String command) {
         GameServerEntity gameServer = getOrThrow(uuid);
         gameServerLogService.publishAndSaveLog(
@@ -396,5 +393,4 @@ public class GameServerService {
                     false);
         }
     }
-
 }

@@ -1,7 +1,5 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
-import static com.magentamause.cosybackend.security.accessmanagement.policies.UtilPolicies.IS_GAMESERVER_OWNER;
-
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
@@ -17,6 +15,7 @@ public class GameServerLogPolicy {
     @Validates(Operation.GAME_SERVER_LOG_READ)
     public boolean readGameServerLogs(
             ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
-        return UtilPolicies.IS_GAMESERVER_OWNER_OR_HAS_PERMISSION(resourceResolver, referenceId, user, GameServerAccessPermission.READ_SERVER_LOGS);
+        return UtilPolicies.IS_GAMESERVER_OWNER_OR_HAS_PERMISSION(
+                resourceResolver, referenceId, user, GameServerAccessPermission.READ_SERVER_LOGS);
     }
 }

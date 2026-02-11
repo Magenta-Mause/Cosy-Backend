@@ -4,8 +4,8 @@ import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreatio
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.SendCommandDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
-import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
@@ -103,5 +103,4 @@ public class GameServerRootController {
         gameServerService.sendCommand(uuid, command.getCommand());
         return ResponseEntity.noContent().build();
     }
-
 }

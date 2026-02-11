@@ -1,8 +1,8 @@
 package com.magentamause.cosybackend.services.engine.docker.util;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
-import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import java.util.List;
