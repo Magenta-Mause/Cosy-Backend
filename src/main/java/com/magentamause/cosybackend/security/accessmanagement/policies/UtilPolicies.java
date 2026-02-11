@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
-import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import java.util.Optional;

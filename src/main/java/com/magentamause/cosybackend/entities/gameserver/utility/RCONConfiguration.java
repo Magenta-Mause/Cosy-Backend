@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.entities.utility;
+package com.magentamause.cosybackend.entities.gameserver.utility;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.annotations.ValidUsername;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
+import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import lombok.Data;
 
 @Data

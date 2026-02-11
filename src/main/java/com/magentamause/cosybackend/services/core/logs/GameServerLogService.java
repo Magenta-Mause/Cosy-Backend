@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.services.core.logs;
 
 import com.magentamause.cosybackend.dtos.loki.LokiLogQuery;
-import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.services.external.loki.LokiQueryService;
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
