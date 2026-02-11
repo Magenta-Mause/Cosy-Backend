@@ -23,7 +23,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/game-server")
 public class GameServerConfigurationController {
-    private final GameServerService gameServerService;
     private final GameServerConfigurationService gameServerConfigurationService;
 
     @PatchMapping("{uuid}/layout/metric")
@@ -51,6 +50,16 @@ public class GameServerConfigurationController {
             @RequestBody AccessGroupCreationDto creationDto
     ) {
         return ResponseEntity.ok(gameServerConfigurationService.createAccessGroup(gameServerUuid, creationDto));
+    }
+
+    @DeleteMapping("/{game_server_uuid}/access-groups/{access_group_uuid}")
+    @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
+    public ResponseEntity<Void> deleteGameServerAccessGroup(
+            @PathVariable("game_server_uuid") @ResourceId String gameServerUuid,
+            @PathVariable("access_group_uuid") String accessGroupUuid
+    ) {
+        gameServerConfigurationService.deleteAccessGroup(gameServerUuid, accessGroupUuid);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{game_server_uuid}/access-groups/{access_group_uuid}")

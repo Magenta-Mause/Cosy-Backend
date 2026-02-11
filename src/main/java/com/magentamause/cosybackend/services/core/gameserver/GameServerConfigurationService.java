@@ -72,6 +72,16 @@ public class GameServerConfigurationService {
         return gameServerService.getOrThrow(gameServerUuid).getAccessGroups();
     }
 
+    public void deleteAccessGroup(String gameServerUuid, String accessGroupUuid) {
+        GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
+        GameServerAccessGroup accessGroupToDelete = getAccessGroup(accessGroupUuid);
+        if (accessGroupToDelete.getGameServer() == null || !accessGroupToDelete.getGameServer().getUuid().equals(gameServerUuid)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Access group '" + accessGroupUuid + "' is not assigned to server '" + gameServerUuid + "'");
+        }
+        gameServer.getAccessGroups().remove(accessGroupToDelete);
+        gameServerRepository.save(gameServer);
+    }
+
     private GameServerAccessGroup getAccessGroup(String accessGroupUuid) {
         return gameServerAccessGroupRepository.findById(accessGroupUuid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Access group '" + accessGroupUuid + "' not found"));
     }

@@ -10,7 +10,7 @@ public class GameServerPermissionsUtility {
     public static List<GameServerAccessPermission> extractUserPermissions(String userId, List<GameServerAccessGroup> accessGroups) {
         List<GameServerAccessGroup> accessGroupsOfUser = accessGroups.stream().filter(gameServerAccessGroup ->
                         gameServerAccessGroup.getUsers().stream()
-                                .anyMatch(userEntity -> userEntity.getUuid().equals(user.getUuid()))
+                                .anyMatch(userEntity -> userEntity.getUuid().equals(userId))
                 )
                 .toList();
         return accessGroupsOfUser.stream().flatMap(p -> p.getPermissions().stream()).toList();

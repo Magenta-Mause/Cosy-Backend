@@ -32,6 +32,6 @@ public class UtilPolicies {
     }
 
     public static boolean IS_GAMESERVER_OWNER(GameServerEntity gameServerEntity, UserEntity user) {
-        return gameServerEntity.getOwner().equals(user);
+        return gameServerEntity.getOwner().getUuid().equals(user.getUuid());
     }
 }
