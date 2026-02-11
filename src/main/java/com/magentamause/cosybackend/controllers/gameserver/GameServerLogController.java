@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/game-server/{gameServerUuid}/logs")
-public class LogController {
+public class GameServerLogController {
 
     private final GameServerLogService gameServerLogService;
 

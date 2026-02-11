@@ -98,15 +98,6 @@ public class GameServerRootController {
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{uuid}/rcon-configuration")
-    @NeedsValidation(Operation.GAME_SERVER_UPDATE)
-    public ResponseEntity<GameServerDto> updateRconConfiguration(
-            @PathVariable @ResourceId String uuid,
-            @RequestBody @Valid RCONConfiguration updateDto) {
-        GameServerEntity gameServer = gameServerService.updateRconConfig(uuid, updateDto);
-        return ResponseEntity.ok(gameServer.toDto());
-    }
-
     @PostMapping("/{uuid}/send-command")
     @NeedsValidation(Operation.GAME_SERVER_SEND_COMMAND)
     public ResponseEntity<Void> sendCommand(
@@ -115,12 +106,4 @@ public class GameServerRootController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("{uuid}/layout/metric")
-    @NeedsValidation(Operation.GAME_SERVER_UPDATE)
-    public ResponseEntity<Void> updateMetricLayout(
-            @PathVariable @ResourceId String uuid,
-            @Valid @RequestBody List<MetricLayout> metricLayout) {
-        gameServerService.updateMetricLayout(uuid, metricLayout);
-        return ResponseEntity.ok().build();
-    }
 }

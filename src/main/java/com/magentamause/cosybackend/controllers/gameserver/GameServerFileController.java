@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/game-server/{uuid}/file-system")
-public class FileController {
+public class GameServerFileController {
     private final GameServerMountService gameServerMountService;
 
     @GetMapping("/")
