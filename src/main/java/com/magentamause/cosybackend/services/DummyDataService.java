@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.services;
 
-import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
-import com.magentamause.cosybackend.dtos.actiondtos.VolumeMountConfigurationCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.VolumeMountConfigurationCreationDto;
 import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;

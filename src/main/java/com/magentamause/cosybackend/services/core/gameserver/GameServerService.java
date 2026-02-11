@@ -1,16 +1,14 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
-import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
-import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
-import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
 import com.magentamause.cosybackend.exceptions.RconException;
@@ -28,6 +26,7 @@ import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -138,7 +138,7 @@ public class GameServerService {
         return gameServerRepository.findAll();
     }
 
-    public GameServerEntity getGameServerById(String uuid) {
+    public GameServerEntity getOrThrow(String uuid) {
         return getGameServerOptionalById(uuid)
                 .orElseThrow(
                         () ->
@@ -159,7 +159,7 @@ public class GameServerService {
         return saveGameServerConfiguration(created, true);
     }
 
-    private GameServerEntity saveGameServerConfiguration(GameServerEntity entity, boolean isNew) {
+    GameServerEntity saveGameServerConfiguration(GameServerEntity entity, boolean isNew) {
         hardwareLimitValidator.validateHardwareLimitsPresent(
                 entity.getOwner().getDockerHardwareLimits(), entity.getDockerHardwareLimits());
         if (isNew) {
@@ -193,7 +193,7 @@ public class GameServerService {
 
     public GameServerEntity updateGameServerConfiguration(
             String uuid, GameServerUpdateDto updateDto) {
-        GameServerEntity gameServer = getGameServerById(uuid);
+        GameServerEntity gameServer = getOrThrow(uuid);
 
         Function<Integer, GameEntity> gameResolver =
                 (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
@@ -207,7 +207,7 @@ public class GameServerService {
         if (!startingServers.add(gameServerUuid)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Server is already starting");
         }
-        GameServerEntity serverConfig = getGameServerById(gameServerUuid);
+        GameServerEntity serverConfig = getOrThrow(gameServerUuid);
         try {
             List<GameServerEntity> gameServerStartedByUser =
                     getGameServersStartedByUser(user.getUuid());
@@ -300,7 +300,7 @@ public class GameServerService {
     }
 
     private GameServerDto.GameServerStatus getStatusFromEntity(String uuid) {
-        return getGameServerById(uuid).getStatus();
+        return getOrThrow(uuid).getStatus();
     }
 
     @Async
@@ -352,14 +352,9 @@ public class GameServerService {
         return gameServerRepository.findByLastStartedBy_Uuid(userUuid);
     }
 
-    public GameServerEntity updateRconConfig(String uuid, RCONConfiguration updateDto) {
-        GameServerEntity gameServer = getGameServerById(uuid);
-        gameServer.setRconConfiguration(updateDto);
-        return saveGameServerConfiguration(gameServer, false);
-    }
 
     public void sendCommand(String uuid, String command) {
-        GameServerEntity gameServer = getGameServerById(uuid);
+        GameServerEntity gameServer = getOrThrow(uuid);
         gameServerLogService.publishAndSaveLog(
                 gameServer, GameServerLogMessageEntity.LogLevel.INPUT, command, false);
         try {
@@ -402,18 +397,4 @@ public class GameServerService {
         }
     }
 
-    public void updateMetricLayout(String gameServerUuid, List<MetricLayout> metricLayout) {
-        GameServerEntity gameServer =
-                gameServerRepository
-                        .findById(gameServerUuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Server '" + gameServerUuid + "' not found"));
-
-        gameServer.getMetricLayout().clear();
-        gameServer.getMetricLayout().addAll(metricLayout);
-        gameServerRepository.save(gameServer);
-    }
 }

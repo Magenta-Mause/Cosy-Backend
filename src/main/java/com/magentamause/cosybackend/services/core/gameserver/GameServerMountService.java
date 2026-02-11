@@ -510,7 +510,7 @@ public class GameServerMountService {
      * hostPath.
      */
     private ResolvedBindMount resolveBindMount(String serverUuid, String requestedPath) {
-        GameServerEntity server = gameServerService.getGameServerById(serverUuid);
+        GameServerEntity server = gameServerService.getOrThrow(serverUuid);
 
         String req = normalizeContainerLikePath(requestedPath);
         if (req.isBlank() || "/".equals(req)) {

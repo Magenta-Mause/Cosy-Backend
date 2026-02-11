@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.controllers;
 
-import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;

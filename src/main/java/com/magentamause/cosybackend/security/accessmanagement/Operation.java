@@ -23,6 +23,11 @@ public enum Operation {
     GAME_SERVER_SEND_COMMAND,
     GAME_SERVER_GET_LOGS,
 
+    // Game Server Configuration operations
+    GAME_SERVER_METRIC_CONFIG_CHANGE,
+    GAME_SERVER_PERMISSIONS_CONFIG_CHANGE,
+    GAME_SERVER_RCON_CONFIG_CHANGE,
+
     // Game Server Files operations
     GAME_SERVER_FILES_READ,
     GAME_SERVER_FILES_UPDATE,

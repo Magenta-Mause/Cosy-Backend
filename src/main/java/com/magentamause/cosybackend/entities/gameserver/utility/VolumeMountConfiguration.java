@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.entities.gameserver.utility;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.magentamause.cosybackend.dtos.actiondtos.VolumeMountConfigurationCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.VolumeMountConfigurationCreationDto;
 import jakarta.persistence.*;
 import lombok.*;
 

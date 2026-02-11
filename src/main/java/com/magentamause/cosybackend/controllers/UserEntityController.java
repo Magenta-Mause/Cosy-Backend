@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.controllers;
 
-import com.magentamause.cosybackend.dtos.actiondtos.PasswordUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.user.PasswordUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;

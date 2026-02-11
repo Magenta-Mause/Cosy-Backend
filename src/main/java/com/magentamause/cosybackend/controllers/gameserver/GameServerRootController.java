@@ -1,13 +1,11 @@
 package com.magentamause.cosybackend.controllers.gameserver;
 
-import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
-import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
-import com.magentamause.cosybackend.dtos.actiondtos.SendCommandDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.SendCommandDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.entities.layout.MetricLayout;
-import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
@@ -42,7 +40,7 @@ public class GameServerRootController {
     @GetMapping("/{uuid}")
     @NeedsValidation(Operation.GAME_SERVER_GET)
     public ResponseEntity<GameServerDto> getGameServerById(@PathVariable @ResourceId String uuid) {
-        GameServerEntity entity = gameServerService.getGameServerById(uuid);
+        GameServerEntity entity = gameServerService.getOrThrow(uuid);
         return ResponseEntity.ok(entity.toDto());
     }
 

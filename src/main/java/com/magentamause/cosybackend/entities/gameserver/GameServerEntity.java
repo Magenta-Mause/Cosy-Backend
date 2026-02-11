@@ -6,6 +6,7 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.*;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroup;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -75,6 +76,10 @@ public class GameServerEntity {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "metric_layout_uuid")
     private List<MetricLayout> metricLayout;
+
+    @OneToMany(mappedBy = "gameServer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GameServerAccessGroup> accessGroups;
+
 
     public GameServerDto toDto() {
         return GameServerDto.builder()
