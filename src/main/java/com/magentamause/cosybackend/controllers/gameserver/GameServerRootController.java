@@ -3,6 +3,7 @@ package com.magentamause.cosybackend.controllers.gameserver;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.actiondtos.SendCommandDto;
+import com.magentamause.cosybackend.dtos.actiondtos.TransferOwnershipDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
@@ -125,5 +126,16 @@ public class GameServerRootController {
             @Valid @RequestBody List<MetricLayout> metricLayout) {
         gameServerService.updateMetricLayout(uuid, metricLayout);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{uuid}/transfer-ownership")
+    @RequireAccess(action = Action.UPDATE, resource = Resource.GAME_SERVER)
+    public ResponseEntity<GameServerDto> transferOwnership(
+            @PathVariable @ResourceId String uuid,
+            @Valid @RequestBody TransferOwnershipDto newOwnerName) {
+
+        GameServerEntity updated = gameServerService.transferGameServerOwnership(uuid, newOwnerName);
+
+        return ResponseEntity.ok(updated.toDto());
     }
 }

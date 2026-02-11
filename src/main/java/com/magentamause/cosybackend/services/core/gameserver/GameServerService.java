@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.services.core.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.TransferOwnershipDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameEntity;
@@ -18,6 +19,7 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.repositories.UserEntityRepository;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
@@ -49,6 +51,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class GameServerService {
 
     private final GameServerRepository gameServerRepository;
+    private final UserEntityRepository  userEntityRepository;
     private final EngineManager engineManager;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
     private final GameServerStatusPublisher statusPublisher;
@@ -413,4 +416,28 @@ public class GameServerService {
         gameServer.getMetricLayout().addAll(metricLayout);
         gameServerRepository.save(gameServer);
     }
+
+    public GameServerEntity transferGameServerOwnership(String gameServerUuid, TransferOwnershipDto newOwnerName) {
+        GameServerEntity gameServer = getGameServerById(gameServerUuid);
+
+        if (gameServer.getStatus() != GameServerDto.GameServerStatus.STOPPED) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Can't change the owner while the server is running"
+            );
+        }
+        log.info(newOwnerName.getNewOwnerName());
+        UserEntity newOwner =
+                userEntityRepository.findByUsername(newOwnerName.getNewOwnerName())
+                                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User" + newOwnerName + "not found"));
+        gameServer.setOwner(newOwner);
+        log.info(
+                "Changing owner of server {} from {} to {}",
+                gameServerUuid,
+                gameServer.getOwner().getUuid(),
+                newOwnerName
+        );
+        return saveGameServerConfiguration(gameServer, false);
+    }
+
 }
