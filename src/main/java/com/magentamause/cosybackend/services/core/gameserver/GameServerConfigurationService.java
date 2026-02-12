@@ -2,14 +2,19 @@ package com.magentamause.cosybackend.services.core.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupUpdateDto;
+import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroup;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import java.util.List;
+import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -102,5 +107,19 @@ public class GameServerConfigurationService {
                                 new ResponseStatusException(
                                         HttpStatus.NOT_FOUND,
                                         "Access group '" + accessGroupUuid + "' not found"));
+    }
+
+    public List<GameServerAccessPermission> getUserPermissions(String gameServerUuid, String userUuid) {
+        Optional<GameServerEntity> gameServerOptional = gameServerService.getGameServerOptionalById(gameServerUuid);
+        if (gameServerOptional.isEmpty()) {
+            return List.of();
+        }
+
+        GameServerEntity gameServer = gameServerOptional.get();
+        if (gameServer.getOwner().getUuid().equals(userUuid)) {
+            return List.of(GameServerAccessPermission.ADMIN);
+        }
+
+        return GameServerPermissionsUtility.extractUserPermissions(userUuid, gameServer.getAccessGroups());
     }
 }

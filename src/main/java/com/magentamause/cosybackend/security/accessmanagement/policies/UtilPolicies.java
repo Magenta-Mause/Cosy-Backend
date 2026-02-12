@@ -26,7 +26,7 @@ public class UtilPolicies {
         List<GameServerAccessGroup> accessGroups = gameServerEntity.get().getAccessGroups();
         List<GameServerAccessPermission> userPermissions =
                 GameServerPermissionsUtility.extractUserPermissions(user.getUuid(), accessGroups);
-        return userPermissions.contains(permission);
+        return userPermissions.contains(GameServerAccessPermission.ADMIN) || userPermissions.contains(permission);
     }
 
     public static boolean IS_GAMESERVER_OWNER(
