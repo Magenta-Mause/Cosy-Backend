@@ -8,6 +8,7 @@ import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
+import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.entities.utility.PortMapping;
 import com.magentamause.cosybackend.entities.utility.RCONConfiguration;
@@ -411,6 +412,27 @@ public class GameServerService {
 
         gameServer.getMetricLayout().clear();
         gameServer.getMetricLayout().addAll(metricLayout);
+        gameServerRepository.save(gameServer);
+    }
+
+    public void updatePrivateDashboardLayout(String gameServerUuid, List<PrivateDashboardLayout> privateDashboardLayouts) {
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(gameServerUuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Server '" + gameServerUuid + "' not found"));
+
+        privateDashboardLayouts.forEach(layout -> {
+            if (!layout.isValid()) {
+                throw new IllegalStateException("Invalid dashboard layout: " + layout);
+            }
+        });
+
+        gameServer.getPrivateDashboardLayouts().clear();
+        gameServer.getPrivateDashboardLayouts().addAll(privateDashboardLayouts);
         gameServerRepository.save(gameServer);
     }
 }
