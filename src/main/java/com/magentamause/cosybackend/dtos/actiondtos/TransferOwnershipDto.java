@@ -8,6 +8,5 @@ import lombok.Data;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class TransferOwnershipDto {
-    @NotBlank
-    private String newOwnerName;
+    @NotBlank private String newOwnerName;
 }

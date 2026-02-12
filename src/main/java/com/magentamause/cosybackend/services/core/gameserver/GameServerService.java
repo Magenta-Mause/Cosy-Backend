@@ -19,7 +19,6 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
-import com.magentamause.cosybackend.repositories.UserEntityRepository;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
@@ -418,14 +417,13 @@ public class GameServerService {
         gameServerRepository.save(gameServer);
     }
 
-    public GameServerEntity transferGameServerOwnership(String gameServerUuid, TransferOwnershipDto newOwnerName) {
+    public GameServerEntity transferGameServerOwnership(
+            String gameServerUuid, TransferOwnershipDto newOwnerName) {
         GameServerEntity gameServer = getGameServerById(gameServerUuid);
 
         if (gameServer.getStatus() != GameServerDto.GameServerStatus.STOPPED) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Can't change the owner while the server is running"
-            );
+                    HttpStatus.CONFLICT, "Can't change the owner while the server is running");
         }
         log.info(newOwnerName.getNewOwnerName());
         UserEntity newOwner = userEntityService.getUserByUsername(newOwnerName.getNewOwnerName());
@@ -434,9 +432,7 @@ public class GameServerService {
                 "Changing owner of server {} from {} to {}",
                 gameServerUuid,
                 gameServer.getOwner().getUuid(),
-                newOwnerName
-        );
+                newOwnerName);
         return saveGameServerConfiguration(gameServer, false);
     }
-
 }
