@@ -27,7 +27,7 @@ public class WebsocketVerifier {
 
     public boolean verify(String channel, StompHeaderAccessor stompHeaders) {
         final var registeredVerifiers = websocketVerifier.entrySet();
-        log.info("Verifying channel: {}", channel);
+        log.debug("Verifying channel: {}", channel);
         for (final var verifier : registeredVerifiers) {
             Pattern verifierPattern = verifier.getKey();
             if (stompHeaders == null) {
@@ -39,10 +39,10 @@ public class WebsocketVerifier {
             }
             String userId = extractUserId(stompHeaders);
             if (userId == null) {
-                log.info("No user found for channel: {}", channel);
+                log.debug("No user found for channel: {}", channel);
                 continue;
             }
-            log.info("User: {} trying to access channel: {}", userId, channel);
+            log.debug("User: {} trying to access channel: {}", userId, channel);
             UserEntity user = userEntityService.getUserByUuid(userId);
             return verifier.getValue().verify(channel, stompHeaders, securityContextService, user);
         }
