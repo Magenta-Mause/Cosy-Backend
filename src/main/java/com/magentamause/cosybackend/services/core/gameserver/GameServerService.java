@@ -27,6 +27,7 @@ import com.magentamause.cosybackend.services.engine.docker.util.HardwareLimitPre
 import com.magentamause.cosybackend.services.engine.docker.util.HardwareQuotaChecker;
 import com.magentamause.cosybackend.services.engine.docker.util.VolumeDirectoryService;
 import com.magentamause.cosybackend.services.technical.RCONService;
+import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
@@ -51,7 +52,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class GameServerService {
 
     private final GameServerRepository gameServerRepository;
-    private final UserEntityRepository  userEntityRepository;
+    private final UserEntityService userEntityService;
     private final EngineManager engineManager;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
     private final GameServerStatusPublisher statusPublisher;
@@ -427,9 +428,7 @@ public class GameServerService {
             );
         }
         log.info(newOwnerName.getNewOwnerName());
-        UserEntity newOwner =
-                userEntityRepository.findByUsername(newOwnerName.getNewOwnerName())
-                                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User" + newOwnerName + "not found"));
+        UserEntity newOwner = userEntityService.getUserByUsername(newOwnerName.getNewOwnerName());
         gameServer.setOwner(newOwner);
         log.info(
                 "Changing owner of server {} from {} to {}",

@@ -40,6 +40,13 @@ public class UserEntityController {
         return ResponseEntity.ok(user.toDto());
     }
 
+    @GetMapping("/username/{username}")
+    @RequireAccess(action = Action.READ, resource = Resource.USER)
+    public ResponseEntity<UserEntityDto> getUserEntityByUsername(@PathVariable @ResourceId String username) {
+        UserEntity user = userEntityService.getUserByUsername(username);
+        return ResponseEntity.ok(user.toDto());
+    }
+
     @DeleteMapping("/{uuid}")
     @RequireAccess(action = Action.DELETE, resource = Resource.USER)
     public ResponseEntity<Void> deleteUserEntity(@PathVariable @ResourceId String uuid) {
