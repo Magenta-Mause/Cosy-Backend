@@ -60,6 +60,7 @@ public class GameServerService {
     private final HardwareQuotaChecker hardwareQuotaChecker;
     private final VolumeDirectoryService volumeDirectoryService;
     private final RCONService rCONService;
+    private final DefaultSettingsMapper defaultSettingsMapper;
 
     @PostConstruct
     public void init() {
@@ -154,6 +155,9 @@ public class GameServerService {
                 (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
 
         GameServerEntity created = gameServerDto.toEntity(user, gameResolver);
+
+        defaultSettingsMapper.createDefaultLayout(created);
+
         return saveGameServerConfiguration(created, true);
     }
 
@@ -415,7 +419,8 @@ public class GameServerService {
         gameServerRepository.save(gameServer);
     }
 
-    public void updatePrivateDashboardLayout(String gameServerUuid, List<PrivateDashboardLayout> privateDashboardLayouts) {
+    public void updatePrivateDashboardLayout(
+            String gameServerUuid, List<PrivateDashboardLayout> privateDashboardLayouts) {
         GameServerEntity gameServer =
                 gameServerRepository
                         .findById(gameServerUuid)
@@ -425,11 +430,12 @@ public class GameServerService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Server '" + gameServerUuid + "' not found"));
 
-        privateDashboardLayouts.forEach(layout -> {
-            if (!layout.isValid()) {
-                throw new IllegalStateException("Invalid dashboard layout: " + layout);
-            }
-        });
+        privateDashboardLayouts.forEach(
+                layout -> {
+                    if (!layout.isValid()) {
+                        throw new IllegalStateException("Invalid dashboard layout: " + layout);
+                    }
+                });
 
         gameServer.getPrivateDashboardLayouts().clear();
         gameServer.getPrivateDashboardLayouts().addAll(privateDashboardLayouts);
