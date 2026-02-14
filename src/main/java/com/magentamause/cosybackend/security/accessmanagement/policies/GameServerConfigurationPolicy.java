@@ -5,7 +5,9 @@ import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.Validates;
+import org.springframework.stereotype.Component;
 
+@Component
 public class GameServerConfigurationPolicy {
 
     @Validates(Operation.GAME_SERVER_METRIC_CONFIG_CHANGE)
@@ -37,4 +39,5 @@ public class GameServerConfigurationPolicy {
                 user,
                 GameServerAccessPermission.CHANGE_RCON_SETTINGS);
     }
+
 }

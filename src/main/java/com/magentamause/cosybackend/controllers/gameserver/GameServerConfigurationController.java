@@ -67,7 +67,7 @@ public class GameServerConfigurationController {
     public ResponseEntity<List<GameServerAccessGroupDto>> updateGameServerAccessGroups(
             @PathVariable("game_server_uuid") @ResourceId String gameServerUuid,
             @PathVariable("access_group_uuid") String accessGroupUuid,
-            @RequestBody AccessGroupUpdateDto updateDto) {
+            @RequestBody @Valid AccessGroupUpdateDto updateDto) {
         return ResponseEntity.ok(
                 gameServerConfigurationService.updateAccessGroup(
                                 gameServerUuid, accessGroupUuid, updateDto)

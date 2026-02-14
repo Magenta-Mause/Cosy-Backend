@@ -8,6 +8,7 @@ import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
@@ -16,6 +17,8 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerPolicy;
+import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
@@ -36,6 +39,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -392,5 +396,16 @@ public class GameServerService {
                     "RCON IO exception: " + e.getMessage(),
                     false);
         }
+    }
+
+    public List<GameServerEntity> getGameServersVisibleToUser(UserEntity user) {
+        List<GameServerEntity> allGameServers = getAllGameServers();
+        if (user.getRole().isAdmin()) {
+            return allGameServers;
+        }
+        return allGameServers.stream()
+                .filter(gameServer -> GameServerPermissionsUtility.isOwnerOrHasPermission(
+                        gameServer, user, GameServerAccessPermission.SEE_SERVER))
+                .toList();
     }
 }

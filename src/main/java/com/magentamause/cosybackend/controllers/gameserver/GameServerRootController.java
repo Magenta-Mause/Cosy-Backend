@@ -28,10 +28,10 @@ public class GameServerRootController {
     private final SecurityContextService securityContextService;
 
     @GetMapping
-    @NeedsValidation(Operation.GAME_SERVER_GET_ALL)
     public ResponseEntity<List<GameServerDto>> getAllGameServers() {
+        UserEntity user = securityContextService.getUser();
         List<GameServerDto> dtos =
-                gameServerService.getAllGameServers().stream()
+                gameServerService.getGameServersVisibleToUser(user).stream()
                         .map(GameServerEntity::toDto)
                         .toList();
         return ResponseEntity.ok(dtos);

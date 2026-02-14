@@ -3,14 +3,20 @@ package com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroup;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
-import tools.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 @Data
-@JsonNaming(tools.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy.class)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class AccessGroupUpdateDto {
+    @NotEmpty
     private String accessGroupName;
     private List<String> userUuids;
     private List<GameServerAccessPermission> permissions;
@@ -19,8 +25,10 @@ public class AccessGroupUpdateDto {
             GameServerAccessGroup gameServerAccessGroup,
             Function<String, UserEntity> userResolver) {
         gameServerAccessGroup.setGroupName(accessGroupName);
-        gameServerAccessGroup.setUsers(userUuids.stream().map(userResolver::apply).toList());
-        gameServerAccessGroup.setPermissions(permissions);
+        if (userUuids != null) {
+            gameServerAccessGroup.setUsers(new ArrayList<>(userUuids.stream().map(userResolver).toList()));
+        }
+        gameServerAccessGroup.setPermissions(permissions == null ? null : new ArrayList<>(permissions));
         return gameServerAccessGroup;
     }
 }

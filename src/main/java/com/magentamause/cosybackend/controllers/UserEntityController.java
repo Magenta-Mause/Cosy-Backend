@@ -57,4 +57,9 @@ public class UserEntityController {
                         user, request.getOldPassword(), request.getNewPassword());
         return ResponseEntity.ok(userWithChangedPassword.toDto());
     }
+
+    @GetMapping("/uuid-by-username/{username}")
+    public ResponseEntity<String> getUUIDByUsername(@PathVariable String username) {
+        return ResponseEntity.ok(userEntityService.getUserByUsername(username).getUuid());
+    }
 }

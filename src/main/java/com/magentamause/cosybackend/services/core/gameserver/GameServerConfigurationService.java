@@ -79,7 +79,7 @@ public class GameServerConfigurationService {
                             + "'");
         }
         GameServerAccessGroup updatedAccessGroup =
-                updateDto.applyOnEntity(accessGroupToUpdate, userEntityService::getUserByUsername);
+                updateDto.applyOnEntity(accessGroupToUpdate, userEntityService::getUserByUuid);
         gameServerAccessGroupRepository.save(updatedAccessGroup);
         return gameServerService.getOrThrow(gameServerUuid).getAccessGroups();
     }

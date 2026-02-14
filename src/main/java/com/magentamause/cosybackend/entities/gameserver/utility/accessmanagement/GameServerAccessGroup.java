@@ -23,7 +23,7 @@ public class GameServerAccessGroup {
     @ElementCollection(fetch = FetchType.EAGER)
     private List<GameServerAccessPermission> permissions;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "access_group_users",
             joinColumns = @JoinColumn(name = "access_group_id"),

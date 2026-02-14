@@ -9,9 +9,11 @@ import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroup;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
 import lombok.*;
 
 @Getter
@@ -29,9 +31,11 @@ public class GameServerEntity {
 
     private String serverName;
 
-    @ManyToOne private UserEntity owner;
+    @ManyToOne
+    private UserEntity owner;
 
-    @ManyToOne private UserEntity lastStartedBy;
+    @ManyToOne
+    private UserEntity lastStartedBy;
 
     @Enumerated(EnumType.STRING)
     private GameServerDto.GameServerStatus status;
@@ -39,16 +43,19 @@ public class GameServerEntity {
     private LocalDateTime timestampLastStarted;
 
     // No cascading or orphanRemoval, because GameEntities without a server can exist
-    @ManyToOne private GameEntity game;
+    @ManyToOne
+    private GameEntity game;
 
     @Column(nullable = false)
     private String dockerImageName;
 
     private String dockerImageTag;
 
-    @Embedded private DockerHardwareLimits dockerHardwareLimits;
+    @Embedded
+    private DockerHardwareLimits dockerHardwareLimits;
 
-    @Embedded private RCONConfiguration rconConfiguration;
+    @Embedded
+    private RCONConfiguration rconConfiguration;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
@@ -101,7 +108,7 @@ public class GameServerEntity {
                 .environmentVariables(this.getEnvironmentVariables())
                 .volumeMounts(this.getVolumeMounts())
                 .metricLayout(this.getMetricLayout())
-                .accessGroups(this.getAccessGroups().stream().map(GameServerAccessGroup::toDto).toList())
+                .accessGroups(Optional.ofNullable(this.getAccessGroups()).map(access -> access.stream().map(GameServerAccessGroup::toDto).toList()).orElse(null))
                 .build();
     }
 }
