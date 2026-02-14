@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement;
 
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerAccessGroupDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import jakarta.persistence.*;
@@ -32,4 +33,14 @@ public class GameServerAccessGroup {
     @ManyToOne
     @JoinColumn(name = "game_server_id")
     private GameServerEntity gameServer;
+
+    public GameServerAccessGroupDto toDto() {
+        return GameServerAccessGroupDto.builder()
+                .uuid(this.getUuid())
+                .groupName(this.getGroupName())
+                .permissions(this.getPermissions())
+                .users(this.getUsers().stream().map(UserEntity::toDto).toList())
+                .gameServerUuid(this.getGameServer().getUuid())
+                .build();
+    }
 }

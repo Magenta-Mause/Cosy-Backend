@@ -101,6 +101,7 @@ public class GameServerEntity {
                 .environmentVariables(this.getEnvironmentVariables())
                 .volumeMounts(this.getVolumeMounts())
                 .metricLayout(this.getMetricLayout())
+                .accessGroups(this.getAccessGroups().stream().map(GameServerAccessGroup::toDto).toList())
                 .build();
     }
 }

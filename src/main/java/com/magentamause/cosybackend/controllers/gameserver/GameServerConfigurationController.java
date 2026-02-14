@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.controllers.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupUpdateDto;
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerAccessGroupDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
@@ -12,10 +13,11 @@ import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerConfigurationService;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -44,11 +46,11 @@ public class GameServerConfigurationController {
 
     @PostMapping("/{game_server_uuid}/access-groups")
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
-    public ResponseEntity<GameServerAccessGroup> createGameServerAccessGroup(
+    public ResponseEntity<GameServerAccessGroupDto> createGameServerAccessGroup(
             @PathVariable("game_server_uuid") @ResourceId String gameServerUuid,
-            @RequestBody AccessGroupCreationDto creationDto) {
+            @Valid @RequestBody AccessGroupCreationDto creationDto) {
         return ResponseEntity.ok(
-                gameServerConfigurationService.createAccessGroup(gameServerUuid, creationDto));
+                gameServerConfigurationService.createAccessGroup(gameServerUuid, creationDto).toDto());
     }
 
     @DeleteMapping("/{game_server_uuid}/access-groups/{access_group_uuid}")
@@ -62,12 +64,13 @@ public class GameServerConfigurationController {
 
     @PatchMapping("/{game_server_uuid}/access-groups/{access_group_uuid}")
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
-    public ResponseEntity<List<GameServerAccessGroup>> updateGameServerAccessGroups(
+    public ResponseEntity<List<GameServerAccessGroupDto>> updateGameServerAccessGroups(
             @PathVariable("game_server_uuid") @ResourceId String gameServerUuid,
             @PathVariable("access_group_uuid") String accessGroupUuid,
             @RequestBody AccessGroupUpdateDto updateDto) {
         return ResponseEntity.ok(
                 gameServerConfigurationService.updateAccessGroup(
-                        gameServerUuid, accessGroupUuid, updateDto));
+                                gameServerUuid, accessGroupUuid, updateDto)
+                        .stream().map(GameServerAccessGroup::toDto).toList());
     }
 }

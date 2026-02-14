@@ -12,6 +12,7 @@ import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
 import com.magentamause.cosybackend.services.user.UserEntityService;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -54,6 +55,7 @@ public class GameServerConfigurationService {
             String gameServerUuid, AccessGroupCreationDto accessGroupCreationDto) {
         GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
         GameServerAccessGroup accessGroup = new GameServerAccessGroup();
+        accessGroup.setGroupName(accessGroupCreationDto.getName());
         accessGroup.setGameServer(gameServer);
         accessGroup.setUsers(List.of());
         accessGroup.setPermissions(List.of());
@@ -117,6 +119,11 @@ public class GameServerConfigurationService {
 
         GameServerEntity gameServer = gameServerOptional.get();
         if (gameServer.getOwner().getUuid().equals(userUuid)) {
+            return List.of(GameServerAccessPermission.ADMIN);
+        }
+
+        UserEntity user = userEntityService.getOptionalUserByUuid(userUuid).orElseThrow();
+        if (UserEntity.Role.OWNER.equals(user.getRole())) {
             return List.of(GameServerAccessPermission.ADMIN);
         }
 
