@@ -1,0 +1,57 @@
+package com.magentamause.cosybackend.entities;
+
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerWebhookDto;
+import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class GameServerWebhookEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String uuid;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "game_server_uuid", nullable = false)
+    private GameServerEntity gameServer;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private WebhookType webhookType;
+
+    @Column(length = 2000, nullable = false)
+    private String webhookUrl;
+
+    @Builder.Default
+    private boolean enabled = true;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "game_server_webhook_events",
+            joinColumns = @JoinColumn(name = "webhook_id"))
+    @Column(name = "event_type")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Set<GameServerEventType> subscribedEvents = new HashSet<>();
+
+    public GameServerWebhookDto toDto() {
+        return GameServerWebhookDto.builder()
+                .uuid(uuid)
+                .webhookType(webhookType)
+                .webhookUrl(webhookUrl)
+                .enabled(enabled)
+                .subscribedEvents(subscribedEvents)
+                .build();
+    }
+}
