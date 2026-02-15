@@ -46,4 +46,4 @@ dummy
 api-client/
 dummy/
 
-src/main/resources/native/linux-x86_64/libcosyfs.so
+./src/main/resources/native/*/libcosyfs.so
