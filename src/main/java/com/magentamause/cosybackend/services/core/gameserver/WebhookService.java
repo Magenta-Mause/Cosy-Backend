@@ -1,10 +1,10 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.WebhookCreationDto;
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerWebhookDto;
+import com.magentamause.cosybackend.dtos.entitydtos.WebhookDto;
 import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.GameServerWebhookEntity;
-import com.magentamause.cosybackend.repositories.GameServerWebhookRepository;
+import com.magentamause.cosybackend.entities.WebhookEntity;
+import com.magentamause.cosybackend.repositories.WebhookRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,19 +15,19 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class WebhookService {
 
-    private final GameServerWebhookRepository webhookRepository;
+    private final WebhookRepository webhookRepository;
     private final GameServerService gameServerService;
 
-    public List<GameServerWebhookDto> getAllWebhooks(String gameServerUuid) {
+    public List<WebhookDto> getAllWebhooks(String gameServerUuid) {
         gameServerService.getGameServerById(gameServerUuid);
-        List<GameServerWebhookEntity> webhookEntities =
+        List<WebhookEntity> webhookEntities =
                 webhookRepository.findByGameServer_Uuid(gameServerUuid);
-        return webhookEntities.stream().map(GameServerWebhookEntity::toDto).toList();
+        return webhookEntities.stream().map(WebhookEntity::toDto).toList();
     }
 
-    public GameServerWebhookDto createWebhook(String gameServerUuid, WebhookCreationDto request) {
+    public WebhookDto createWebhook(String gameServerUuid, WebhookCreationDto request) {
         GameServerEntity gameServer = gameServerService.getGameServerById(gameServerUuid);
-        GameServerWebhookEntity webhookEntity = request.toEntity(gameServer);
+        WebhookEntity webhookEntity = request.toEntity(gameServer);
         return webhookRepository.save(webhookEntity).toDto();
     }
 

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.GameServerEventType;
-import com.magentamause.cosybackend.entities.GameServerWebhookEntity;
+import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.entities.WebhookType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,8 +27,8 @@ public class WebhookCreationDto {
     private boolean enabled;
     @NotNull private Set<GameServerEventType> subscribedEvents;
 
-    public GameServerWebhookEntity toEntity(GameServerEntity gameServer) {
-        return GameServerWebhookEntity.builder()
+    public WebhookEntity toEntity(GameServerEntity gameServer) {
+        return WebhookEntity.builder()
                 .gameServer(gameServer)
                 .webhookType(this.webhookType)
                 .webhookUrl(this.webhookUrl)

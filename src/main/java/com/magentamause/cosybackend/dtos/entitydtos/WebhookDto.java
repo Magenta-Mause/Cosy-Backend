@@ -13,7 +13,7 @@ import lombok.Data;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Builder
-public class GameServerWebhookDto {
+public class WebhookDto {
     private String uuid;
     private WebhookType webhookType;
     private String webhookUrl;

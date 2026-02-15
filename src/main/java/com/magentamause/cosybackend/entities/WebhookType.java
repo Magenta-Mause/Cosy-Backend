@@ -3,5 +3,6 @@ package com.magentamause.cosybackend.entities;
 public enum WebhookType {
     DISCORD,
     SLACK,
-    TELEGRAM
+    TELEGRAM,
+    N8N
 }

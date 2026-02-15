@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.entities;
 
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerWebhookDto;
+import com.magentamause.cosybackend.dtos.entitydtos.WebhookDto;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,7 +16,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class GameServerWebhookEntity {
+public class WebhookEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -44,8 +44,8 @@ public class GameServerWebhookEntity {
     @Builder.Default
     private Set<GameServerEventType> subscribedEvents = new HashSet<>();
 
-    public GameServerWebhookDto toDto() {
-        return GameServerWebhookDto.builder()
+    public WebhookDto toDto() {
+        return WebhookDto.builder()
                 .uuid(uuid)
                 .webhookType(webhookType)
                 .webhookUrl(webhookUrl)

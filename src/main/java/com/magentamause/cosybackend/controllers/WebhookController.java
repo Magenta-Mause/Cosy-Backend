@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.actiondtos.WebhookCreationDto;
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerWebhookDto;
+import com.magentamause.cosybackend.dtos.entitydtos.WebhookDto;
 import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
@@ -25,17 +25,17 @@ public class WebhookController {
 
     @GetMapping
     @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
-    public ResponseEntity<List<GameServerWebhookDto>> getAllWebhooks(
+    public ResponseEntity<List<WebhookDto>> getAllWebhooks(
             @PathVariable @ResourceId String uuid) {
-        List<GameServerWebhookDto> webhooks = webhookService.getAllWebhooks(uuid);
+        List<WebhookDto> webhooks = webhookService.getAllWebhooks(uuid);
         return ResponseEntity.ok(webhooks);
     }
 
     @PostMapping
     @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
-    public ResponseEntity<GameServerWebhookDto> createWebhook(
+    public ResponseEntity<WebhookDto> createWebhook(
             @PathVariable @ResourceId String uuid, @Valid @RequestBody WebhookCreationDto request) {
-        GameServerWebhookDto created = webhookService.createWebhook(uuid, request);
+        WebhookDto created = webhookService.createWebhook(uuid, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
