@@ -122,22 +122,24 @@ public class GameServerConfigurationService {
                                         "Access group '" + accessGroupUuid + "' not found"));
     }
 
-    public List<GameServerAccessPermission> getUserPermissions(String gameServerUuid, String userUuid) {
-        Optional<GameServerEntity> gameServerOptional = gameServerService.getGameServerOptionalById(gameServerUuid);
-        if (gameServerOptional.isEmpty()) {
-            return List.of();
-        }
-
-        GameServerEntity gameServer = gameServerOptional.get();
+    public List<GameServerAccessPermission> getUserPermissions(GameServerEntity gameServer, String userUuid) {
         if (gameServer.getOwner().getUuid().equals(userUuid)) {
             return List.of(GameServerAccessPermission.ADMIN);
         }
 
         UserEntity user = userEntityService.getOptionalUserByUuid(userUuid).orElseThrow();
-        if (UserEntity.Role.OWNER.equals(user.getRole())) {
+        if (user.getRole().isAdmin()) {
             return List.of(GameServerAccessPermission.ADMIN);
         }
 
         return GameServerPermissionsUtility.extractUserPermissions(userUuid, gameServer.getAccessGroups());
+    }
+
+    public List<GameServerAccessPermission> getUserPermissions(String gameServerUuid, String userUuid) {
+        Optional<GameServerEntity> gameServerOptional = gameServerService.getGameServerOptionalById(gameServerUuid);
+        if (gameServerOptional.isEmpty()) {
+            return List.of();
+        }
+        return getUserPermissions(gameServerOptional.get(), userUuid);
     }
 }

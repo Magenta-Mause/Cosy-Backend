@@ -7,7 +7,10 @@ import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroup;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
+import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
+import io.reactivex.rxjava3.internal.operators.observable.ObservableZip;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -98,7 +101,7 @@ public class GameServerEntity {
                 .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
                 .status(this.getStatus())
                 .timestampLastStarted(this.getTimestampLastStarted())
-                .gameUuid(this.getGame() == null ? null : this.getGame().getUuid())
+                .gameUuid(Optional.ofNullable(this.getGame()).map(GameEntity::getUuid).orElse(null))
                 .rconConfiguration(this.getRconConfiguration())
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
@@ -110,5 +113,34 @@ public class GameServerEntity {
                 .metricLayout(this.getMetricLayout())
                 .accessGroups(Optional.ofNullable(this.getAccessGroups()).map(access -> access.stream().map(GameServerAccessGroup::toDto).toList()).orElse(null))
                 .build();
+    }
+
+    public GameServerDto toDto(List<GameServerAccessPermission> permissions) {
+        GameServerDto.GameServerDtoBuilder builder = GameServerDto.builder()
+                .uuid(this.getUuid())
+                .serverName(this.getServerName())
+                .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
+                .status(this.getStatus())
+                .timestampLastStarted(this.getTimestampLastStarted())
+                .gameUuid(Optional.ofNullable(this.getGame()).map(GameEntity::getUuid).orElse(null));
+        if (GameServerPermissionsUtility.can(GameServerAccessPermission.CHANGE_SERVER_CONFIGS, permissions)) {
+            builder.dockerImageName(this.getDockerImageName())
+                    .dockerImageTag(this.getDockerImageTag())
+                    .dockerHardwareLimits(this.getDockerHardwareLimits())
+                    .executionCommand(this.getDockerExecutionCommand())
+                    .portMappings(this.getPortMappings())
+                    .environmentVariables(this.getEnvironmentVariables())
+                    .volumeMounts(this.getVolumeMounts());
+        }
+        if (GameServerPermissionsUtility.can(GameServerAccessPermission.CHANGE_RCON_SETTINGS, permissions)) {
+            builder.rconConfiguration(this.getRconConfiguration());
+        }
+        if (GameServerPermissionsUtility.can(GameServerAccessPermission.CHANGE_METRICS_SETTINGS, permissions) || GameServerPermissionsUtility.can(GameServerAccessPermission.READ_SERVER_METRICS, permissions)) {
+            builder.metricLayout(this.getMetricLayout());
+        }
+        if (GameServerPermissionsUtility.can(GameServerAccessPermission.CHANGE_PERMISSIONS_SETTINGS, permissions)) {
+            builder.accessGroups(Optional.ofNullable(this.getAccessGroups()).map(access -> access.stream().map(GameServerAccessGroup::toDto).toList()).orElse(null));
+        }
+        return builder.build();
     }
 }

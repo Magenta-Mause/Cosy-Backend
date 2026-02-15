@@ -6,13 +6,17 @@ import com.magentamause.cosybackend.dtos.actiondtos.gameserver.SendCommandDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
+import com.magentamause.cosybackend.services.core.gameserver.GameServerConfigurationService;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import jakarta.validation.Valid;
+
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -26,13 +30,14 @@ public class GameServerRootController {
 
     private final GameServerService gameServerService;
     private final SecurityContextService securityContextService;
+    private final GameServerConfigurationService gameServerConfigurationService;
 
     @GetMapping
     public ResponseEntity<List<GameServerDto>> getAllGameServers() {
         UserEntity user = securityContextService.getUser();
         List<GameServerDto> dtos =
                 gameServerService.getGameServersVisibleToUser(user).stream()
-                        .map(GameServerEntity::toDto)
+                        .map(server -> server.toDto(gameServerConfigurationService.getUserPermissions(server, securityContextService.getUserId())))
                         .toList();
         return ResponseEntity.ok(dtos);
     }
@@ -41,7 +46,8 @@ public class GameServerRootController {
     @NeedsValidation(Operation.GAME_SERVER_GET)
     public ResponseEntity<GameServerDto> getGameServerById(@PathVariable @ResourceId String uuid) {
         GameServerEntity entity = gameServerService.getOrThrow(uuid);
-        return ResponseEntity.ok(entity.toDto());
+        List<GameServerAccessPermission> userPermissions = gameServerConfigurationService.getUserPermissions(uuid, securityContextService.getUserId());
+        return ResponseEntity.ok(entity.toDto(userPermissions));
     }
 
     @DeleteMapping("/{uuid}")
@@ -59,7 +65,8 @@ public class GameServerRootController {
         UserEntity user = securityContextService.getUser();
 
         GameServerEntity createdGameServer = gameServerService.createGameServer(user, gameServer);
-        return ResponseEntity.status(201).body(createdGameServer.toDto());
+        List<GameServerAccessPermission> userPermissions = gameServerConfigurationService.getUserPermissions(createdGameServer, securityContextService.getUserId());
+        return ResponseEntity.status(201).body(createdGameServer.toDto(userPermissions));
     }
 
     @PutMapping("/{uuid}")
@@ -71,7 +78,8 @@ public class GameServerRootController {
 
         GameServerEntity updated = gameServerService.updateGameServerConfiguration(uuid, updateDto);
 
-        return ResponseEntity.ok(updated.toDto());
+        List<GameServerAccessPermission> userPermissions = gameServerConfigurationService.getUserPermissions(updated, securityContextService.getUserId());
+        return ResponseEntity.ok(updated.toDto(userPermissions));
     }
 
     @GetMapping("/{uuid}/status")

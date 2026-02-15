@@ -7,10 +7,12 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroup;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
+import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerConfigurationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ import java.util.List;
 @RequestMapping("/game-server")
 public class GameServerConfigurationController {
     private final GameServerConfigurationService gameServerConfigurationService;
+    private final SecurityContextService securityContextService;
 
     @PatchMapping("{uuid}/layout/metric")
     @NeedsValidation(Operation.GAME_SERVER_METRIC_CONFIG_CHANGE)
@@ -41,7 +44,8 @@ public class GameServerConfigurationController {
             @RequestBody @Valid RCONConfiguration updateDto) {
         GameServerEntity gameServer =
                 gameServerConfigurationService.updateRconConfig(uuid, updateDto);
-        return ResponseEntity.ok(gameServer.toDto());
+        List<GameServerAccessPermission> userPermissions = gameServerConfigurationService.getUserPermissions(uuid, securityContextService.getUserId());
+        return ResponseEntity.ok(gameServer.toDto(userPermissions));
     }
 
     @PostMapping("/{game_server_uuid}/access-groups")
