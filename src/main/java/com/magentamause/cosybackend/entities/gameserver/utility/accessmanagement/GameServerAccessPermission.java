@@ -6,16 +6,17 @@ public enum GameServerAccessPermission {
     // Base
     SEE_SERVER,
 
+    START_STOP_SERVER,
+
     // Logs/Metrics
     READ_SERVER_LOGS,
     READ_SERVER_METRICS,
+
 
     // File
     READ_SERVER_SERVER_FILES,
     CHANGE_SERVER_FILES,
 
-    // Server Actions
-    START_STOP_SERVER,
     SEND_COMMANDS,
 
     // Configs
