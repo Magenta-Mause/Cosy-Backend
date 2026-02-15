@@ -7,9 +7,7 @@ import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.repositories.WebhookRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -25,22 +23,13 @@ public class WebhookService {
         return webhookEntities.stream().map(WebhookEntity::toDto).toList();
     }
 
-    public WebhookDto createWebhook(String gameServerUuid, WebhookCreationDto request) {
+    public WebhookDto createWebhook(String gameServerUuid, WebhookCreationDto creationDto) {
         GameServerEntity gameServer = gameServerService.getGameServerById(gameServerUuid);
-        WebhookEntity webhookEntity = request.toEntity(gameServer);
+        WebhookEntity webhookEntity = creationDto.toEntity(gameServer);
         return webhookRepository.save(webhookEntity).toDto();
     }
 
-    public void deleteWebhook(String gameServerUuid, String webhookId) {
-        gameServerService.getGameServerById(gameServerUuid);
-        long deleted = webhookRepository.deleteByUuidAndGameServer_Uuid(webhookId, gameServerUuid);
-        if (deleted == 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Webhook with uuid "
-                            + webhookId
-                            + " not found for game server "
-                            + gameServerUuid);
-        }
+    public void deleteWebhook(String webhookId) {
+        webhookRepository.deleteById(webhookId);
     }
 }
