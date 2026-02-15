@@ -42,7 +42,7 @@ public class WebhookController {
     @DeleteMapping("/{webhookUuid}")
     @RequireAccess(action = Action.DELETE, resource = Resource.GAME_SERVER)
     public ResponseEntity<Void> deleteWebhook(
-            @PathVariable @ResourceId String gameserver_uuid, @PathVariable String webhookUuid) {
+            @PathVariable @ResourceId String gameserverUuid, @PathVariable String webhookUuid) {
         webhookService.deleteWebhook(webhookUuid);
         return ResponseEntity.noContent().build();
     }
