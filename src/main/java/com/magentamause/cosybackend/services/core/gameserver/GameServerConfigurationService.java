@@ -66,7 +66,9 @@ public class GameServerConfigurationService {
     public List<GameServerAccessGroup> updateAccessGroup(
             String gameServerUuid, String accessGroupUuid, AccessGroupUpdateDto updateDto) {
         GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
-        List<GameServerAccessGroup> accessGroups = gameServer.getAccessGroups();
+        List<GameServerAccessGroup> accessGroups = gameServer.getAccessGroups() != null 
+                ? gameServer.getAccessGroups() 
+                : List.of();
         GameServerAccessGroup accessGroupToUpdate = getAccessGroup(accessGroupUuid);
         if (accessGroupToUpdate.getGameServer() == null
                 || !accessGroupToUpdate.getGameServer().getUuid().equals(gameServerUuid)
@@ -86,7 +88,10 @@ public class GameServerConfigurationService {
         usersToNotify.addAll(updatedAccessGroup.getUsers());
         gameServerAccessGroupRepository.save(updatedAccessGroup);
         sendPermissionUpdateNotification(usersToNotify.stream().toList(), gameServerUuid);
-        return gameServerService.getOrThrow(gameServerUuid).getAccessGroups();
+        GameServerEntity updatedGameServer = gameServerService.getOrThrow(gameServerUuid);
+        return updatedGameServer.getAccessGroups() != null 
+                ? updatedGameServer.getAccessGroups() 
+                : List.of();
     }
 
     public void sendPermissionUpdateNotification(List<UserEntity> users, String serverId) {
@@ -112,7 +117,9 @@ public class GameServerConfigurationService {
                             + "'");
         }
         List<UserEntity> usersToNotify = new ArrayList<>(accessGroupToDelete.getUsers());
-        gameServer.getAccessGroups().remove(accessGroupToDelete);
+        if (gameServer.getAccessGroups() != null) {
+            gameServer.getAccessGroups().remove(accessGroupToDelete);
+        }
         gameServerRepository.save(gameServer);
         sendPermissionUpdateNotification(usersToNotify, gameServerUuid);
     }
@@ -139,7 +146,9 @@ public class GameServerConfigurationService {
         }
 
         return GameServerPermissionsUtility.extractUserPermissions(
-                userUuid, gameServer.getAccessGroups());
+                userUuid, gameServer.getAccessGroups() != null 
+                        ? gameServer.getAccessGroups() 
+                        : List.of());
     }
 
     public List<GameServerAccessPermission> getUserPermissions(
