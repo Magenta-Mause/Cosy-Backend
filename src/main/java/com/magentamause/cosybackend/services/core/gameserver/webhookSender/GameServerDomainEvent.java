@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.services.core.gameserver.webhooks;
+package com.magentamause.cosybackend.services.core.gameserver.webhookSender;
 
 import com.magentamause.cosybackend.entities.GameServerEventType;
 
