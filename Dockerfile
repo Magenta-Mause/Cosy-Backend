@@ -40,9 +40,9 @@ RUN set -eux; \
     esac; \
     rustup target add "$RUST_TARGET"; \
     RUSTFLAGS="-C target-feature=-crt-static" cargo build --release --target "$RUST_TARGET"; \
-    mkdir -p /out/native/"$RES_ARCH"; \
-    cp "target/$RUST_TARGET/release/libcosyfs.so" "/out/native/$RES_ARCH/libcosyfs.so"; \
-    strip "/out/native/$RES_ARCH/libcosyfs.so" || true
+    mkdir -p /out/native/linux-"$RES_ARCH"; \
+    cp "target/$RUST_TARGET/release/libcosyfs.so" "/out/native/linux-$RES_ARCH/libcosyfs.so"; \
+    strip "/out/native/linux-$RES_ARCH/libcosyfs.so" || true
 
 ############################
 # Stage 1: build the jar
@@ -66,7 +66,7 @@ RUN set -eux; \
       arm64) RES_ARCH="aarch64" ;; \
       *) echo "Unsupported TARGETARCH=${TARGETARCH} (TARGETPLATFORM=${TARGETPLATFORM})" >&2; exit 1 ;; \
     esac; \
-    mkdir -p "src/main/resources/native/$RES_ARCH"
+    mkdir -p "src/main/resources/native/linux-$RES_ARCH"
 
 COPY --from=cosyfs-builder /out/native/ /app/src/main/resources/native/
 
@@ -76,7 +76,7 @@ RUN set -eux; \
       amd64) RES_ARCH="x86_64" ;; \
       arm64) RES_ARCH="aarch64" ;; \
     esac; \
-    test -f "src/main/resources/native/$RES_ARCH/libcosyfs.so"
+    test -f "src/main/resources/native/linux-$RES_ARCH/libcosyfs.so"
 
 RUN mvn clean package -DskipTests -B
 
@@ -101,8 +101,8 @@ RUN printf '%s\n' \
 '  *) echo "Unsupported runtime arch: $ARCH" >&2; exit 1 ;;' \
 'esac' \
 '# verify the lib is packaged in the jar (Spring Boot jar layout)' \
-'if ! zipinfo -1 /app/app.jar | grep -q "^BOOT-INF/classes/native/${RES_ARCH}/libcosyfs.so$"; then' \
-'  echo "FATAL: native cosyfs library missing for ${RES_ARCH} in app.jar (would fall back to unsafe path)" >&2' \
+'if ! zipinfo -1 /app/app.jar | grep -q "^BOOT-INF/classes/native/linux-${RES_ARCH}/libcosyfs.so$"; then' \
+'  echo "FATAL: native cosyfs library missing for linux-${RES_ARCH} in app.jar (would fall back to unsafe path)" >&2' \
 '  echo "Found native entries:" >&2' \
 '  zipinfo -1 /app/app.jar | grep "BOOT-INF/classes/native/" >&2 || true' \
 '  exit 1' \

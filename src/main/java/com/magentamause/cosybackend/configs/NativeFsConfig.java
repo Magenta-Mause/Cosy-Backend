@@ -11,15 +11,15 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class NativeFsConfig {
 
-  @Bean
-  public CosyFsHandle cosyFsHandle() {
-    try {
-      CosyFsNative lib = NativeLibraryLoader.loadFromResources("cosyfs", CosyFsNative.class);
-      return new CosyFsHandle(Optional.of(lib));
-    } catch (Throwable t) {
-      LoggerFactory.getLogger(NativeFsConfig.class)
-          .warn("cosyfs native library not available; falling back to Java NIO", t);
-      return new CosyFsHandle(Optional.empty());
+    @Bean
+    public CosyFsHandle cosyFsHandle() {
+        try {
+            CosyFsNative lib = NativeLibraryLoader.loadFromResources("cosyfs", CosyFsNative.class);
+            return new CosyFsHandle(Optional.of(lib));
+        } catch (Throwable t) {
+            LoggerFactory.getLogger(NativeFsConfig.class)
+                    .warn("cosyfs native library not available; falling back to Java NIO", t);
+            return new CosyFsHandle(Optional.empty());
+        }
     }
-  }
 }
