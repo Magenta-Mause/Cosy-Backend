@@ -37,7 +37,10 @@ public class WebhookService {
         if (deleted == 0) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
-                    "Webhook with uuid " + webhookId + " not found for game server " + gameServerUuid);
+                    "Webhook with uuid "
+                            + webhookId
+                            + " not found for game server "
+                            + gameServerUuid);
         }
     }
 }

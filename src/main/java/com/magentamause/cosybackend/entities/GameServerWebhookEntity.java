@@ -33,8 +33,7 @@ public class GameServerWebhookEntity {
     @Column(length = 2000, nullable = false)
     private String webhookUrl;
 
-    @Builder.Default
-    private boolean enabled = true;
+    @Builder.Default private boolean enabled = true;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
