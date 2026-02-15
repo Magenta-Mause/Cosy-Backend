@@ -5,9 +5,11 @@ import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.services.external.loki.LokiQueryService;
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
+
 import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.regex.Pattern;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,15 +39,14 @@ public class GameServerLogService {
     public GameServerLogMessageEntity publishAndSaveLog(
             GameServerLogMessageEntity logEntity, boolean parseErrorLogLevel) {
         GameServerLogMessageEntity copy = logEntity.copy();
-        if (parseErrorLogLevel
-                && logEntity.getMessage() != null
-                && detectErrorLogLevel(logEntity.getMessage())
-                        == GameServerLogMessageEntity.LogLevel.ERROR) {
-            copy.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);
-        }
         if (logEntity.getMessage() == null) {
             log.debug("Received empty message");
             return null;
+        }
+        if (parseErrorLogLevel
+                && detectErrorLogLevel(logEntity.getMessage())
+                == GameServerLogMessageEntity.LogLevel.ERROR) {
+            copy.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);
         }
         lokiQueryService.saveGameServerLog(copy);
         gameServerLogWebsocketPublisher.publishLog(copy.getGameServerUuid(), logEntity);

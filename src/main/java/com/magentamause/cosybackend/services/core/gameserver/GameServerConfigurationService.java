@@ -13,7 +13,9 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.websockets.UserPermissionsPublisher;
+
 import java.util.*;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -131,7 +133,7 @@ public class GameServerConfigurationService {
             return List.of(GameServerAccessPermission.ADMIN);
         }
 
-        UserEntity user = userEntityService.getOptionalUserByUuid(userUuid).orElseThrow();
+        UserEntity user = userEntityService.getOptionalUserByUuid(userUuid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         if (user.getRole().isAdmin()) {
             return List.of(GameServerAccessPermission.ADMIN);
         }
