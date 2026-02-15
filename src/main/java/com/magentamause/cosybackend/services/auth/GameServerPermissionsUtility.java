@@ -37,6 +37,6 @@ public class GameServerPermissionsUtility {
         List<GameServerAccessPermission> userPermissions =
                 extractUserPermissions(user.getUuid(), gameServer.getAccessGroups());
         return userPermissions.contains(GameServerAccessPermission.ADMIN)
-                || userPermissions.contains(permission);
+                || (userPermissions.contains(GameServerAccessPermission.SEE_SERVER) && userPermissions.contains(permission));
     }
 }

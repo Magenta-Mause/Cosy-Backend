@@ -13,9 +13,9 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
+import com.magentamause.cosybackend.websockets.UserPermissionsPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -29,6 +29,7 @@ public class GameServerConfigurationService {
     private final GameServerService gameServerService;
     private final GameServerAccessGroupRepository gameServerAccessGroupRepository;
     private final UserEntityService userEntityService;
+    private final UserPermissionsPublisher userPermissionsPublisher;
 
     public GameServerEntity updateRconConfig(String uuid, RCONConfiguration updateDto) {
         GameServerEntity gameServer = gameServerService.getOrThrow(uuid);
@@ -78,10 +79,18 @@ public class GameServerConfigurationService {
                             + gameServerUuid
                             + "'");
         }
+        HashSet<UserEntity> usersToNotify = new HashSet<>(accessGroupToUpdate.getUsers());
+
         GameServerAccessGroup updatedAccessGroup =
                 updateDto.applyOnEntity(accessGroupToUpdate, userEntityService::getUserByUuid);
+        usersToNotify.addAll(updatedAccessGroup.getUsers());
         gameServerAccessGroupRepository.save(updatedAccessGroup);
+        sendPermissionUpdateNotification(usersToNotify.stream().toList(), gameServerUuid);
         return gameServerService.getOrThrow(gameServerUuid).getAccessGroups();
+    }
+
+    public void sendPermissionUpdateNotification(List<UserEntity> users, String serverId) {
+        users.forEach(user -> userPermissionsPublisher.publishPermissionUpdate(user.getUuid(), serverId, getUserPermissions(serverId, user.getUuid())));
     }
 
     public void deleteAccessGroup(String gameServerUuid, String accessGroupUuid) {
@@ -97,8 +106,10 @@ public class GameServerConfigurationService {
                             + gameServerUuid
                             + "'");
         }
+        List<UserEntity> usersToNotify = new ArrayList<>(accessGroupToDelete.getUsers());
         gameServer.getAccessGroups().remove(accessGroupToDelete);
         gameServerRepository.save(gameServer);
+        sendPermissionUpdateNotification(usersToNotify, gameServerUuid);
     }
 
     private GameServerAccessGroup getAccessGroup(String accessGroupUuid) {

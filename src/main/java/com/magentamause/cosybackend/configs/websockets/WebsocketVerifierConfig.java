@@ -22,32 +22,36 @@ public class WebsocketVerifierConfig {
             ObjectProvider<ResourceResolver> resourceResolverProvider) {
         return new WebsocketVerifier(securityContextService, userEntityService)
                 .addVerifier(
-                        WebSocketDestinations.Topics.GAME_SERVER_LOGS_CREATION,
                         new AccessManagementVerifier(
                                 WebSocketDestinations.Topics.GAME_SERVER_LOGS_CREATION,
                                 Operation.GAME_SERVER_LOG_READ,
                                 validatorRegistryProvider::getObject,
                                 resourceResolverProvider::getObject))
                 .addVerifier(
-                        WebSocketDestinations.Topics.GAME_SERVER_STATUS,
                         new AccessManagementVerifier(
                                 WebSocketDestinations.Topics.GAME_SERVER_STATUS,
                                 Operation.GAME_SERVER_GET,
                                 validatorRegistryProvider::getObject,
                                 resourceResolverProvider::getObject))
                 .addVerifier(
-                        WebSocketDestinations.Topics.GAME_SERVER_DOCKER_PROGRESS,
                         new AccessManagementVerifier(
                                 WebSocketDestinations.Topics.GAME_SERVER_DOCKER_PROGRESS,
                                 Operation.GAME_SERVER_GET,
                                 validatorRegistryProvider::getObject,
                                 resourceResolverProvider::getObject))
                 .addVerifier(
-                        WebSocketDestinations.Topics.GAME_SERVER_METRICS,
                         new AccessManagementVerifier(
                                 WebSocketDestinations.Topics.GAME_SERVER_METRICS,
                                 Operation.GAME_SERVER_METRIC_READ,
                                 validatorRegistryProvider::getObject,
-                                resourceResolverProvider::getObject));
+                                resourceResolverProvider::getObject))
+                .addVerifier(
+                        new AccessManagementVerifier(
+                                WebSocketDestinations.Topics.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE,
+                                Operation.USER_READ_PERMISSIONS,
+                                validatorRegistryProvider::getObject,
+                                resourceResolverProvider::getObject,
+                                "{userId}")
+                );
     }
 }

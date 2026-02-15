@@ -4,9 +4,11 @@ import com.magentamause.cosybackend.configs.UtilConfig;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.user.UserEntityService;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
@@ -18,10 +20,8 @@ public class WebsocketVerifier {
     private final SecurityContextService securityContextService;
     private final UserEntityService userEntityService;
 
-    public WebsocketVerifier addVerifier(String channel, WebsocketEndpointVerifier verifier) {
-        String regex = "^" + channel.replace("{serverId}", UtilConfig.UUID_REGEX) + "$";
-        Pattern pattern = Pattern.compile(regex);
-        websocketVerifier.put(pattern, verifier);
+    public WebsocketVerifier addVerifier(WebsocketEndpointVerifier verifier) {
+        websocketVerifier.put(verifier.getPathPattern(), verifier);
         return this;
     }
 
