@@ -45,3 +45,5 @@ dummy
 # For api client tests
 api-client/
 dummy/
+
+src/main/resources/native/linux-x86_64/libcosyfs.so
