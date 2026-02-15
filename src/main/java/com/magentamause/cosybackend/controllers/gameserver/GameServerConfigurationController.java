@@ -49,35 +49,35 @@ public class GameServerConfigurationController {
         return ResponseEntity.ok(gameServer.toDto(userPermissions));
     }
 
-    @PostMapping("/{game_server_uuid}/access-groups")
+    @PostMapping("/{uuid}/access-groups")
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
     public ResponseEntity<GameServerAccessGroupDto> createGameServerAccessGroup(
-            @PathVariable("game_server_uuid") @ResourceId String gameServerUuid,
+            @PathVariable @ResourceId String uuid,
             @Valid @RequestBody AccessGroupCreationDto creationDto) {
         return ResponseEntity.ok(
                 gameServerConfigurationService
-                        .createAccessGroup(gameServerUuid, creationDto)
+                        .createAccessGroup(uuid, creationDto)
                         .toDto());
     }
 
-    @DeleteMapping("/{game_server_uuid}/access-groups/{access_group_uuid}")
+    @DeleteMapping("/{uuid}/access-groups/{access_group_uuid}")
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
     public ResponseEntity<Void> deleteGameServerAccessGroup(
-            @PathVariable("game_server_uuid") @ResourceId String gameServerUuid,
+            @PathVariable @ResourceId String uuid,
             @PathVariable("access_group_uuid") String accessGroupUuid) {
-        gameServerConfigurationService.deleteAccessGroup(gameServerUuid, accessGroupUuid);
+        gameServerConfigurationService.deleteAccessGroup(uuid, accessGroupUuid);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{game_server_uuid}/access-groups/{access_group_uuid}")
+    @PatchMapping("/{uuid}/access-groups/{access_group_uuid}")
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
     public ResponseEntity<List<GameServerAccessGroupDto>> updateGameServerAccessGroups(
-            @PathVariable("game_server_uuid") @ResourceId String gameServerUuid,
+            @PathVariable @ResourceId String uuid,
             @PathVariable("access_group_uuid") String accessGroupUuid,
             @RequestBody @Valid AccessGroupUpdateDto updateDto) {
         return ResponseEntity.ok(
                 gameServerConfigurationService
-                        .updateAccessGroup(gameServerUuid, accessGroupUuid, updateDto)
+                        .updateAccessGroup(uuid, accessGroupUuid, updateDto)
                         .stream()
                         .map(GameServerAccessGroup::toDto)
                         .toList());
