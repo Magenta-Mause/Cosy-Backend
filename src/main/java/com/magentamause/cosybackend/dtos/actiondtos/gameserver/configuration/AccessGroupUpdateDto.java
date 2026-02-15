@@ -27,7 +27,7 @@ public class AccessGroupUpdateDto {
                     new ArrayList<>(userUuids.stream().map(userResolver).toList()));
         }
         gameServerAccessGroup.setPermissions(
-                permissions == null ? null : new ArrayList<>(permissions));
+                permissions == null ? new ArrayList<>() : new ArrayList<>(permissions));
         return gameServerAccessGroup;
     }
 }
