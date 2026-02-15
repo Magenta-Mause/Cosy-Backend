@@ -10,14 +10,12 @@ import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import lombok.Getter;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 
 public class AccessManagementVerifier implements WebsocketEndpointVerifier {
 
-    @Getter
-    private final Pattern pathPattern;
+    @Getter private final Pattern pathPattern;
     private final Operation operation;
     private final Supplier<ValidatorRegistry> validatorRegistrySupplier;
     private final Supplier<ResourceResolver> resourceResolverSupplier;
@@ -41,7 +39,8 @@ public class AccessManagementVerifier implements WebsocketEndpointVerifier {
             final Supplier<ResourceResolver> resourceResolverSupplier,
             final String pathReplacePattern) {
         this.pathPattern =
-                Pattern.compile("^" + path.replace(pathReplacePattern, UtilConfig.UUID_REGEX) + "$");
+                Pattern.compile(
+                        "^" + path.replace(pathReplacePattern, UtilConfig.UUID_REGEX) + "$");
         this.operation = operation;
         this.validatorRegistrySupplier = validatorRegistrySupplier;
         this.resourceResolverSupplier = resourceResolverSupplier;

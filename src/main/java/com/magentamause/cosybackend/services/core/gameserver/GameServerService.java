@@ -17,7 +17,6 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
-import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerPolicy;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
@@ -39,7 +38,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -404,8 +402,10 @@ public class GameServerService {
             return allGameServers;
         }
         return allGameServers.stream()
-                .filter(gameServer -> GameServerPermissionsUtility.isOwnerOrHasPermission(
-                        gameServer, user, GameServerAccessPermission.SEE_SERVER))
+                .filter(
+                        gameServer ->
+                                GameServerPermissionsUtility.isOwnerOrHasPermission(
+                                        gameServer, user, GameServerAccessPermission.SEE_SERVER))
                 .toList();
     }
 }

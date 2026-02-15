@@ -24,7 +24,6 @@ public enum Operation {
     GAME_SERVER_SEND_COMMAND,
     GAME_SERVER_GET_LOGS,
 
-
     // Game Server Configuration operations
     GAME_SERVER_METRIC_CONFIG_CHANGE,
     GAME_SERVER_PERMISSIONS_CONFIG_CHANGE,
@@ -43,5 +42,5 @@ public enum Operation {
     // User Invite operations
     USER_INVITE_READ,
     USER_INVITE_CREATE,
-     USER_INVITE_DELETE
+    USER_INVITE_DELETE
 }

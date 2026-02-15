@@ -15,11 +15,10 @@ import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerConfigurationService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -44,7 +43,9 @@ public class GameServerConfigurationController {
             @RequestBody @Valid RCONConfiguration updateDto) {
         GameServerEntity gameServer =
                 gameServerConfigurationService.updateRconConfig(uuid, updateDto);
-        List<GameServerAccessPermission> userPermissions = gameServerConfigurationService.getUserPermissions(uuid, securityContextService.getUserId());
+        List<GameServerAccessPermission> userPermissions =
+                gameServerConfigurationService.getUserPermissions(
+                        uuid, securityContextService.getUserId());
         return ResponseEntity.ok(gameServer.toDto(userPermissions));
     }
 
@@ -54,7 +55,9 @@ public class GameServerConfigurationController {
             @PathVariable("game_server_uuid") @ResourceId String gameServerUuid,
             @Valid @RequestBody AccessGroupCreationDto creationDto) {
         return ResponseEntity.ok(
-                gameServerConfigurationService.createAccessGroup(gameServerUuid, creationDto).toDto());
+                gameServerConfigurationService
+                        .createAccessGroup(gameServerUuid, creationDto)
+                        .toDto());
     }
 
     @DeleteMapping("/{game_server_uuid}/access-groups/{access_group_uuid}")
@@ -73,8 +76,10 @@ public class GameServerConfigurationController {
             @PathVariable("access_group_uuid") String accessGroupUuid,
             @RequestBody @Valid AccessGroupUpdateDto updateDto) {
         return ResponseEntity.ok(
-                gameServerConfigurationService.updateAccessGroup(
-                                gameServerUuid, accessGroupUuid, updateDto)
-                        .stream().map(GameServerAccessGroup::toDto).toList());
+                gameServerConfigurationService
+                        .updateAccessGroup(gameServerUuid, accessGroupUuid, updateDto)
+                        .stream()
+                        .map(GameServerAccessGroup::toDto)
+                        .toList());
     }
 }

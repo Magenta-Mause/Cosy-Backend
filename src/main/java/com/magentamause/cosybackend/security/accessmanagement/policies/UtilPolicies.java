@@ -5,9 +5,8 @@ import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class UtilPolicies {
@@ -18,13 +17,13 @@ public class UtilPolicies {
             GameServerAccessPermission permission) {
         try {
 
-        Optional<GameServerEntity> gameServerEntity =
-                resourceResolver.getGameServerEntity((String) referenceId);
-        if (gameServerEntity.isEmpty()) {
-            return false;
-        }
-        return GameServerPermissionsUtility.isOwnerOrHasPermission(
-                gameServerEntity.get(), user, permission);
+            Optional<GameServerEntity> gameServerEntity =
+                    resourceResolver.getGameServerEntity((String) referenceId);
+            if (gameServerEntity.isEmpty()) {
+                return false;
+            }
+            return GameServerPermissionsUtility.isOwnerOrHasPermission(
+                    gameServerEntity.get(), user, permission);
         } catch (Exception e) {
             log.error("Error checking permissions", e);
             throw new RuntimeException(e);

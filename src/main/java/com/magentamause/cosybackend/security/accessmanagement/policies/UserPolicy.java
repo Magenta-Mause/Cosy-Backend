@@ -50,7 +50,8 @@ public class UserPolicy {
     }
 
     @Validates(Operation.USER_READ_PERMISSIONS)
-    public boolean readPermissions(ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+    public boolean readPermissions(
+            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
         return user.getUuid().equals(referenceId);
     }
 }

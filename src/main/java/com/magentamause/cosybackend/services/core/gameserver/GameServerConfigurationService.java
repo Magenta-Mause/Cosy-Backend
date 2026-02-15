@@ -12,10 +12,8 @@ import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
 import com.magentamause.cosybackend.services.user.UserEntityService;
-
-import java.util.*;
-
 import com.magentamause.cosybackend.websockets.UserPermissionsPublisher;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -90,7 +88,12 @@ public class GameServerConfigurationService {
     }
 
     public void sendPermissionUpdateNotification(List<UserEntity> users, String serverId) {
-        users.forEach(user -> userPermissionsPublisher.publishPermissionUpdate(user.getUuid(), serverId, getUserPermissions(serverId, user.getUuid())));
+        users.forEach(
+                user ->
+                        userPermissionsPublisher.publishPermissionUpdate(
+                                user.getUuid(),
+                                serverId,
+                                getUserPermissions(serverId, user.getUuid())));
     }
 
     public void deleteAccessGroup(String gameServerUuid, String accessGroupUuid) {
@@ -122,7 +125,8 @@ public class GameServerConfigurationService {
                                         "Access group '" + accessGroupUuid + "' not found"));
     }
 
-    public List<GameServerAccessPermission> getUserPermissions(GameServerEntity gameServer, String userUuid) {
+    public List<GameServerAccessPermission> getUserPermissions(
+            GameServerEntity gameServer, String userUuid) {
         if (gameServer.getOwner().getUuid().equals(userUuid)) {
             return List.of(GameServerAccessPermission.ADMIN);
         }
@@ -132,11 +136,14 @@ public class GameServerConfigurationService {
             return List.of(GameServerAccessPermission.ADMIN);
         }
 
-        return GameServerPermissionsUtility.extractUserPermissions(userUuid, gameServer.getAccessGroups());
+        return GameServerPermissionsUtility.extractUserPermissions(
+                userUuid, gameServer.getAccessGroups());
     }
 
-    public List<GameServerAccessPermission> getUserPermissions(String gameServerUuid, String userUuid) {
-        Optional<GameServerEntity> gameServerOptional = gameServerService.getGameServerOptionalById(gameServerUuid);
+    public List<GameServerAccessPermission> getUserPermissions(
+            String gameServerUuid, String userUuid) {
+        Optional<GameServerEntity> gameServerOptional =
+                gameServerService.getGameServerOptionalById(gameServerUuid);
         if (gameServerOptional.isEmpty()) {
             return List.of();
         }

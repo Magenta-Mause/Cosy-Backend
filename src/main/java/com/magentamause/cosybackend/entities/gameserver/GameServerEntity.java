@@ -10,13 +10,10 @@ import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
-import io.reactivex.rxjava3.internal.operators.observable.ObservableZip;
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
 import lombok.*;
 
 @Getter
@@ -34,11 +31,9 @@ public class GameServerEntity {
 
     private String serverName;
 
-    @ManyToOne
-    private UserEntity owner;
+    @ManyToOne private UserEntity owner;
 
-    @ManyToOne
-    private UserEntity lastStartedBy;
+    @ManyToOne private UserEntity lastStartedBy;
 
     @Enumerated(EnumType.STRING)
     private GameServerDto.GameServerStatus status;
@@ -46,19 +41,16 @@ public class GameServerEntity {
     private LocalDateTime timestampLastStarted;
 
     // No cascading or orphanRemoval, because GameEntities without a server can exist
-    @ManyToOne
-    private GameEntity game;
+    @ManyToOne private GameEntity game;
 
     @Column(nullable = false)
     private String dockerImageName;
 
     private String dockerImageTag;
 
-    @Embedded
-    private DockerHardwareLimits dockerHardwareLimits;
+    @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
-    @Embedded
-    private RCONConfiguration rconConfiguration;
+    @Embedded private RCONConfiguration rconConfiguration;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
@@ -111,19 +103,34 @@ public class GameServerEntity {
                 .environmentVariables(this.getEnvironmentVariables())
                 .volumeMounts(this.getVolumeMounts())
                 .metricLayout(this.getMetricLayout())
-                .accessGroups(Optional.ofNullable(this.getAccessGroups()).map(access -> access.stream().map(GameServerAccessGroup::toDto).toList()).orElse(null))
+                .accessGroups(
+                        Optional.ofNullable(this.getAccessGroups())
+                                .map(
+                                        access ->
+                                                access.stream()
+                                                        .map(GameServerAccessGroup::toDto)
+                                                        .toList())
+                                .orElse(null))
                 .build();
     }
 
     public GameServerDto toDto(List<GameServerAccessPermission> permissions) {
-        GameServerDto.GameServerDtoBuilder builder = GameServerDto.builder()
-                .uuid(this.getUuid())
-                .serverName(this.getServerName())
-                .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
-                .status(this.getStatus())
-                .timestampLastStarted(this.getTimestampLastStarted())
-                .gameUuid(Optional.ofNullable(this.getGame()).map(GameEntity::getUuid).orElse(null));
-        if (GameServerPermissionsUtility.can(GameServerAccessPermission.CHANGE_SERVER_CONFIGS, permissions)) {
+        GameServerDto.GameServerDtoBuilder builder =
+                GameServerDto.builder()
+                        .uuid(this.getUuid())
+                        .serverName(this.getServerName())
+                        .owner(
+                                Optional.ofNullable(this.getOwner())
+                                        .map(UserEntity::toDto)
+                                        .orElse(null))
+                        .status(this.getStatus())
+                        .timestampLastStarted(this.getTimestampLastStarted())
+                        .gameUuid(
+                                Optional.ofNullable(this.getGame())
+                                        .map(GameEntity::getUuid)
+                                        .orElse(null));
+        if (GameServerPermissionsUtility.can(
+                GameServerAccessPermission.CHANGE_SERVER_CONFIGS, permissions)) {
             builder.dockerImageName(this.getDockerImageName())
                     .dockerImageTag(this.getDockerImageTag())
                     .dockerHardwareLimits(this.getDockerHardwareLimits())
@@ -132,14 +139,26 @@ public class GameServerEntity {
                     .environmentVariables(this.getEnvironmentVariables())
                     .volumeMounts(this.getVolumeMounts());
         }
-        if (GameServerPermissionsUtility.can(GameServerAccessPermission.CHANGE_RCON_SETTINGS, permissions)) {
+        if (GameServerPermissionsUtility.can(
+                GameServerAccessPermission.CHANGE_RCON_SETTINGS, permissions)) {
             builder.rconConfiguration(this.getRconConfiguration());
         }
-        if (GameServerPermissionsUtility.can(GameServerAccessPermission.CHANGE_METRICS_SETTINGS, permissions) || GameServerPermissionsUtility.can(GameServerAccessPermission.READ_SERVER_METRICS, permissions)) {
+        if (GameServerPermissionsUtility.can(
+                        GameServerAccessPermission.CHANGE_METRICS_SETTINGS, permissions)
+                || GameServerPermissionsUtility.can(
+                        GameServerAccessPermission.READ_SERVER_METRICS, permissions)) {
             builder.metricLayout(this.getMetricLayout());
         }
-        if (GameServerPermissionsUtility.can(GameServerAccessPermission.CHANGE_PERMISSIONS_SETTINGS, permissions)) {
-            builder.accessGroups(Optional.ofNullable(this.getAccessGroups()).map(access -> access.stream().map(GameServerAccessGroup::toDto).toList()).orElse(null));
+        if (GameServerPermissionsUtility.can(
+                GameServerAccessPermission.CHANGE_PERMISSIONS_SETTINGS, permissions)) {
+            builder.accessGroups(
+                    Optional.ofNullable(this.getAccessGroups())
+                            .map(
+                                    access ->
+                                            access.stream()
+                                                    .map(GameServerAccessGroup::toDto)
+                                                    .toList())
+                            .orElse(null));
         }
         return builder.build();
     }

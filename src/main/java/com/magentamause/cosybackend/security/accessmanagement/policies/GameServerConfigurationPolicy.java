@@ -39,5 +39,4 @@ public class GameServerConfigurationPolicy {
                 user,
                 GameServerAccessPermission.CHANGE_RCON_SETTINGS);
     }
-
 }

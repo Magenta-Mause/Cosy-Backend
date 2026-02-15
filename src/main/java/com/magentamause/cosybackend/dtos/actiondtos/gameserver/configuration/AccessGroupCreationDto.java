@@ -5,6 +5,5 @@ import lombok.Data;
 
 @Data
 public class AccessGroupCreationDto {
-    @NotEmpty
-    private String name;
+    @NotEmpty private String name;
 }

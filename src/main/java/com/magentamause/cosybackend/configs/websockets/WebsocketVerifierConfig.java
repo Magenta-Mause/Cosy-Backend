@@ -51,7 +51,6 @@ public class WebsocketVerifierConfig {
                                 Operation.USER_READ_PERMISSIONS,
                                 validatorRegistryProvider::getObject,
                                 resourceResolverProvider::getObject,
-                                "{userId}")
-                );
+                                "{userId}"));
     }
 }
