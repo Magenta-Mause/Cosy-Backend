@@ -34,7 +34,8 @@ public class WebhookController {
     @PostMapping
     @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
     public ResponseEntity<WebhookDto> createWebhook(
-            @PathVariable @ResourceId String gameserverUuid, @Valid @RequestBody WebhookCreationDto creationDto) {
+            @PathVariable @ResourceId String gameserverUuid,
+            @Valid @RequestBody WebhookCreationDto creationDto) {
         WebhookDto created = webhookService.createWebhook(gameserverUuid, creationDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }

@@ -1,12 +1,10 @@
 package com.magentamause.cosybackend.services.core.gameserver.webhookSender.impl;
 
-import com.magentamause.cosybackend.entities.GameServerEventType;
 import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.entities.WebhookType;
-import java.util.Map;
-
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.WebhookSender;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
