@@ -4,6 +4,7 @@ import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
+import com.magentamause.cosybackend.entities.GameServerEventType;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
@@ -24,6 +25,7 @@ import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.services.engine.docker.util.HardwareLimitPresentValidator;
 import com.magentamause.cosybackend.services.engine.docker.util.HardwareQuotaChecker;
 import com.magentamause.cosybackend.services.engine.docker.util.VolumeDirectoryService;
+import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
 import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
@@ -38,9 +40,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
@@ -59,13 +63,15 @@ public class GameServerService {
     private final HardwareQuotaChecker hardwareQuotaChecker;
     private final VolumeDirectoryService volumeDirectoryService;
     private final RCONService rCONService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final TransactionTemplate transactionTemplate;
 
     @PostConstruct
     public void init() {
         engineManager.attachStatusListener(this::handleGameServerEngineEvent);
         for (GameServerEntity server : gameServerRepository.findAll()) {
             GameServerDto.GameServerStatus status = engineManager.getStatus(server);
-            updateStatus(server, status);
+            updateStatus(server, status, false);
             engineManager.attachStatusSupplier(
                     server.getUuid(), () -> getStatusFromEntity(server.getUuid()));
             log.info("Setting status of server {} to {} ", server.getUuid(), status);
@@ -327,9 +333,31 @@ public class GameServerService {
     }
 
     public void updateStatus(GameServerEntity serverConfig, GameServerDto.GameServerStatus status) {
-        serverConfig.setStatus(status);
-        gameServerRepository.save(serverConfig);
-        statusPublisher.publishStatus(serverConfig.getUuid(), status);
+        updateStatus(serverConfig, status, true);
+    }
+
+    public void updateStatus(
+            GameServerEntity serverConfig,
+            GameServerDto.GameServerStatus status,
+            boolean publishWebhookEvent) {
+        transactionTemplate.executeWithoutResult(
+                ignored -> {
+                    GameServerDto.GameServerStatus previousStatus = serverConfig.getStatus();
+                    serverConfig.setStatus(status);
+                    gameServerRepository.save(serverConfig);
+                    statusPublisher.publishStatus(serverConfig.getUuid(), status);
+
+                    if (publishWebhookEvent) {
+                        mapStatusTransitionToEvent(previousStatus, status)
+                                .ifPresent(
+                                        eventType ->
+                                                eventPublisher.publishEvent(
+                                                        new GameServerDomainEvent(
+                                                                serverConfig.getUuid(),
+                                                                serverConfig.getServerName(),
+                                                                eventType)));
+                    }
+                });
     }
 
     public GameServerDto.GameServerStatus getStatus(String serviceName) {
@@ -347,6 +375,20 @@ public class GameServerService {
 
     private List<GameServerEntity> getGameServersStartedByUser(String userUuid) {
         return gameServerRepository.findByLastStartedBy_Uuid(userUuid);
+    }
+
+    private Optional<GameServerEventType> mapStatusTransitionToEvent(
+            GameServerDto.GameServerStatus previousStatus, GameServerDto.GameServerStatus status) {
+        if (previousStatus == status) {
+            return Optional.empty();
+        }
+
+        return switch (status) {
+            case RUNNING -> Optional.of(GameServerEventType.SERVER_STARTED);
+            case STOPPED -> Optional.of(GameServerEventType.SERVER_STOPPED);
+            case FAILED -> Optional.of(GameServerEventType.SERVER_FAILED);
+            default -> Optional.empty();
+        };
     }
 
     public GameServerEntity updateRconConfig(String uuid, RCONConfiguration updateDto) {

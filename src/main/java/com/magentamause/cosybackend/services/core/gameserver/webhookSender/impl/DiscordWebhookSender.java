@@ -37,7 +37,7 @@ public class DiscordWebhookSender implements WebhookSender {
                     .post()
                     .uri(webhook.getWebhookUrl())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(Map.of("content", toMessage(event.eventType())))
+                    .bodyValue(Map.of("content", toMessage(event)))
                     .retrieve()
                     .toBodilessEntity()
                     .doOnError(
@@ -57,11 +57,11 @@ public class DiscordWebhookSender implements WebhookSender {
         }
     }
 
-    private String toMessage(GameServerEventType eventType) {
-        return switch (eventType) {
-            case SERVER_STARTED -> "✅ Server started";
-            case SERVER_STOPPED -> "🛑 Server stopped";
-            case SERVER_FAILED -> "❌ Server crashed";
+    private String toMessage(GameServerDomainEvent event) {
+        return switch (event.eventType()) {
+            case SERVER_STARTED -> "✅ Server started: " + event.serverName();
+            case SERVER_STOPPED -> "🛑 Server stopped: " + event.serverName();
+            case SERVER_FAILED -> "❌ Server crashed: " + event.serverName();
         };
     }
 }
