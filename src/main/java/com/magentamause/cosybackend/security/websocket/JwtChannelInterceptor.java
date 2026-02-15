@@ -33,6 +33,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
             } catch (Exception e) {
                 log.error("Error while verifying authentication for {}", subscribedEndpoint, e);
             }
+            return null;
         }
         return message;
     }
