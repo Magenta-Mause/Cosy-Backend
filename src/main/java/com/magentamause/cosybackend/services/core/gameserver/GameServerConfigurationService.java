@@ -13,9 +13,7 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.websockets.UserPermissionsPublisher;
-
 import java.util.*;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -66,9 +64,8 @@ public class GameServerConfigurationService {
     public List<GameServerAccessGroup> updateAccessGroup(
             String gameServerUuid, String accessGroupUuid, AccessGroupUpdateDto updateDto) {
         GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
-        List<GameServerAccessGroup> accessGroups = gameServer.getAccessGroups() != null 
-                ? gameServer.getAccessGroups() 
-                : List.of();
+        List<GameServerAccessGroup> accessGroups =
+                gameServer.getAccessGroups() != null ? gameServer.getAccessGroups() : List.of();
         GameServerAccessGroup accessGroupToUpdate = getAccessGroup(accessGroupUuid);
         if (accessGroupToUpdate.getGameServer() == null
                 || !accessGroupToUpdate.getGameServer().getUuid().equals(gameServerUuid)
@@ -89,8 +86,8 @@ public class GameServerConfigurationService {
         gameServerAccessGroupRepository.save(updatedAccessGroup);
         sendPermissionUpdateNotification(usersToNotify.stream().toList(), gameServerUuid);
         GameServerEntity updatedGameServer = gameServerService.getOrThrow(gameServerUuid);
-        return updatedGameServer.getAccessGroups() != null 
-                ? updatedGameServer.getAccessGroups() 
+        return updatedGameServer.getAccessGroups() != null
+                ? updatedGameServer.getAccessGroups()
                 : List.of();
     }
 
@@ -140,15 +137,20 @@ public class GameServerConfigurationService {
             return List.of(GameServerAccessPermission.ADMIN);
         }
 
-        UserEntity user = userEntityService.getOptionalUserByUuid(userUuid).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        UserEntity user =
+                userEntityService
+                        .getOptionalUserByUuid(userUuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "User not found"));
         if (user.getRole().isAdmin()) {
             return List.of(GameServerAccessPermission.ADMIN);
         }
 
         return GameServerPermissionsUtility.extractUserPermissions(
-                userUuid, gameServer.getAccessGroups() != null 
-                        ? gameServer.getAccessGroups() 
-                        : List.of());
+                userUuid,
+                gameServer.getAccessGroups() != null ? gameServer.getAccessGroups() : List.of());
     }
 
     public List<GameServerAccessPermission> getUserPermissions(

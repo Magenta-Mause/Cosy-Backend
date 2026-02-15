@@ -55,9 +55,7 @@ public class GameServerConfigurationController {
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody AccessGroupCreationDto creationDto) {
         return ResponseEntity.ok(
-                gameServerConfigurationService
-                        .createAccessGroup(uuid, creationDto)
-                        .toDto());
+                gameServerConfigurationService.createAccessGroup(uuid, creationDto).toDto());
     }
 
     @DeleteMapping("/{uuid}/access-groups/{access_group_uuid}")

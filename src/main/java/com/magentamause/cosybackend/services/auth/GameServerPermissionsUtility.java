@@ -4,7 +4,6 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroup;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
-
 import java.util.List;
 
 public class GameServerPermissionsUtility {
@@ -47,6 +46,6 @@ public class GameServerPermissionsUtility {
             List<GameServerAccessPermission> userPermissions) {
         return userPermissions.contains(GameServerAccessPermission.ADMIN)
                 || (userPermissions.contains(GameServerAccessPermission.SEE_SERVER)
-                && userPermissions.contains(permission));
+                        && userPermissions.contains(permission));
     }
 }
