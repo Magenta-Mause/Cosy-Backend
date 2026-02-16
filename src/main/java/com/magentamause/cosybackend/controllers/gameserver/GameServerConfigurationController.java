@@ -42,7 +42,8 @@ public class GameServerConfigurationController {
     public ResponseEntity<GameServerDto> updateRconConfiguration(
             @PathVariable @ResourceId String uuid,
             @RequestBody @Valid RCONConfiguration updateDto) {
-        GameServerEntity gameServer = gameServerConfigurationService.updateRconConfig(uuid, updateDto);
+        GameServerEntity gameServer =
+                gameServerConfigurationService.updateRconConfig(uuid, updateDto);
         return ResponseEntity.ok(gameServer.toDto(securityContextService.getUser()));
     }
 

@@ -22,7 +22,7 @@ public class GameServerFieldVisibilityPolicy {
 
     public static boolean canSeeMetricLayout(List<GameServerAccessPermission> permissions) {
         return GameServerPermissionsUtility.can(
-                GameServerAccessPermission.CHANGE_METRICS_SETTINGS, permissions)
+                        GameServerAccessPermission.CHANGE_METRICS_SETTINGS, permissions)
                 || GameServerPermissionsUtility.can(
                         GameServerAccessPermission.READ_SERVER_METRICS, permissions);
     }

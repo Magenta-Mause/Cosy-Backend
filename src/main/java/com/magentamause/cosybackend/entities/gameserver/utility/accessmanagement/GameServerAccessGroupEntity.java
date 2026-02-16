@@ -24,7 +24,10 @@ public class GameServerAccessGroupEntity {
     private List<GameServerAccessPermission> permissions;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "access_group_users", joinColumns = @JoinColumn(name = "access_group_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @JoinTable(
+            name = "access_group_users",
+            joinColumns = @JoinColumn(name = "access_group_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id"))
     private List<UserEntity> users;
 
     @ManyToOne

@@ -14,8 +14,7 @@ import lombok.Data;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class AccessGroupUpdateDto {
-    @NotEmpty
-    private String accessGroupName;
+    @NotEmpty private String accessGroupName;
     private List<String> userUuids;
     private List<GameServerAccessPermission> permissions;
 

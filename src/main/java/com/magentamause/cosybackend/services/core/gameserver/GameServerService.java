@@ -75,7 +75,8 @@ public class GameServerService {
                     log.info("Re-attaching log listener for running server {}", server.getUuid());
                     engineManager.attachLogListener(
                             server,
-                            (logMessage) -> gameServerLogService.publishAndSaveLog(logMessage, true));
+                            (logMessage) ->
+                                    gameServerLogService.publishAndSaveLog(logMessage, true));
                 } catch (Exception e) {
                     log.warn("Failed to re-attach log listener for server {}", server.getUuid(), e);
                 }
@@ -103,10 +104,11 @@ public class GameServerService {
                 GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
                 "Docker game server start event received",
                 false);
-        String exposedPorts = gameServerEntity.getPortMappings().stream()
-                .map(PortMapping::getInstancePort)
-                .map(Object::toString)
-                .collect(Collectors.joining(", "));
+        String exposedPorts =
+                gameServerEntity.getPortMappings().stream()
+                        .map(PortMapping::getInstancePort)
+                        .map(Object::toString)
+                        .collect(Collectors.joining(", "));
         gameServerLogService.publishAndSaveLog(
                 gameServerEntity,
                 GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
@@ -139,9 +141,10 @@ public class GameServerService {
     public GameServerEntity getOrThrow(String uuid) {
         return getOptionalGameServerOptionalById(uuid)
                 .orElseThrow(
-                        () -> new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Game server with uuid " + uuid + " not found"));
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Game server with uuid " + uuid + " not found"));
     }
 
     public Optional<GameServerEntity> getOptionalGameServerOptionalById(String uuid) {
@@ -149,8 +152,8 @@ public class GameServerService {
     }
 
     public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto gameServerDto) {
-        Function<Integer, GameEntity> gameResolver = (externalGameId) -> gamesService
-                .getGameEntityByExternalId(externalGameId, true);
+        Function<Integer, GameEntity> gameResolver =
+                (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
 
         GameServerEntity created = gameServerDto.toEntity(user, gameResolver);
         return saveGameServerConfiguration(created, true);
@@ -171,12 +174,14 @@ public class GameServerService {
     }
 
     public void deleteGameServerById(String uuid) {
-        GameServerEntity gameServer = gameServerRepository
-                .findById(uuid)
-                .orElseThrow(
-                        () -> new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Game server with uuid " + uuid + " not found"));
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(uuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game server with uuid " + uuid + " not found"));
         try {
             engineManager.stopAndRemove(gameServer);
         } catch (ServerAlreadyStoppedException e) {
@@ -190,8 +195,8 @@ public class GameServerService {
             String uuid, GameServerUpdateDto updateDto) {
         GameServerEntity gameServer = getOrThrow(uuid);
 
-        Function<Integer, GameEntity> gameResolver = (externalGameId) -> gamesService
-                .getGameEntityByExternalId(externalGameId, true);
+        Function<Integer, GameEntity> gameResolver =
+                (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
 
         updateDto.applyToEntity(gameServer, gameResolver);
 
@@ -204,7 +209,8 @@ public class GameServerService {
         }
         GameServerEntity serverConfig = getOrThrow(gameServerUuid);
         try {
-            List<GameServerEntity> gameServerStartedByUser = getGameServersStartedByUser(user.getUuid());
+            List<GameServerEntity> gameServerStartedByUser =
+                    getGameServersStartedByUser(user.getUuid());
             hardwareQuotaChecker.assertSufficientQuota(user, serverConfig, gameServerStartedByUser);
 
             startServerAsync(gameServerUuid, serverConfig);
@@ -250,16 +256,18 @@ public class GameServerService {
                             }
                         },
                         (status) -> updateStatus(serverConfig, status),
-                        (ignored) -> gameServerLogService.publishAndSaveLog(
-                                serverConfig,
-                                GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
-                                "Starting to pull Docker Image",
-                                false),
-                        (ignored) -> gameServerLogService.publishAndSaveLog(
-                                serverConfig,
-                                GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
-                                "Docker Image pulled successfully",
-                                false),
+                        (ignored) ->
+                                gameServerLogService.publishAndSaveLog(
+                                        serverConfig,
+                                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
+                                        "Starting to pull Docker Image",
+                                        false),
+                        (ignored) ->
+                                gameServerLogService.publishAndSaveLog(
+                                        serverConfig,
+                                        GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
+                                        "Docker Image pulled successfully",
+                                        false),
                         () -> getStatusFromEntity(serverConfig.getUuid()));
             } catch (InternalServiceStartException e) {
                 log.error("Docker error while starting server '{}'", gameServerUuid, e);
@@ -297,11 +305,13 @@ public class GameServerService {
 
     @Async
     public void stopServer(String serviceName) {
-        GameServerEntity gameServer = gameServerRepository
-                .findById(serviceName)
-                .orElseThrow(
-                        () -> new RuntimeException(
-                                "Server '" + serviceName + "' not found"));
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(serviceName)
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "Server '" + serviceName + "' not found"));
         gameServerLogService.publishAndSaveLog(
                 gameServer,
                 GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
@@ -326,12 +336,14 @@ public class GameServerService {
     }
 
     public GameServerDto.GameServerStatus getStatus(String serviceName) {
-        GameServerEntity server = gameServerRepository
-                .findById(serviceName)
-                .orElseThrow(
-                        () -> new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Server '" + serviceName + "' not found"));
+        GameServerEntity server =
+                gameServerRepository
+                        .findById(serviceName)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Server '" + serviceName + "' not found"));
 
         return server.getStatus();
     }
@@ -348,11 +360,13 @@ public class GameServerService {
             log.info("Sending command '{}' to server {}", command, uuid);
             if (gameServer.getRconConfiguration() != null
                     && gameServer.getRconConfiguration().isEnabled()) {
-                Consumer<String> logCallback = (log) -> gameServerLogService.publishAndSaveLog(
-                        gameServer,
-                        GameServerLogMessageEntity.LogLevel.INFO,
-                        log,
-                        true);
+                Consumer<String> logCallback =
+                        (log) ->
+                                gameServerLogService.publishAndSaveLog(
+                                        gameServer,
+                                        GameServerLogMessageEntity.LogLevel.INFO,
+                                        log,
+                                        true);
                 rCONService.sendCommand(
                         gameServer.getRconConfiguration().getPort(),
                         gameServer.getRconConfiguration().getPassword(),
@@ -389,10 +403,11 @@ public class GameServerService {
         }
         return allGameServers.stream()
                 .filter(
-                        gameServer -> GameServerPolicy.canGetGameServer(
-                                ResourceResolver.of(gameServer),
-                                gameServer.getUuid(),
-                                user))
+                        gameServer ->
+                                GameServerPolicy.canGetGameServer(
+                                        ResourceResolver.of(gameServer),
+                                        gameServer.getUuid(),
+                                        user))
                 .toList();
     }
 }

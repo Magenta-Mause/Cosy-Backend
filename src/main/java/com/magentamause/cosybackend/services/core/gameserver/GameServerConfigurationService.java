@@ -14,25 +14,27 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class GameServerConfigurationService {
 
-        private final GameServerRepository gameServerRepository;
-        private final GameServerService gameServerService;
+    private final GameServerRepository gameServerRepository;
+    private final GameServerService gameServerService;
 
-        public GameServerEntity updateRconConfig(String uuid, RCONConfiguration updateDto) {
-                GameServerEntity gameServer = gameServerService.getOrThrow(uuid);
-                gameServer.setRconConfiguration(updateDto);
-                return gameServerService.saveGameServerConfiguration(gameServer, false);
-        }
+    public GameServerEntity updateRconConfig(String uuid, RCONConfiguration updateDto) {
+        GameServerEntity gameServer = gameServerService.getOrThrow(uuid);
+        gameServer.setRconConfiguration(updateDto);
+        return gameServerService.saveGameServerConfiguration(gameServer, false);
+    }
 
-        public void updateMetricLayout(String gameServerUuid, List<MetricLayout> metricLayout) {
-                GameServerEntity gameServer = gameServerRepository
-                                .findById(gameServerUuid)
-                                .orElseThrow(
-                                                () -> new ResponseStatusException(
-                                                                HttpStatus.NOT_FOUND,
-                                                                "Server '" + gameServerUuid + "' not found"));
+    public void updateMetricLayout(String gameServerUuid, List<MetricLayout> metricLayout) {
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(gameServerUuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Server '" + gameServerUuid + "' not found"));
 
-                gameServer.getMetricLayout().clear();
-                gameServer.getMetricLayout().addAll(metricLayout);
-                gameServerRepository.save(gameServer);
-        }
+        gameServer.getMetricLayout().clear();
+        gameServer.getMetricLayout().addAll(metricLayout);
+        gameServerRepository.save(gameServer);
+    }
 }

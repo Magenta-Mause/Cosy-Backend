@@ -4,5 +4,4 @@ import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GameServerAccessGroupRepository
-                extends JpaRepository<GameServerAccessGroupEntity, String> {
-}
+        extends JpaRepository<GameServerAccessGroupEntity, String> {}
