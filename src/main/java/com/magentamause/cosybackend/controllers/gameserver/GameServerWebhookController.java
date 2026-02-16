@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.controllers;
+package com.magentamause.cosybackend.controllers.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.WebhookCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.WebhookDto;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/game-server/{gameserverUuid}/webhooks")
-public class WebhookController {
+public class GameServerWebhookController {
     // TODO: refactor access checks with fine-grained permissions
     private final GameServerWebhookService webhookService;
 
