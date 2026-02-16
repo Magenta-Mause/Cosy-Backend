@@ -15,8 +15,7 @@ public class GameServerFilesPolicy {
     public static boolean canReadFiles(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
         return checkPermission(
-                resolver, referenceId, user,
-                GameServerAccessPermission.READ_SERVER_SERVER_FILES);
+                resolver, referenceId, user, GameServerAccessPermission.READ_SERVER_SERVER_FILES);
     }
 
     @Validates(Operation.GAME_SERVER_FILES_UPDATE)
@@ -32,8 +31,10 @@ public class GameServerFilesPolicy {
             UserEntity user,
             GameServerAccessPermission permission) {
         return resolver.getGameServerEntity((String) referenceId)
-                .map(server -> GameServerPermissionsUtility.isOwnerOrHasPermission(
-                        server, user, permission))
+                .map(
+                        server ->
+                                GameServerPermissionsUtility.isOwnerOrHasPermission(
+                                        server, user, permission))
                 .orElse(false);
     }
 }

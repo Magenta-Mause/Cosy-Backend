@@ -22,7 +22,9 @@ public class GameServerConfigurationPolicy {
     public static boolean canChangePermissionsConfig(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
         return checkPermission(
-                resolver, referenceId, user,
+                resolver,
+                referenceId,
+                user,
                 GameServerAccessPermission.CHANGE_PERMISSIONS_SETTINGS);
     }
 
@@ -39,8 +41,10 @@ public class GameServerConfigurationPolicy {
             UserEntity user,
             GameServerAccessPermission permission) {
         return resolver.getGameServerEntity((String) referenceId)
-                .map(server -> GameServerPermissionsUtility.isOwnerOrHasPermission(
-                        server, user, permission))
+                .map(
+                        server ->
+                                GameServerPermissionsUtility.isOwnerOrHasPermission(
+                                        server, user, permission))
                 .orElse(false);
     }
 }

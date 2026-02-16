@@ -15,8 +15,12 @@ public class GameServerMetricPolicy {
     public static boolean canReadMetrics(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
         return resolver.getGameServerEntity((String) referenceId)
-                .map(server -> GameServerPermissionsUtility.isOwnerOrHasPermission(
-                        server, user, GameServerAccessPermission.READ_SERVER_METRICS))
+                .map(
+                        server ->
+                                GameServerPermissionsUtility.isOwnerOrHasPermission(
+                                        server,
+                                        user,
+                                        GameServerAccessPermission.READ_SERVER_METRICS))
                 .orElse(false);
     }
 }

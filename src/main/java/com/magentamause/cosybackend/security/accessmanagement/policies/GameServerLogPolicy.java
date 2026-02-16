@@ -15,8 +15,10 @@ public class GameServerLogPolicy {
     public static boolean canReadLogs(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
         return resolver.getGameServerEntity((String) referenceId)
-                .map(server -> GameServerPermissionsUtility.isOwnerOrHasPermission(
-                        server, user, GameServerAccessPermission.READ_SERVER_LOGS))
+                .map(
+                        server ->
+                                GameServerPermissionsUtility.isOwnerOrHasPermission(
+                                        server, user, GameServerAccessPermission.READ_SERVER_LOGS))
                 .orElse(false);
     }
 }

@@ -20,7 +20,8 @@ public class GameServerPolicy {
     @Validates(Operation.GAME_SERVER_DELETE)
     public static boolean canDeleteGameServer(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
-        return checkPermission(resolver, referenceId, user, GameServerAccessPermission.DELETE_SERVER);
+        return checkPermission(
+                resolver, referenceId, user, GameServerAccessPermission.DELETE_SERVER);
     }
 
     @Validates(Operation.GAME_SERVER_START_STOP)
@@ -69,8 +70,10 @@ public class GameServerPolicy {
             UserEntity user,
             GameServerAccessPermission permission) {
         return resolver.getGameServerEntity((String) referenceId)
-                .map(server -> GameServerPermissionsUtility.isOwnerOrHasPermission(
-                        server, user, permission))
+                .map(
+                        server ->
+                                GameServerPermissionsUtility.isOwnerOrHasPermission(
+                                        server, user, permission))
                 .orElse(false);
     }
 }
