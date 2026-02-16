@@ -20,6 +20,11 @@ import org.springframework.stereotype.Service;
 public class MetricsQueryService {
     private final InfluxDBClient influxDBClient;
 
+    private static final String TYPE_SUFFIX_STRING = "__s";
+    private static final String TYPE_SUFFIX_INT = "__i";
+    private static final String TYPE_SUFFIX_FLOAT = "__f";
+    private static final String TYPE_SUFFIX_BOOL = "__b";
+
     private static final Set<String> NON_CUSTOM_COLUMNS =
             Set.of(
                     "result",
@@ -91,13 +96,26 @@ public class MetricsQueryService {
             if (key == null || NON_CUSTOM_COLUMNS.contains(key)) {
                 continue;
             }
+
             Object value = entry.getValue();
             if (value == null) {
                 continue;
             }
-            custom.put(key, value);
+
+            String baseKey = stripTypeSuffix(key);
+            custom.put(baseKey, value);
         }
         return custom;
+    }
+
+    private String stripTypeSuffix(String key) {
+        if (key.endsWith(TYPE_SUFFIX_STRING)
+                || key.endsWith(TYPE_SUFFIX_INT)
+                || key.endsWith(TYPE_SUFFIX_FLOAT)
+                || key.endsWith(TYPE_SUFFIX_BOOL)) {
+            return key.substring(0, key.length() - 3);
+        }
+        return key;
     }
 
     private String buildInfluxQuery(String gameServerUuid, Instant start, Instant end, int pointCount) {
@@ -111,7 +129,7 @@ public class MetricsQueryService {
                         + "|> range(start: %s, stop: %s) "
                         + "|> filter(fn: (r) => r[\"_measurement\"] == \"metrics\") "
                         + "|> filter(fn: (r) => r[\"game_server_uuid\"] == \"%s\") "
-                        + "|> aggregateWindow(every: %s, fn: mean, createEmpty: true) "
+                        + "|> aggregateWindow(every: %s, fn: last, createEmpty: true) "
                         + "|> pivot( rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") ",
                 start.toString(), end.toString(), gameServerUuid, time);
     }

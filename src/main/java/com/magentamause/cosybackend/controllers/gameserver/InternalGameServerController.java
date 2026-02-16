@@ -18,7 +18,6 @@ public class InternalGameServerController {
 
     @PutMapping("/custom-metric/{uuid}/{secret}")
     public ResponseEntity<Map<String, Object>> updateCustomMetric(@PathVariable String uuid, @PathVariable String secret, @RequestBody Map<String, Object> value) {
-        log.info("Updating custom metric");
         return ResponseEntity.ok(gameServerService.updateCustomMetric(uuid, secret, value));
     }
 }
