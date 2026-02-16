@@ -105,15 +105,6 @@ public class GameServerRootController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{uuid}/layout/metric")
-    @NeedsValidation(Operation.GAME_SERVER_METRIC_CONFIG_CHANGE)
-    public ResponseEntity<Void> updateMetricLayout(
-            @PathVariable @ResourceId String uuid,
-            @Valid @RequestBody List<MetricLayout> metricLayout) {
-        gameServerService.updateMetricLayout(uuid, metricLayout);
-        return ResponseEntity.ok().build();
-    }
-
     @PostMapping("/{uuid}/transfer-ownership")
     @NeedsValidation(Operation.GAME_SERVER_UPDATE)
     public ResponseEntity<GameServerDto> transferOwnership(
