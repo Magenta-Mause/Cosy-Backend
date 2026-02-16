@@ -3,7 +3,7 @@ package com.magentamause.cosybackend.services.core.metrics;
 import com.influxdb.client.InfluxDBClient;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
-import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,8 +1,8 @@
 package com.magentamause.cosybackend.services.engine.docker.util;
 
 import com.github.dockerjava.api.model.ExposedPort;
-import com.magentamause.cosybackend.entities.utility.EnvironmentVariableConfiguration;
-import com.magentamause.cosybackend.entities.utility.PortMapping;
+import com.magentamause.cosybackend.entities.gameserver.utility.EnvironmentVariableConfiguration;
+import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
