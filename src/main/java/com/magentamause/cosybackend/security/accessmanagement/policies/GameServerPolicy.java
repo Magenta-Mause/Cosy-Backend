@@ -14,6 +14,7 @@ public class GameServerPolicy {
     @Validates(Operation.GAME_SERVER_CREATE)
     public static boolean canCreateGameServer(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
+        // every user should be able to create a game server
         return true;
     }
 
@@ -47,7 +48,7 @@ public class GameServerPolicy {
     @Validates(Operation.GAME_SERVER_GET_ALL)
     public static boolean canGetAllGameServers(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
-        return false;
+        return user.getRole().isAdmin();
     }
 
     @Validates(Operation.GAME_SERVER_SEND_COMMAND)
