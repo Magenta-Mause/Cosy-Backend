@@ -10,22 +10,20 @@ import org.springframework.stereotype.Component;
 public class UserInvitePolicy {
 
     @Validates(Operation.USER_INVITE_CREATE)
-    public boolean canCreateInvite(
-            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
-        // every non-admin should not be able to create an invite - admins have permission to
-        // override all policies anyways so no need to check here
+    public static boolean canCreateInvite(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
         return false;
     }
 
     @Validates(Operation.USER_INVITE_READ)
-    public boolean canReadInvite(
-            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+    public static boolean canReadInvite(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
         return false;
     }
 
     @Validates(Operation.USER_INVITE_DELETE)
-    public boolean canDeleteInvite(
-            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
+    public static boolean canDeleteInvite(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
         return false;
     }
 }

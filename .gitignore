@@ -45,3 +45,6 @@ dummy
 # For api client tests
 api-client/
 dummy/
+
+.claude
+.claude/**

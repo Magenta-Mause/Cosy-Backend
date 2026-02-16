@@ -5,17 +5,18 @@ import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.Validates;
-import lombok.extern.slf4j.Slf4j;
+import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 public class GameServerLogPolicy {
 
     @Validates(Operation.GAME_SERVER_LOG_READ)
-    public boolean readGameServerLogs(
-            ResourceResolver resourceResolver, Object referenceId, UserEntity user) {
-        return UtilPolicies.IS_GAMESERVER_OWNER_OR_HAS_PERMISSION(
-                resourceResolver, referenceId, user, GameServerAccessPermission.READ_SERVER_LOGS);
+    public static boolean canReadLogs(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return resolver.getGameServerEntity((String) referenceId)
+                .map(server -> GameServerPermissionsUtility.isOwnerOrHasPermission(
+                        server, user, GameServerAccessPermission.READ_SERVER_LOGS))
+                .orElse(false);
     }
 }

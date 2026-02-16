@@ -9,7 +9,7 @@ import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroup;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
-import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
+import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerFieldVisibilityPolicy;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -114,6 +114,12 @@ public class GameServerEntity {
                 .build();
     }
 
+    public GameServerDto toDto(UserEntity user) {
+        List<GameServerAccessPermission> permissions =
+                GameServerFieldVisibilityPolicy.resolvePermissions(this, user);
+        return toDto(permissions);
+    }
+
     public GameServerDto toDto(List<GameServerAccessPermission> permissions) {
         GameServerDto.GameServerDtoBuilder builder =
                 GameServerDto.builder()
@@ -129,8 +135,7 @@ public class GameServerEntity {
                                 Optional.ofNullable(this.getGame())
                                         .map(GameEntity::getUuid)
                                         .orElse(null));
-        if (GameServerPermissionsUtility.can(
-                GameServerAccessPermission.CHANGE_SERVER_CONFIGS, permissions)) {
+        if (GameServerFieldVisibilityPolicy.canSeeServerConfigs(permissions)) {
             builder.dockerImageName(this.getDockerImageName())
                     .dockerImageTag(this.getDockerImageTag())
                     .dockerHardwareLimits(this.getDockerHardwareLimits())
@@ -139,18 +144,13 @@ public class GameServerEntity {
                     .environmentVariables(this.getEnvironmentVariables())
                     .volumeMounts(this.getVolumeMounts());
         }
-        if (GameServerPermissionsUtility.can(
-                GameServerAccessPermission.CHANGE_RCON_SETTINGS, permissions)) {
+        if (GameServerFieldVisibilityPolicy.canSeeRconConfig(permissions)) {
             builder.rconConfiguration(this.getRconConfiguration());
         }
-        if (GameServerPermissionsUtility.can(
-                        GameServerAccessPermission.CHANGE_METRICS_SETTINGS, permissions)
-                || GameServerPermissionsUtility.can(
-                        GameServerAccessPermission.READ_SERVER_METRICS, permissions)) {
+        if (GameServerFieldVisibilityPolicy.canSeeMetricLayout(permissions)) {
             builder.metricLayout(this.getMetricLayout());
         }
-        if (GameServerPermissionsUtility.can(
-                GameServerAccessPermission.CHANGE_PERMISSIONS_SETTINGS, permissions)) {
+        if (GameServerFieldVisibilityPolicy.canSeeAccessGroups(permissions)) {
             builder.accessGroups(
                     Optional.ofNullable(this.getAccessGroups())
                             .map(

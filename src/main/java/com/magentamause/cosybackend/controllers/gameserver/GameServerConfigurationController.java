@@ -7,7 +7,6 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroup;
-import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
@@ -43,10 +42,7 @@ public class GameServerConfigurationController {
             @RequestBody @Valid RCONConfiguration updateDto) {
         GameServerEntity gameServer =
                 gameServerConfigurationService.updateRconConfig(uuid, updateDto);
-        List<GameServerAccessPermission> userPermissions =
-                gameServerConfigurationService.getUserPermissions(
-                        uuid, securityContextService.getUserId());
-        return ResponseEntity.ok(gameServer.toDto(userPermissions));
+        return ResponseEntity.ok(gameServer.toDto(securityContextService.getUser()));
     }
 
     @PostMapping("/{uuid}/access-groups")

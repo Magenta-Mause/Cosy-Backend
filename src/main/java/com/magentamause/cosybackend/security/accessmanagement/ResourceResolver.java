@@ -2,24 +2,25 @@ package com.magentamause.cosybackend.security.accessmanagement;
 
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
-import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
-import com.magentamause.cosybackend.services.user.UserEntityService;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-@Service
-@RequiredArgsConstructor
-public class ResourceResolver {
+public interface ResourceResolver {
 
-    private final GameServerService gameServerService;
-    private final UserEntityService userEntityService;
+    Optional<GameServerEntity> getGameServerEntity(String gameServerUuid);
 
-    public Optional<GameServerEntity> getGameServerEntity(String gameServerUuid) {
-        return gameServerService.getGameServerOptionalById(gameServerUuid);
-    }
+    Optional<UserEntity> getUserEntity(String userUuid);
 
-    public Optional<UserEntity> getUserEntity(String userUuid) {
-        return userEntityService.getOptionalUserByUuid(userUuid);
+    static ResourceResolver of(GameServerEntity gameServer) {
+        return new ResourceResolver() {
+            @Override
+            public Optional<GameServerEntity> getGameServerEntity(String gameServerUuid) {
+                return Optional.ofNullable(gameServer);
+            }
+
+            @Override
+            public Optional<UserEntity> getUserEntity(String userUuid) {
+                return Optional.empty();
+            }
+        };
     }
 }
