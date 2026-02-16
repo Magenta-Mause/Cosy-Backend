@@ -121,6 +121,6 @@ public class GameServerRootController {
             @Valid @RequestBody TransferOwnershipDto newOwnerName) {
         GameServerEntity updated =
                 gameServerService.transferGameServerOwnership(uuid, newOwnerName);
-        return ResponseEntity.ok(updated.toDto());
+        return ResponseEntity.ok(updated.toDto(securityContextService.getUser()));
     }
 }
