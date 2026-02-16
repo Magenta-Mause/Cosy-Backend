@@ -40,7 +40,6 @@ public class GameServerEntity {
 
     private LocalDateTime timestampLastStarted;
 
-    // No cascading or orphanRemoval, because GameEntities without a server can exist
     @ManyToOne private GameEntity game;
 
     @Column(nullable = false)
