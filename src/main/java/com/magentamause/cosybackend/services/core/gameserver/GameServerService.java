@@ -9,7 +9,6 @@ import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
-import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
@@ -413,12 +412,6 @@ public class GameServerService {
                                         gameServer.getUuid(),
                                         user))
                 .toList();
-    }
-
-    private final GameServerConfigurationService gameServerConfigurationService;
-
-    public void updateMetricLayout(String gameServerUuid, List<MetricLayout> metricLayout) {
-        gameServerConfigurationService.updateMetricLayout(gameServerUuid, metricLayout);
     }
 
     public GameServerEntity transferGameServerOwnership(
