@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.controllers.gameserver;
 
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
-import com.magentamause.cosybackend.services.core.gameserver.GameServerConfigurationService;
+import com.magentamause.cosybackend.services.core.gameserver.GameServerAccessGroupService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/game-server")
 public class GameServerPermissionsController {
 
-    private final GameServerConfigurationService gameServerConfigurationService;
+    private final GameServerAccessGroupService gameServerAccessGroupService;
     private final SecurityContextService securityContextService;
 
     @GetMapping("/{uuid}/permissions")
@@ -24,6 +24,6 @@ public class GameServerPermissionsController {
             @PathVariable String uuid) {
         String currentUserUuid = securityContextService.getUserId();
         return ResponseEntity.ok(
-                gameServerConfigurationService.getUserPermissions(uuid, currentUserUuid));
+                gameServerAccessGroupService.getUserPermissions(uuid, currentUserUuid));
     }
 }
