@@ -42,7 +42,7 @@ public class GameServerWebhookController {
     @NeedsValidation(Operation.GAME_SERVER_WEBHOOK_UPDATE)
     public ResponseEntity<Void> deleteWebhook(
             @PathVariable @ResourceId String gameserverUuid, @PathVariable String webhookUuid) {
-        webhookService.deleteWebhook(webhookUuid);
+        webhookService.deleteWebhook(gameserverUuid, webhookUuid);
         return ResponseEntity.noContent().build();
     }
 }

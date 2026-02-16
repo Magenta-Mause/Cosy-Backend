@@ -12,7 +12,9 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -36,8 +38,13 @@ public class GameServerWebhookService {
         return webhookRepository.save(webhookEntity).toDto();
     }
 
-    public void deleteWebhook(String webhookId) {
-        webhookRepository.deleteById(webhookId);
+    public void deleteWebhook(String gameServerUuid, String webhookId) {
+        long deleted = webhookRepository.deleteByUuidAndGameServer_Uuid(webhookId, gameServerUuid);
+        if (deleted == 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Webhook '" + webhookId + "' not found for game server '" + gameServerUuid + "'");
+        }
     }
 
     public void dispatch(GameServerDomainEvent event) {
