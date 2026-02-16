@@ -415,19 +415,10 @@ public class GameServerService {
                 .toList();
     }
 
-    public void updateMetricLayout(String gameServerUuid, List<MetricLayout> metricLayout) {
-        GameServerEntity gameServer =
-                gameServerRepository
-                        .findById(gameServerUuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Server '" + gameServerUuid + "' not found"));
+    private final GameServerConfigurationService gameServerConfigurationService;
 
-        gameServer.getMetricLayout().clear();
-        gameServer.getMetricLayout().addAll(metricLayout);
-        gameServerRepository.save(gameServer);
+    public void updateMetricLayout(String gameServerUuid, List<MetricLayout> metricLayout) {
+        gameServerConfigurationService.updateMetricLayout(gameServerUuid, metricLayout);
     }
 
     public GameServerEntity transferGameServerOwnership(
