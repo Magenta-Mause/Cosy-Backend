@@ -8,7 +8,7 @@ import java.util.List;
 
 public class GameServerFieldVisibilityPolicy {
 
-    // Permission-list-based (used by toDto(permissions) — efficient, extract once)
+    // Permission-list-based (used by toDto(permissions))
 
     public static boolean canSeeServerConfigs(List<GameServerAccessPermission> permissions) {
         return GameServerPermissionsUtility.can(
@@ -22,7 +22,7 @@ public class GameServerFieldVisibilityPolicy {
 
     public static boolean canSeeMetricLayout(List<GameServerAccessPermission> permissions) {
         return GameServerPermissionsUtility.can(
-                        GameServerAccessPermission.CHANGE_METRICS_SETTINGS, permissions)
+                GameServerAccessPermission.CHANGE_METRICS_SETTINGS, permissions)
                 || GameServerPermissionsUtility.can(
                         GameServerAccessPermission.READ_SERVER_METRICS, permissions);
     }
