@@ -11,7 +11,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class WebhookEventListener {
 
-    private final WebhookService webhookService;
+    private final GameServerWebhookService webhookService;
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

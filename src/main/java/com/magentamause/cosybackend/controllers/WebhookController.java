@@ -6,7 +6,7 @@ import com.magentamause.cosybackend.security.accessmanagement.Action;
 import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
 import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
-import com.magentamause.cosybackend.services.core.gameserver.WebhookService;
+import com.magentamause.cosybackend.services.core.gameserver.GameServerWebhookService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/game-server/{gameserverUuid}/webhooks")
 public class WebhookController {
     // TODO: refactor access checks with fine-grained permissions
-    private final WebhookService webhookService;
+    private final GameServerWebhookService webhookService;
 
     @GetMapping
     @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
