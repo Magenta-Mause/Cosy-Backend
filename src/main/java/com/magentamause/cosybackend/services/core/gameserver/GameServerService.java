@@ -420,6 +420,7 @@ public class GameServerService {
     public GameServerEntity transferGameServerOwnership(
             String gameServerUuid, TransferOwnershipDto transferOwnershipDto) {
         GameServerEntity gameServer = getGameServerById(gameServerUuid);
+        UserEntity oldOwner = gameServer.getOwner();
 
         if (gameServer.getStatus() != GameServerDto.GameServerStatus.STOPPED) {
             throw new ResponseStatusException(
@@ -430,8 +431,8 @@ public class GameServerService {
         log.info(
                 "Changing owner of server {} from {} to {}",
                 gameServerUuid,
-                gameServer.getOwner().getUuid(),
-                transferOwnershipDto.getNewOwnerName());
+                oldOwner.getUsername(),
+                gameServer.getOwner().getUsername());
         return saveGameServerConfiguration(gameServer, false);
     }
 }
