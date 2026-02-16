@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.influxdb.annotations.Column;
 import com.influxdb.annotations.Measurement;
-import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Getter;

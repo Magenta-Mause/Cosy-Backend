@@ -1,20 +1,29 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
+import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
+import com.magentamause.cosybackend.security.accessmanagement.Validates;
 import org.springframework.stereotype.Component;
 
 @Component
-public class UserInvitePolicy implements AccessPolicy {
+public class UserInvitePolicy {
 
-    @Override
-    public Resource resource() {
-        return Resource.USER_INVITE;
+    @Validates(Operation.USER_INVITE_CREATE)
+    public static boolean canCreateInvite(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return user.getRole().isAdmin();
     }
 
-    @Override
-    public boolean can(UserEntity user, Action action, Object referenceId) {
+    @Validates(Operation.USER_INVITE_READ)
+    public static boolean canReadInvite(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return user.getRole().isAdmin();
+    }
+
+    @Validates(Operation.USER_INVITE_DELETE)
+    public static boolean canDeleteInvite(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
         return user.getRole().isAdmin();
     }
 }

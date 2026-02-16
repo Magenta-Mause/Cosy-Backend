@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.services.engine.docker;
 
 import com.github.dockerjava.api.model.Container;
-import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import java.io.IOException;
 import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;

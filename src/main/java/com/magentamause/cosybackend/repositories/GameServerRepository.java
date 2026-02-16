@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.repositories;
 
-import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 

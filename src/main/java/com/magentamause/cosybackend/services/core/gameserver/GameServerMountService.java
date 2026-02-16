@@ -2,8 +2,8 @@ package com.magentamause.cosybackend.services.core.gameserver;
 
 import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerFileSystemDto;
-import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -510,7 +510,7 @@ public class GameServerMountService {
      * hostPath.
      */
     private ResolvedBindMount resolveBindMount(String serverUuid, String requestedPath) {
-        GameServerEntity server = gameServerService.getGameServerById(serverUuid);
+        GameServerEntity server = gameServerService.getOrThrow(serverUuid);
 
         String req = normalizeContainerLikePath(requestedPath);
         if (req.isBlank() || "/".equals(req)) {

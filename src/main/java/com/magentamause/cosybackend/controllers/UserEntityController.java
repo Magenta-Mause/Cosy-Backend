@@ -1,11 +1,10 @@
 package com.magentamause.cosybackend.controllers;
 
-import com.magentamause.cosybackend.dtos.actiondtos.PasswordUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.user.PasswordUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
+import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import jakarta.validation.Valid;
@@ -25,7 +24,7 @@ public class UserEntityController {
     private final UserEntityService userEntityService;
 
     @GetMapping
-    @RequireAccess(action = Action.READ, resource = Resource.USER)
+    @NeedsValidation(Operation.USER_GET_ALL)
     public ResponseEntity<List<UserEntityDto>> getAllUserEntities() {
         List<UserEntity> users = userEntityService.getAllUsers();
         List<UserEntityDto> userDTOs =
@@ -34,28 +33,21 @@ public class UserEntityController {
     }
 
     @GetMapping("/{uuid}")
-    @RequireAccess(action = Action.READ, resource = Resource.USER)
+    @NeedsValidation(Operation.USER_GET_BY_UUID)
     public ResponseEntity<UserEntityDto> getUserEntity(@PathVariable @ResourceId String uuid) {
         UserEntity user = userEntityService.getUserByUuid(uuid);
         return ResponseEntity.ok(user.toDto());
     }
 
-    @GetMapping("/username/{username}")
-    @RequireAccess(action = Action.READ, resource = Resource.USER)
-    public ResponseEntity<UserEntityDto> getUserEntityByUsername(@PathVariable String username) {
-        UserEntity user = userEntityService.getUserByUsername(username);
-        return ResponseEntity.ok(user.toDto());
-    }
-
     @DeleteMapping("/{uuid}")
-    @RequireAccess(action = Action.DELETE, resource = Resource.USER)
+    @NeedsValidation(Operation.USER_DELETE)
     public ResponseEntity<Void> deleteUserEntity(@PathVariable @ResourceId String uuid) {
         userEntityService.deleteUserByUuid(uuid);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{uuid}/change-password")
-    @RequireAccess(action = Action.UPDATE, resource = Resource.USER)
+    @NeedsValidation(Operation.USER_CHANGE_PASSWORD)
     public ResponseEntity<UserEntityDto> changePassword(
             @PathVariable @ResourceId String uuid, @Valid @RequestBody PasswordUpdateDto request) {
         log.info("Changing password for user with UUID: {}", uuid);
@@ -64,5 +56,10 @@ public class UserEntityController {
                 userEntityService.changePassword(
                         user, request.getOldPassword(), request.getNewPassword());
         return ResponseEntity.ok(userWithChangedPassword.toDto());
+    }
+
+    @GetMapping("/uuid-by-username/{username}")
+    public ResponseEntity<String> getUUIDByUsername(@PathVariable String username) {
+        return ResponseEntity.ok(userEntityService.getUserByUsername(username).getUuid());
     }
 }

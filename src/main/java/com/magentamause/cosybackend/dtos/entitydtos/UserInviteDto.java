@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
+import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import java.time.Instant;
 import lombok.*;
 

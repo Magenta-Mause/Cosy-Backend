@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.websockets;
 
 import com.magentamause.cosybackend.configs.websockets.WebSocketDestinations;
-import com.magentamause.cosybackend.dtos.actiondtos.MetricPointDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
