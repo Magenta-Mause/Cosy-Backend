@@ -14,10 +14,6 @@ public enum GameServerAccessPermission {
 
     SEND_COMMANDS,
 
-    // Webhooks
-    READ_SERVER_WEBHOOKS,
-    CHANGE_SERVER_WEBHOOKS,
-
     // File
     READ_SERVER_SERVER_FILES,
     CHANGE_SERVER_FILES,
@@ -27,6 +23,7 @@ public enum GameServerAccessPermission {
     CHANGE_METRICS_SETTINGS,
     CHANGE_PERMISSIONS_SETTINGS,
     CHANGE_RCON_SETTINGS,
+    CHANGE_WEBHOOK_SETTINGS,
 
     // Danger Zone
     TRANSFER_SERVER_OWNERSHIP,

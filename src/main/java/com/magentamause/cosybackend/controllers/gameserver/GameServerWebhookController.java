@@ -30,7 +30,7 @@ public class GameServerWebhookController {
     }
 
     @PostMapping
-    @NeedsValidation(Operation.GAME_SERVER_WEBHOOK_UPDATE)
+    @NeedsValidation(Operation.GAME_SERVER_WEBHOOK_CREATE)
     public ResponseEntity<WebhookDto> createWebhook(
             @PathVariable @ResourceId String gameserverUuid,
             @Valid @RequestBody WebhookCreationDto creationDto) {
@@ -39,7 +39,7 @@ public class GameServerWebhookController {
     }
 
     @DeleteMapping("/{webhookUuid}")
-    @NeedsValidation(Operation.GAME_SERVER_WEBHOOK_UPDATE)
+    @NeedsValidation(Operation.GAME_SERVER_WEBHOOK_DELETE)
     public ResponseEntity<Void> deleteWebhook(
             @PathVariable @ResourceId String gameserverUuid, @PathVariable String webhookUuid) {
         webhookService.deleteWebhook(gameserverUuid, webhookUuid);
