@@ -8,14 +8,18 @@ import com.github.dockerjava.api.model.Statistics;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.metric.Metric;
 import com.magentamause.cosybackend.services.engine.docker.util.StatsMapper;
+
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/** Service for collecting metrics from Docker containers. */
+/**
+ * Service for collecting metrics from Docker containers.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -40,6 +44,7 @@ public class DockerMetricsCollector {
         }
 
         AtomicReference<Metric> statsRef = new AtomicReference<>();
+
         client.statsCmd(containerUuid)
                 .exec(
                         new ResultCallback.Adapter<Statistics>() {
@@ -61,6 +66,10 @@ public class DockerMetricsCollector {
                             }
                         })
                 .awaitCompletion();
+
+        if (statsRef.get() != null) {
+            statsRef.get().setCustomMetricHolder(gameServer.getCustomMetricHolder());
+        }
 
         return Optional.ofNullable(statsRef.get());
     }

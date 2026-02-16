@@ -16,7 +16,6 @@ import lombok.Setter;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class MetricLayout extends Layout {
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MetricType metricType;
+    private String metricType;
 }

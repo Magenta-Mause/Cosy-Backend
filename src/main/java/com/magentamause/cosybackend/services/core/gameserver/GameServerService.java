@@ -16,6 +16,7 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.security.SecretGenerator;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerPolicy;
 import com.magentamause.cosybackend.services.core.games.GamesService;
@@ -28,14 +29,18 @@ import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
+
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -234,12 +239,16 @@ public class GameServerService {
     void startServerAsync(String gameServerUuid, GameServerEntity serverConfig) {
         log.info("Starting server {}", gameServerUuid);
         try {
-
+            String gameServerContainerSecret = SecretGenerator.generateSecret();
             gameServerLogService.publishAndSaveLog(
                     serverConfig,
                     GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
                     "Starting Game Server",
                     false);
+            serverConfig.setContainerSecret(gameServerContainerSecret);
+            serverConfig.setLastStartedBy(serverConfig.getOwner());
+            serverConfig.setTimestampLastStarted(LocalDateTime.now());
+            gameServerRepository.save(serverConfig);
 
             updateStatus(serverConfig, GameServerDto.GameServerStatus.AWAITING_UPDATE);
 
@@ -409,5 +418,14 @@ public class GameServerService {
                                         gameServer.getUuid(),
                                         user))
                 .toList();
+    }
+
+    public Map<String, Object> updateCustomMetric(String uuid, String secret, Map<String, Object> value) {
+        GameServerEntity gameServer = getOrThrow(uuid);
+        if (!gameServer.getContainerSecret().equals(secret)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid secret");
+        }
+        gameServer.setCustomMetricHolder(value);
+        return gameServerRepository.save(gameServer).getCustomMetricHolder();
     }
 }

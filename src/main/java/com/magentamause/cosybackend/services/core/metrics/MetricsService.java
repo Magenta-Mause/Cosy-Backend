@@ -10,10 +10,12 @@ import com.magentamause.cosybackend.entities.metric.MetricType;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.websockets.GameServerMetricsPublisher;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -40,6 +42,7 @@ public class MetricsService {
                 .addField(MetricType.NETWORK_OUTPUT.getValue(), metrics.getNetworkOutput())
                 .addField(MetricType.BLOCK_READ.getValue(), metrics.getBlockRead())
                 .addField(MetricType.BLOCK_WRITE.getValue(), metrics.getBlockWrite())
+                .addFields(Optional.ofNullable(metrics.getCustomMetricHolder()).orElse(new java.util.HashMap<>()))
                 .time(metrics.getTime(), WritePrecision.NS);
     }
 

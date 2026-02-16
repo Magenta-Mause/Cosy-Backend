@@ -6,7 +6,10 @@ import com.influxdb.query.FluxTable;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,8 +20,25 @@ import org.springframework.stereotype.Service;
 public class MetricsQueryService {
     private final InfluxDBClient influxDBClient;
 
-    public List<MetricPointDto> queryMetrics(
-            String gameServerUuid, Instant start, Instant end, int point) {
+    private static final Set<String> NON_CUSTOM_COLUMNS =
+            Set.of(
+                    "result",
+                    "table",
+                    "_start",
+                    "_stop",
+                    "_time",
+                    "_measurement",
+                    "game_server_uuid",
+                    "cpu_percent",
+                    "memory_percent",
+                    "memory_usage",
+                    "memory_limit",
+                    "network_input",
+                    "network_output",
+                    "block_read",
+                    "block_write");
+
+    public List<MetricPointDto> queryMetrics(String gameServerUuid, Instant start, Instant end, int point) {
         String flux = buildInfluxQuery(gameServerUuid, start, end, point);
 
         List<FluxTable> tables = influxDBClient.getQueryApi().query(flux);
@@ -27,6 +47,8 @@ public class MetricsQueryService {
 
         for (FluxTable table : tables) {
             for (FluxRecord record : table.getRecords()) {
+                Map<String, Object> customMetricHolder = extractCustomMetrics(record);
+
                 MetricPointDto.MetricValues metrics =
                         MetricPointDto.MetricValues.builder()
                                 .cpuPercent(toDouble(record.getValueByKey("cpu_percent")))
@@ -37,6 +59,7 @@ public class MetricsQueryService {
                                 .networkOutput(toLong(record.getValueByKey("network_output")))
                                 .blockRead(toLong(record.getValueByKey("block_read")))
                                 .blockWrite(toLong(record.getValueByKey("block_write")))
+                                .customMetricHolder(customMetricHolder)
                                 .build();
 
                 results.add(
@@ -56,8 +79,28 @@ public class MetricsQueryService {
         return results;
     }
 
-    private String buildInfluxQuery(
-            String gameServerUuid, Instant start, Instant end, int pointCount) {
+    private Map<String, Object> extractCustomMetrics(FluxRecord record) {
+        Map<String, Object> custom = new HashMap<>();
+        Map<String, Object> values = record.getValues();
+        if (values == null || values.isEmpty()) {
+            return custom;
+        }
+
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            String key = entry.getKey();
+            if (key == null || NON_CUSTOM_COLUMNS.contains(key)) {
+                continue;
+            }
+            Object value = entry.getValue();
+            if (value == null) {
+                continue;
+            }
+            custom.put(key, value);
+        }
+        return custom;
+    }
+
+    private String buildInfluxQuery(String gameServerUuid, Instant start, Instant end, int pointCount) {
         long totalSeconds = end.getEpochSecond() - start.getEpochSecond();
 
         long intervalSeconds = Math.max(1, totalSeconds / pointCount);
@@ -98,6 +141,7 @@ public class MetricsQueryService {
                         .networkOutput(0L)
                         .blockRead(0L)
                         .blockWrite(0L)
+                        .customMetricHolder(new HashMap<>())
                         .build();
 
         for (int i = 0; i < pointCount; i++) {
