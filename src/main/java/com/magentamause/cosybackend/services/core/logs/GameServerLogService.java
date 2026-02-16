@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.services.core.logs;
 
 import com.magentamause.cosybackend.dtos.loki.LokiLogQuery;
-import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.services.external.loki.LokiQueryService;
 import com.magentamause.cosybackend.websockets.GameServerLogWebsocketPublisher;
@@ -37,8 +37,11 @@ public class GameServerLogService {
     public GameServerLogMessageEntity publishAndSaveLog(
             GameServerLogMessageEntity logEntity, boolean parseErrorLogLevel) {
         GameServerLogMessageEntity copy = logEntity.copy();
+        if (logEntity.getMessage() == null) {
+            log.debug("Received empty message");
+            return null;
+        }
         if (parseErrorLogLevel
-                && logEntity.getMessage() != null
                 && detectErrorLogLevel(logEntity.getMessage())
                         == GameServerLogMessageEntity.LogLevel.ERROR) {
             copy.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);

@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.security.accessmanagement;
 
+import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import java.lang.annotation.Annotation;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +9,9 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Aspect
@@ -16,12 +19,30 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AuthorizationAspect {
     private final SecurityContextService securityContextService;
+    private final ValidatorRegistry validatorRegistry;
+    private final ResourceResolver resourceResolver;
 
-    @Before("@annotation(requireAccess)")
-    public void checkAccess(JoinPoint joinPoint, RequireAccess requireAccess) {
-        Object specificId = findResourceId(joinPoint);
-        securityContextService.assertUserCan(
-                requireAccess.action(), requireAccess.resource(), specificId);
+    @Before("@annotation(needsValidation)")
+    public void checkAccess(JoinPoint joinPoint, NeedsValidation needsValidation) {
+        UserEntity user = securityContextService.getUser();
+
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+
+        if (user.getRole().isAdmin()) {
+            return;
+        }
+
+        Object resourceId = findResourceId(joinPoint);
+
+        ValidatorRegistry.ValidatorEntry validator =
+                validatorRegistry.getValidator(needsValidation.value());
+
+        boolean allowed = validator.invoke(resourceResolver, resourceId, user);
+        if (!allowed) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permissions");
+        }
     }
 
     private Object findResourceId(JoinPoint joinPoint) {

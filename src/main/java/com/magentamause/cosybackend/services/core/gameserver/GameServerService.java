@@ -1,17 +1,15 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
-import com.magentamause.cosybackend.dtos.actiondtos.GameServerCreationDto;
-import com.magentamause.cosybackend.dtos.actiondtos.GameServerUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameEntity;
-import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.GameServerEventType;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.entities.layout.MetricLayout;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
-import com.magentamause.cosybackend.entities.utility.PortMapping;
-import com.magentamause.cosybackend.entities.utility.RCONConfiguration;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
 import com.magentamause.cosybackend.exceptions.RconException;
@@ -19,6 +17,8 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
+import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerPolicy;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
 import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
@@ -144,14 +144,17 @@ public class GameServerService {
         return gameServerRepository.findAll();
     }
 
-    public GameServerEntity getGameServerById(String uuid) {
-        return gameServerRepository
-                .findById(uuid)
+    public GameServerEntity getOrThrow(String uuid) {
+        return getOptionalGameServerOptionalById(uuid)
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(
                                         HttpStatus.NOT_FOUND,
                                         "Game server with uuid " + uuid + " not found"));
+    }
+
+    public Optional<GameServerEntity> getOptionalGameServerOptionalById(String uuid) {
+        return gameServerRepository.findById(uuid);
     }
 
     public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto gameServerDto) {
@@ -162,7 +165,7 @@ public class GameServerService {
         return saveGameServerConfiguration(created, true);
     }
 
-    private GameServerEntity saveGameServerConfiguration(GameServerEntity entity, boolean isNew) {
+    GameServerEntity saveGameServerConfiguration(GameServerEntity entity, boolean isNew) {
         hardwareLimitValidator.validateHardwareLimitsPresent(
                 entity.getOwner().getDockerHardwareLimits(), entity.getDockerHardwareLimits());
         if (isNew) {
@@ -196,7 +199,7 @@ public class GameServerService {
 
     public GameServerEntity updateGameServerConfiguration(
             String uuid, GameServerUpdateDto updateDto) {
-        GameServerEntity gameServer = getGameServerById(uuid);
+        GameServerEntity gameServer = getOrThrow(uuid);
 
         Function<Integer, GameEntity> gameResolver =
                 (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
@@ -210,7 +213,7 @@ public class GameServerService {
         if (!startingServers.add(gameServerUuid)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Server is already starting");
         }
-        GameServerEntity serverConfig = getGameServerById(gameServerUuid);
+        GameServerEntity serverConfig = getOrThrow(gameServerUuid);
         try {
             List<GameServerEntity> gameServerStartedByUser =
                     getGameServersStartedByUser(user.getUuid());
@@ -303,7 +306,7 @@ public class GameServerService {
     }
 
     private GameServerDto.GameServerStatus getStatusFromEntity(String uuid) {
-        return getGameServerById(uuid).getStatus();
+        return getOrThrow(uuid).getStatus();
     }
 
     @Async
@@ -391,14 +394,8 @@ public class GameServerService {
         };
     }
 
-    public GameServerEntity updateRconConfig(String uuid, RCONConfiguration updateDto) {
-        GameServerEntity gameServer = getGameServerById(uuid);
-        gameServer.setRconConfiguration(updateDto);
-        return saveGameServerConfiguration(gameServer, false);
-    }
-
     public void sendCommand(String uuid, String command) {
-        GameServerEntity gameServer = getGameServerById(uuid);
+        GameServerEntity gameServer = getOrThrow(uuid);
         gameServerLogService.publishAndSaveLog(
                 gameServer, GameServerLogMessageEntity.LogLevel.INPUT, command, false);
         try {
@@ -441,18 +438,18 @@ public class GameServerService {
         }
     }
 
-    public void updateMetricLayout(String gameServerUuid, List<MetricLayout> metricLayout) {
-        GameServerEntity gameServer =
-                gameServerRepository
-                        .findById(gameServerUuid)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Server '" + gameServerUuid + "' not found"));
-
-        gameServer.getMetricLayout().clear();
-        gameServer.getMetricLayout().addAll(metricLayout);
-        gameServerRepository.save(gameServer);
+    public List<GameServerEntity> getGameServersVisibleToUser(UserEntity user) {
+        List<GameServerEntity> allGameServers = getAllGameServers();
+        if (user.getRole().isAdmin()) {
+            return allGameServers;
+        }
+        return allGameServers.stream()
+                .filter(
+                        gameServer ->
+                                GameServerPolicy.canGetGameServer(
+                                        ResourceResolver.of(gameServer),
+                                        gameServer.getUuid(),
+                                        user))
+                .toList();
     }
 }
