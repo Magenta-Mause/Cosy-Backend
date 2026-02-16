@@ -2,9 +2,6 @@ package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.actiondtos.WebhookCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.WebhookDto;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.RequireAccess;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerWebhookService;
 import jakarta.validation.Valid;
@@ -24,7 +21,7 @@ public class WebhookController {
     private final GameServerWebhookService webhookService;
 
     @GetMapping
-    @RequireAccess(action = Action.READ, resource = Resource.GAME_SERVER)
+    // TODO add permission
     public ResponseEntity<List<WebhookDto>> getAllWebhooks(
             @PathVariable @ResourceId String gameserverUuid) {
         List<WebhookDto> webhooks = webhookService.getAllWebhooks(gameserverUuid);
@@ -32,7 +29,7 @@ public class WebhookController {
     }
 
     @PostMapping
-    @RequireAccess(action = Action.CREATE, resource = Resource.GAME_SERVER)
+    // TODO add permissions
     public ResponseEntity<WebhookDto> createWebhook(
             @PathVariable @ResourceId String gameserverUuid,
             @Valid @RequestBody WebhookCreationDto creationDto) {
@@ -41,7 +38,7 @@ public class WebhookController {
     }
 
     @DeleteMapping("/{webhookUuid}")
-    @RequireAccess(action = Action.DELETE, resource = Resource.GAME_SERVER)
+    // TODO add permission
     public ResponseEntity<Void> deleteWebhook(
             @PathVariable @ResourceId String gameserverUuid, @PathVariable String webhookUuid) {
         webhookService.deleteWebhook(webhookUuid);

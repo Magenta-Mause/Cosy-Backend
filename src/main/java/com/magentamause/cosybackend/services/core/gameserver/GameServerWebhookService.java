@@ -2,9 +2,9 @@ package com.magentamause.cosybackend.services.core.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.WebhookCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.WebhookDto;
-import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.entities.WebhookType;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.repositories.WebhookRepository;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.WebhookSender;
@@ -24,14 +24,14 @@ public class GameServerWebhookService {
     private final List<WebhookSender> webhookSenders;
 
     public List<WebhookDto> getAllWebhooks(String gameServerUuid) {
-        gameServerService.getGameServerById(gameServerUuid);
+        gameServerService.getOrThrow(gameServerUuid);
         List<WebhookEntity> webhookEntities =
                 webhookRepository.findByGameServer_Uuid(gameServerUuid);
         return webhookEntities.stream().map(WebhookEntity::toDto).toList();
     }
 
     public WebhookDto createWebhook(String gameServerUuid, WebhookCreationDto creationDto) {
-        GameServerEntity gameServer = gameServerService.getGameServerById(gameServerUuid);
+        GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
         WebhookEntity webhookEntity = creationDto.toEntity(gameServer);
         return webhookRepository.save(webhookEntity).toDto();
     }

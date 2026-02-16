@@ -1,14 +1,11 @@
 package com.magentamause.cosybackend.entities;
 
 import com.magentamause.cosybackend.dtos.entitydtos.WebhookDto;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Getter
