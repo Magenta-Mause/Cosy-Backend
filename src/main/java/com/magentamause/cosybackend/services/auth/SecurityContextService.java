@@ -4,10 +4,8 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.exceptions.NoAuthenticationFoundException;
 import com.magentamause.cosybackend.security.jwtfilter.AuthenticationToken;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -31,15 +29,5 @@ public class SecurityContextService {
 
     public UserEntity getUser() {
         return getAuthenticationToken().getUser();
-    }
-
-    public void assertUserHasAccessOfRole(UserEntity.Role role) {
-        if (getUser().getRole().equals(UserEntity.Role.OWNER)) {
-            return;
-        }
-
-        if (!getAuthenticationToken().getUser().getRole().equals(role)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permissions");
-        }
     }
 }

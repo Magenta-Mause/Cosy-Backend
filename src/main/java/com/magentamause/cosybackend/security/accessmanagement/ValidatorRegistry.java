@@ -21,6 +21,25 @@ public class ValidatorRegistry {
     private final ApplicationContext applicationContext;
     private Map<Operation, ValidatorEntry> validators;
 
+    public ValidatorEntry getValidator(Operation operation) {
+        ensureInitialized();
+        ValidatorEntry entry = validators.get(operation);
+        if (entry == null) {
+            throw new IllegalStateException("No validator registered for operation: " + operation);
+        }
+        return entry;
+    }
+
+    public record ValidatorEntry(Object bean, Method method) {
+        public boolean invoke(ResourceResolver resolver, Object referenceId, UserEntity user) {
+            try {
+                return (boolean) method.invoke(bean, resolver, referenceId, user);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to invoke validator: " + method.getName(), e);
+            }
+        }
+    }
+
     private synchronized void ensureInitialized() {
         if (validators != null) {
             return;
@@ -83,25 +102,6 @@ public class ValidatorRegistry {
         if (method.getReturnType() != boolean.class && method.getReturnType() != Boolean.class) {
             throw new IllegalStateException(
                     "Validator method " + method.getName() + " must return boolean");
-        }
-    }
-
-    public ValidatorEntry getValidator(Operation operation) {
-        ensureInitialized();
-        ValidatorEntry entry = validators.get(operation);
-        if (entry == null) {
-            throw new IllegalStateException("No validator registered for operation: " + operation);
-        }
-        return entry;
-    }
-
-    public record ValidatorEntry(Object bean, Method method) {
-        public boolean invoke(ResourceResolver resolver, Object referenceId, UserEntity user) {
-            try {
-                return (boolean) method.invoke(bean, resolver, referenceId, user);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to invoke validator: " + method.getName(), e);
-            }
         }
     }
 }

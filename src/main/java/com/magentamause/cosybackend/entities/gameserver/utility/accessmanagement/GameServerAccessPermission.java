@@ -12,11 +12,11 @@ public enum GameServerAccessPermission {
     READ_SERVER_LOGS,
     READ_SERVER_METRICS,
 
+    SEND_COMMANDS,
+
     // File
     READ_SERVER_SERVER_FILES,
     CHANGE_SERVER_FILES,
-
-    SEND_COMMANDS,
 
     // Configs
     CHANGE_SERVER_CONFIGS,
