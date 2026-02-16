@@ -109,9 +109,9 @@ public class GameServerRootController {
     @NeedsValidation(Operation.GAME_SERVER_UPDATE)
     public ResponseEntity<GameServerDto> transferOwnership(
             @PathVariable @ResourceId String uuid,
-            @Valid @RequestBody TransferOwnershipDto newOwnerName) {
+            @Valid @RequestBody TransferOwnershipDto transferOwnershipDto) {
         GameServerEntity updated =
-                gameServerService.transferGameServerOwnership(uuid, newOwnerName);
+                gameServerService.transferGameServerOwnership(uuid, transferOwnershipDto);
         return ResponseEntity.ok(updated.toDto(securityContextService.getUser()));
     }
 }
