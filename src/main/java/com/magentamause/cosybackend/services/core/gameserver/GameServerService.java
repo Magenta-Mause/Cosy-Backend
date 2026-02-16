@@ -418,20 +418,20 @@ public class GameServerService {
     }
 
     public GameServerEntity transferGameServerOwnership(
-            String gameServerUuid, TransferOwnershipDto newOwnerName) {
+            String gameServerUuid, TransferOwnershipDto transferOwnershipDto) {
         GameServerEntity gameServer = getGameServerById(gameServerUuid);
 
         if (gameServer.getStatus() != GameServerDto.GameServerStatus.STOPPED) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Can't change the owner while the server is running");
         }
-        UserEntity newOwner = userEntityService.getUserByUsername(newOwnerName.getNewOwnerName());
+        UserEntity newOwner = userEntityService.getUserByUsername(transferOwnershipDto.getNewOwnerName());
         gameServer.setOwner(newOwner);
         log.info(
                 "Changing owner of server {} from {} to {}",
                 gameServerUuid,
                 gameServer.getOwner().getUuid(),
-                newOwnerName);
+                transferOwnershipDto.getNewOwnerName());
         return saveGameServerConfiguration(gameServer, false);
     }
 }
