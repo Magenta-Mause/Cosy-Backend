@@ -17,7 +17,7 @@ public class DefaultResourceResolver implements ResourceResolver {
 
     @Override
     public Optional<GameServerEntity> getGameServerEntity(String gameServerUuid) {
-        return gameServerService.getGameServerOptionalById(gameServerUuid);
+        return gameServerService.getOptionalGameServerOptionalById(gameServerUuid);
     }
 
     @Override

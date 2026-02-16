@@ -151,7 +151,7 @@ public class GameServerConfigurationService {
         public List<GameServerAccessPermission> getUserPermissions(
                         String gameServerUuid, String userUuid) {
                 Optional<GameServerEntity> gameServerOptional = gameServerService
-                                .getGameServerOptionalById(gameServerUuid);
+                                .getOptionalGameServerOptionalById(gameServerUuid);
                 if (gameServerOptional.isEmpty()) {
                         return List.of();
                 }
