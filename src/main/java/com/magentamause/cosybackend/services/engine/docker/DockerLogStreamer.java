@@ -3,7 +3,7 @@ package com.magentamause.cosybackend.services.engine.docker;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Frame;
-import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerContainerNameResolver;
 import jakarta.annotation.PreDestroy;

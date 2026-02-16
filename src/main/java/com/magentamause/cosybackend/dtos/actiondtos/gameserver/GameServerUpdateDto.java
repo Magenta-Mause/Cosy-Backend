@@ -1,11 +1,14 @@
-package com.magentamause.cosybackend.dtos.actiondtos;
+package com.magentamause.cosybackend.dtos.actiondtos.gameserver;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.annotations.uniqueElements.UniqueElementsBy;
 import com.magentamause.cosybackend.entities.GameEntity;
-import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.utility.*;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
+import com.magentamause.cosybackend.entities.gameserver.utility.EnvironmentVariableConfiguration;
+import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
+import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.ArrayList;

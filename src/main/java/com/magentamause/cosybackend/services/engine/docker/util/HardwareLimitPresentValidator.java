@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.services.engine.docker.util;
 
-import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
+import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
