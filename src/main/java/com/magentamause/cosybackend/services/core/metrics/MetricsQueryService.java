@@ -43,7 +43,8 @@ public class MetricsQueryService {
                     "block_read",
                     "block_write");
 
-    public List<MetricPointDto> queryMetrics(String gameServerUuid, Instant start, Instant end, int point) {
+    public List<MetricPointDto> queryMetrics(
+            String gameServerUuid, Instant start, Instant end, int point) {
         String flux = buildInfluxQuery(gameServerUuid, start, end, point);
 
         List<FluxTable> tables = influxDBClient.getQueryApi().query(flux);
@@ -118,7 +119,8 @@ public class MetricsQueryService {
         return key;
     }
 
-    private String buildInfluxQuery(String gameServerUuid, Instant start, Instant end, int pointCount) {
+    private String buildInfluxQuery(
+            String gameServerUuid, Instant start, Instant end, int pointCount) {
         long totalSeconds = end.getEpochSecond() - start.getEpochSecond();
 
         long intervalSeconds = Math.max(1, totalSeconds / pointCount);

@@ -38,7 +38,9 @@ public class SecurityConfiguration {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/user-invites/*")
                                         .permitAll()
-                                        .requestMatchers(HttpMethod.PUT, "/internal/game-server/custom-metric/**")
+                                        .requestMatchers(
+                                                HttpMethod.PUT,
+                                                "/internal/game-server/custom-metric/**")
                                         .permitAll()
                                         .dispatcherTypeMatchers(DispatcherType.ASYNC)
                                         .permitAll() // Allow async dispatches to bypass

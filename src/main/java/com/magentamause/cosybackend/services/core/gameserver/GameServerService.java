@@ -29,7 +29,6 @@ import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,7 +39,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -420,7 +418,8 @@ public class GameServerService {
                 .toList();
     }
 
-    public Map<String, Object> updateCustomMetric(String uuid, String secret, Map<String, Object> value) {
+    public Map<String, Object> updateCustomMetric(
+            String uuid, String secret, Map<String, Object> value) {
         GameServerEntity gameServer = getOrThrow(uuid);
         if (!gameServer.getContainerSecret().equals(secret)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid secret");

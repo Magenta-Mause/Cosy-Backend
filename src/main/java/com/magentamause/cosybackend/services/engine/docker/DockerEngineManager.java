@@ -22,7 +22,6 @@ import com.magentamause.cosybackend.services.engine.docker.util.DockerImageNameB
 import com.magentamause.cosybackend.services.engine.docker.util.DockerStatsMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -114,7 +112,9 @@ public class DockerEngineManager implements EngineManager, Closeable {
         List<String> cmd =
                 Optional.ofNullable(serverConfig.getDockerExecutionCommand()).orElse(List.of());
         List<String> env =
-                new ArrayList<>(DockerConfigurationMapper.mapEnvironment(serverConfig.getEnvironmentVariables()));
+                new ArrayList<>(
+                        DockerConfigurationMapper.mapEnvironment(
+                                serverConfig.getEnvironmentVariables()));
         List<ExposedPort> exposedPorts =
                 DockerConfigurationMapper.mapExposedPorts(serverConfig.getPortMappings());
 

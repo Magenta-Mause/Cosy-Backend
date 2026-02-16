@@ -2,18 +2,12 @@ package com.magentamause.cosybackend.entities.metric;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.influxdb.annotations.Column;
-import com.influxdb.annotations.Measurement;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
-
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 @Data
 @Builder

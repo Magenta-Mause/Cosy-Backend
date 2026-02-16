@@ -27,4 +27,3 @@ public final class SecretGenerator {
         return sb.toString();
     }
 }
-

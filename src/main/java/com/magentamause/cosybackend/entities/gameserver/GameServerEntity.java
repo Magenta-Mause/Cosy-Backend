@@ -11,13 +11,11 @@ import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerFieldVisibilityPolicy;
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -37,19 +35,16 @@ public class GameServerEntity {
 
     private String serverName;
 
-    @ManyToOne
-    private UserEntity owner;
+    @ManyToOne private UserEntity owner;
 
-    @ManyToOne
-    private UserEntity lastStartedBy;
+    @ManyToOne private UserEntity lastStartedBy;
 
     @Enumerated(EnumType.STRING)
     private GameServerDto.GameServerStatus status;
 
     private LocalDateTime timestampLastStarted;
 
-    @ManyToOne
-    private GameEntity game;
+    @ManyToOne private GameEntity game;
 
     @Column(nullable = false)
     private String dockerImageName;
@@ -62,11 +57,9 @@ public class GameServerEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> customMetricHolder = new HashMap<>();
 
-    @Embedded
-    private DockerHardwareLimits dockerHardwareLimits;
+    @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
-    @Embedded
-    private RCONConfiguration rconConfiguration;
+    @Embedded private RCONConfiguration rconConfiguration;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
