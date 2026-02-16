@@ -426,7 +426,8 @@ public class GameServerService {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Can't change the owner while the server is running");
         }
-        UserEntity newOwner = userEntityService.getUserByUsername(transferOwnershipDto.getNewOwnerName());
+        UserEntity newOwner =
+                userEntityService.getUserByUsername(transferOwnershipDto.getNewOwnerName());
         gameServer.setOwner(newOwner);
         log.info(
                 "Changing owner of server {} from {} to {}",

@@ -42,8 +42,7 @@ public class UserEntityController {
 
     @GetMapping("/username/{username}")
     @RequireAccess(action = Action.READ, resource = Resource.USER)
-    public ResponseEntity<UserEntityDto> getUserEntityByUsername(
-            @PathVariable String username) {
+    public ResponseEntity<UserEntityDto> getUserEntityByUsername(@PathVariable String username) {
         UserEntity user = userEntityService.getUserByUsername(username);
         return ResponseEntity.ok(user.toDto());
     }
