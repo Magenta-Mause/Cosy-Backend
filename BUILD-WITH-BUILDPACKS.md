@@ -45,7 +45,3 @@ The image name is configured in `pom.xml`:
 ```
 
 To customize, see [Spring Boot Maven Plugin docs](https://docs.spring.io/spring-boot/docs/current/maven-plugin/reference/htmlsingle/#build-image).
-
-## Dockerfile (Deprecated)
-
-The `Dockerfile` is no longer needed for builds. It's kept for reference but Buildpacks is now the recommended approach.
