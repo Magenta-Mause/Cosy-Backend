@@ -8,5 +8,3 @@ public interface WebhookSender {
 
     void send(WebhookEntity webhook, GameServerDomainEvent event);
 }
-
-}
