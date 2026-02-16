@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
-import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.layout.Size;
 import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;

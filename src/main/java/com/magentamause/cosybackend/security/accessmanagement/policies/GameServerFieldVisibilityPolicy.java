@@ -27,6 +27,14 @@ public class GameServerFieldVisibilityPolicy {
                         GameServerAccessPermission.READ_SERVER_METRICS, permissions);
     }
 
+    public static boolean canSeePrivateDashboardLayout(
+            List<GameServerAccessPermission> permissions) {
+        return GameServerPermissionsUtility.can(
+                        GameServerAccessPermission.CHANGE_PRIVATE_DASHBOARD_SETTINGS, permissions)
+                || GameServerPermissionsUtility.can(
+                        GameServerAccessPermission.READ_SERVER_PRIVATE_DASHBOARD, permissions);
+    }
+
     public static boolean canSeeAccessGroups(List<GameServerAccessPermission> permissions) {
         return GameServerPermissionsUtility.can(
                 GameServerAccessPermission.CHANGE_PERMISSIONS_SETTINGS, permissions);

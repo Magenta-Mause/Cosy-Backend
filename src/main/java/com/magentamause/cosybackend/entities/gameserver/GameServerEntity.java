@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
+import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerFieldVisibilityPolicy;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -77,6 +78,10 @@ public class GameServerEntity {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "metric_layout_uuid")
     private List<MetricLayout> metricLayout;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "private_dashboard_layout_uuid")
+    private List<PrivateDashboardLayout> privateDashboardLayouts;
 
     @OneToMany(
             mappedBy = "gameServer",
@@ -148,6 +153,9 @@ public class GameServerEntity {
         }
         if (GameServerFieldVisibilityPolicy.canSeeMetricLayout(permissions)) {
             builder.metricLayout(this.getMetricLayout());
+        }
+        if (GameServerFieldVisibilityPolicy.canSeePrivateDashboardLayout(permissions)) {
+            builder.privateDashboardLayouts(this.getPrivateDashboardLayouts());
         }
         if (GameServerFieldVisibilityPolicy.canSeeAccessGroups(permissions)) {
             builder.accessGroups(

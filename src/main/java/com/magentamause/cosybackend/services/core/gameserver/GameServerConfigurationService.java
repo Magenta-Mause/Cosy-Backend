@@ -3,6 +3,7 @@ package com.magentamause.cosybackend.services.core.gameserver;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
+import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,29 @@ public class GameServerConfigurationService {
 
         gameServer.getMetricLayout().clear();
         gameServer.getMetricLayout().addAll(metricLayout);
+        gameServerRepository.save(gameServer);
+    }
+
+    public void updatePrivateDashboardLayout(
+            String gameServerUuid, List<PrivateDashboardLayout> privateDashboardLayouts) {
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(gameServerUuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Server '" + gameServerUuid + "' not found"));
+
+        privateDashboardLayouts.forEach(
+                layout -> {
+                    if (!layout.isValid()) {
+                        throw new IllegalStateException("Invalid dashboard layout: " + layout);
+                    }
+                });
+
+        gameServer.getPrivateDashboardLayouts().clear();
+        gameServer.getPrivateDashboardLayouts().addAll(privateDashboardLayouts);
         gameServerRepository.save(gameServer);
     }
 }
