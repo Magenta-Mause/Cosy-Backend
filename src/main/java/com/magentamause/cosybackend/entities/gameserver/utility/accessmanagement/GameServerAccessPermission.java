@@ -14,6 +14,10 @@ public enum GameServerAccessPermission {
 
     SEND_COMMANDS,
 
+    // Webhooks
+    READ_SERVER_WEBHOOKS,
+    CHANGE_SERVER_WEBHOOKS,
+
     // File
     READ_SERVER_SERVER_FILES,
     CHANGE_SERVER_FILES,

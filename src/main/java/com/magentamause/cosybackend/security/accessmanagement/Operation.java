@@ -36,6 +36,10 @@ public enum Operation {
     // Game Server Log operations
     GAME_SERVER_LOG_READ,
 
+    // Game Server Webhook operations
+    GAME_SERVER_WEBHOOK_READ,
+    GAME_SERVER_WEBHOOK_UPDATE,
+
     // Game Server Metric operations
     GAME_SERVER_METRIC_READ,
 

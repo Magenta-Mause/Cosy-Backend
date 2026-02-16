@@ -2,6 +2,8 @@ package com.magentamause.cosybackend.controllers.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.WebhookCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.WebhookDto;
+import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerWebhookService;
 import jakarta.validation.Valid;
@@ -17,11 +19,10 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/game-server/{gameserverUuid}/webhooks")
 public class GameServerWebhookController {
-    // TODO: refactor access checks with fine-grained permissions
     private final GameServerWebhookService webhookService;
 
     @GetMapping
-    // TODO add permission
+    @NeedsValidation(Operation.GAME_SERVER_WEBHOOK_READ)
     public ResponseEntity<List<WebhookDto>> getAllWebhooks(
             @PathVariable @ResourceId String gameserverUuid) {
         List<WebhookDto> webhooks = webhookService.getAllWebhooks(gameserverUuid);
@@ -29,7 +30,7 @@ public class GameServerWebhookController {
     }
 
     @PostMapping
-    // TODO add permissions
+    @NeedsValidation(Operation.GAME_SERVER_WEBHOOK_UPDATE)
     public ResponseEntity<WebhookDto> createWebhook(
             @PathVariable @ResourceId String gameserverUuid,
             @Valid @RequestBody WebhookCreationDto creationDto) {
@@ -38,7 +39,7 @@ public class GameServerWebhookController {
     }
 
     @DeleteMapping("/{webhookUuid}")
-    // TODO add permission
+    @NeedsValidation(Operation.GAME_SERVER_WEBHOOK_UPDATE)
     public ResponseEntity<Void> deleteWebhook(
             @PathVariable @ResourceId String gameserverUuid, @PathVariable String webhookUuid) {
         webhookService.deleteWebhook(webhookUuid);
