@@ -7,7 +7,6 @@ import com.magentamause.cosybackend.dtos.actiondtos.gameserver.SendCommandDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
-import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
