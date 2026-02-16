@@ -133,10 +133,8 @@ public class GameServerRootController {
     public ResponseEntity<GameServerDto> transferOwnership(
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody TransferOwnershipDto newOwnerName) {
-
         GameServerEntity updated =
                 gameServerService.transferGameServerOwnership(uuid, newOwnerName);
-
         return ResponseEntity.ok(updated.toDto());
     }
 }
