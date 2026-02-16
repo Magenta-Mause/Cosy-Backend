@@ -6,7 +6,7 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameServerAccessGroupDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
-import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroup;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
@@ -40,8 +40,7 @@ public class GameServerConfigurationController {
     public ResponseEntity<GameServerDto> updateRconConfiguration(
             @PathVariable @ResourceId String uuid,
             @RequestBody @Valid RCONConfiguration updateDto) {
-        GameServerEntity gameServer =
-                gameServerConfigurationService.updateRconConfig(uuid, updateDto);
+        GameServerEntity gameServer = gameServerConfigurationService.updateRconConfig(uuid, updateDto);
         return ResponseEntity.ok(gameServer.toDto(securityContextService.getUser()));
     }
 
@@ -73,7 +72,7 @@ public class GameServerConfigurationController {
                 gameServerConfigurationService
                         .updateAccessGroup(uuid, accessGroupUuid, updateDto)
                         .stream()
-                        .map(GameServerAccessGroup::toDto)
+                        .map(GameServerAccessGroupEntity::toDto)
                         .toList());
     }
 }

@@ -11,7 +11,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-public class GameServerAccessGroup {
+public class GameServerAccessGroupEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -24,10 +24,7 @@ public class GameServerAccessGroup {
     private List<GameServerAccessPermission> permissions;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "access_group_users",
-            joinColumns = @JoinColumn(name = "access_group_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    @JoinTable(name = "access_group_users", joinColumns = @JoinColumn(name = "access_group_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
     private List<UserEntity> users;
 
     @ManyToOne
