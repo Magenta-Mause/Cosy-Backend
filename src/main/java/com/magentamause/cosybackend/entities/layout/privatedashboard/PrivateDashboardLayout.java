@@ -43,10 +43,7 @@ public class PrivateDashboardLayout extends Layout {
 
         return switch (privateDashboardTypes) {
             case METRIC -> metricType != null;
-            case FREETEXT -> content != null
-                    && !content.isEmpty()
-                    && title != null
-                    && !title.isBlank();
+            case FREETEXT -> content != null && !content.isEmpty();
             case LOGS -> true;
         };
     }
