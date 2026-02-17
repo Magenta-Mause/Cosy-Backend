@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -52,6 +53,11 @@ public class DockerEngineManager implements EngineManager, Closeable {
     private final DockerCommandSender commandSender;
     private final DockerHostConfigFactory hostConfigFactory;
     private final DockerContainerNameResolver containerNameResolver;
+
+    @Value("${cosy.custom-metrics.base-url}")
+    private String COSY_METRICS_BASE_URL;
+    @Value("${cosy.custom-metrics.period-seconds:1}")
+    private int COSY_METRICS_PERIOD_SECONDS;
 
     @PostConstruct
     public void init() {
@@ -118,12 +124,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
         List<ExposedPort> exposedPorts =
                 DockerConfigurationMapper.mapExposedPorts(serverConfig.getPortMappings());
 
-        if (serverConfig.getContainerSecret() != null) {
-            env.add("COSY_CONTAINER_SECRET=" + serverConfig.getContainerSecret());
-            env.add("COSY_GAME_SERVER_UUID=" + serverConfig.getUuid());
-            env.add("COSY_GAME_SERVER_NAME=" + serverConfig.getServerName());
-            env.add("COSY_GAME_SERVER_OWNER=" + serverConfig.getOwner().getUsername());
-        }
+        addUtilEnvVars(env, serverConfig);
+
         log.info("Starting container {} with env {}", containerName, env);
 
         CreateContainerResponse response =
@@ -146,6 +148,15 @@ public class DockerEngineManager implements EngineManager, Closeable {
             client.removeContainerCmd(response.getId()).withForce(true).exec();
             throw new InternalServiceStartException(e);
         }
+    }
+
+    private void addUtilEnvVars(List<String> env, GameServerEntity serverConfig) {
+        env.add("COSY_GAME_SERVER_UUID=" + serverConfig.getUuid());
+        env.add("COSY_GAME_SERVER_NAME=" + serverConfig.getServerName());
+        env.add("COSY_GAME_SERVER_OWNER=" + serverConfig.getOwner().getUsername());
+        env.add("COSY_CONTAINER_SECRET=" + serverConfig.getContainerSecret());
+        env.add("COSY_METRICS_BASE_URL=" + COSY_METRICS_BASE_URL);
+        env.add("COSY_METRICS_PERIOD_SECONDS=" + COSY_METRICS_PERIOD_SECONDS);
     }
 
     private void handleExistingContainer(Container container, GameServerEntity serverConfig)

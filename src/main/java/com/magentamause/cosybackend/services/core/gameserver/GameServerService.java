@@ -29,6 +29,7 @@ import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -426,5 +428,10 @@ public class GameServerService {
         }
         gameServer.setCustomMetricHolder(value);
         return gameServerRepository.save(gameServer).getCustomMetricHolder();
+    }
+
+    public Boolean checkGameServerConnection(String uuid, String secret) {
+        GameServerEntity gameServer = getOrThrow(uuid);
+        return gameServer.getContainerSecret().equals(secret);
     }
 }

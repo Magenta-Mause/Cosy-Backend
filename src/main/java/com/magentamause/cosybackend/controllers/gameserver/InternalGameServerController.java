@@ -22,4 +22,13 @@ public class InternalGameServerController {
             @RequestBody Map<String, Object> value) {
         return ResponseEntity.ok(gameServerService.updateCustomMetric(uuid, secret, value));
     }
+
+    @GetMapping("/test-connection/{uuid}/{secret}")
+    public ResponseEntity<Boolean> checkConnection(
+            @PathVariable String uuid,
+            @PathVariable String secret
+    ) {
+        return ResponseEntity.ok(gameServerService.checkGameServerConnection(uuid, secret));
+    }
+
 }

@@ -42,6 +42,9 @@ public class SecurityConfiguration {
                                                 HttpMethod.PUT,
                                                 "/internal/game-server/custom-metric/**")
                                         .permitAll()
+                                        .requestMatchers(HttpMethod.GET,
+                                                "/internal/game-server/test-connection/**")
+                                        .permitAll()
                                         .dispatcherTypeMatchers(DispatcherType.ASYNC)
                                         .permitAll() // Allow async dispatches to bypass
                                         // re-authentication (e.g. for streaming
