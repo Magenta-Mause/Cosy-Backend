@@ -56,6 +56,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
     @Value("${cosy.custom-metrics.base-url}")
     private String COSY_METRICS_BASE_URL;
+
     @Value("${cosy.custom-metrics.period-seconds:1}")
     private int COSY_METRICS_PERIOD_SECONDS;
 

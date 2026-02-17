@@ -42,7 +42,8 @@ public class SecurityConfiguration {
                                                 HttpMethod.PUT,
                                                 "/internal/game-server/custom-metric/**")
                                         .permitAll()
-                                        .requestMatchers(HttpMethod.GET,
+                                        .requestMatchers(
+                                                HttpMethod.GET,
                                                 "/internal/game-server/test-connection/**")
                                         .permitAll()
                                         .dispatcherTypeMatchers(DispatcherType.ASYNC)
