@@ -65,6 +65,13 @@ public class GameServerPolicy {
                 resolver, referenceId, user, GameServerAccessPermission.READ_SERVER_LOGS);
     }
 
+    @Validates(Operation.GAME_SERVER_TRANSFER_OWNERSHIP)
+    public static boolean canChangeTransferOwnership(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return checkPermission(
+                resolver, referenceId, user, GameServerAccessPermission.TRANSFER_SERVER_OWNERSHIP);
+    }
+
     private static boolean checkPermission(
             ResourceResolver resolver,
             Object referenceId,

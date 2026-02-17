@@ -23,6 +23,7 @@ public enum Operation {
     GAME_SERVER_GET_ALL,
     GAME_SERVER_SEND_COMMAND,
     GAME_SERVER_GET_LOGS,
+    GAME_SERVER_TRANSFER_OWNERSHIP,
 
     // Game Server Configuration operations
     GAME_SERVER_METRIC_CONFIG_CHANGE,
