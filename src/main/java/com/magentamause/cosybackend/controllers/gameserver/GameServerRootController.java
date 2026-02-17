@@ -105,7 +105,7 @@ public class GameServerRootController {
     }
 
     @PostMapping("/{uuid}/transfer-ownership")
-    @NeedsValidation(Operation.GAME_SERVER_UPDATE)
+    @NeedsValidation(Operation.GAME_SERVER_TRANSFER_OWNERSHIP)
     public ResponseEntity<GameServerDto> transferOwnership(
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody TransferOwnershipDto transferOwnershipDto) {
