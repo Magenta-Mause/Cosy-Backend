@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.controllers.gameserver;
 
+import com.magentamause.cosybackend.dtos.actiondtos.TransferOwnershipDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.SendCommandDto;
@@ -101,5 +102,15 @@ public class GameServerRootController {
             @PathVariable @ResourceId String uuid, @RequestBody SendCommandDto command) {
         gameServerService.sendCommand(uuid, command.getCommand());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{uuid}/transfer-ownership")
+    @NeedsValidation(Operation.GAME_SERVER_TRANSFER_OWNERSHIP)
+    public ResponseEntity<GameServerDto> transferOwnership(
+            @PathVariable @ResourceId String uuid,
+            @Valid @RequestBody TransferOwnershipDto transferOwnershipDto) {
+        GameServerEntity updated =
+                gameServerService.transferGameServerOwnership(uuid, transferOwnershipDto);
+        return ResponseEntity.ok(updated.toDto(securityContextService.getUser()));
     }
 }
