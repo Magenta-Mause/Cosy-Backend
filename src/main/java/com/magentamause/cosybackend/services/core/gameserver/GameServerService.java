@@ -31,7 +31,6 @@ import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,7 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -466,11 +464,11 @@ public class GameServerService {
     }
 
     private boolean isCustomMetricEntryValid(Object entry) {
-        return entry instanceof Integer ||
-                entry instanceof Long ||
-                entry instanceof Float ||
-                entry instanceof Double ||
-                entry instanceof String ||
-                entry instanceof Boolean;
+        return entry instanceof Integer
+                || entry instanceof Long
+                || entry instanceof Float
+                || entry instanceof Double
+                || entry instanceof String
+                || entry instanceof Boolean;
     }
 }
