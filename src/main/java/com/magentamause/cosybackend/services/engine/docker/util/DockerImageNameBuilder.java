@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.services.engine.docker.util;
 
-import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 
 /** Utility class for building Docker image names with optional tags. */
 public final class DockerImageNameBuilder {

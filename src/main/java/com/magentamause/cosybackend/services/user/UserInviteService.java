@@ -1,6 +1,6 @@
 package com.magentamause.cosybackend.services.user;
 
-import com.magentamause.cosybackend.dtos.actiondtos.UserInviteCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.user.UserInviteCreationDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.UserInviteEntity;
 import com.magentamause.cosybackend.repositories.UserInviteRepository;

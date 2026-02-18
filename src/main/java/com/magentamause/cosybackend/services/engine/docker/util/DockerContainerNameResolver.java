@@ -1,7 +1,7 @@
 package com.magentamause.cosybackend.services.engine.docker.util;
 
 import com.magentamause.cosybackend.configs.properties.EngineProperties;
-import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

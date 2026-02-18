@@ -170,6 +170,10 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                    <mainClass>com.magentamause.cosybackend.CosyBackendApplication</mainClass>
+                    <image>
+                        <name>cosy-backend:${project.version}</name>
+                    </image>
                 </configuration>
             </plugin>
             <plugin>

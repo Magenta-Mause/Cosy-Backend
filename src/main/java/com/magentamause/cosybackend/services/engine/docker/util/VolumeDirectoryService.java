@@ -1,8 +1,8 @@
 package com.magentamause.cosybackend.services.engine.docker.util;
 
 import com.magentamause.cosybackend.configs.properties.EngineProperties;
-import com.magentamause.cosybackend.entities.GameServerEntity;
-import com.magentamause.cosybackend.entities.utility.VolumeMountConfiguration;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;

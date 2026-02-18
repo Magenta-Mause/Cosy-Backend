@@ -1,7 +1,8 @@
 package com.magentamause.cosybackend.entities;
 
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
-import com.magentamause.cosybackend.entities.utility.DockerHardwareLimits;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import jakarta.persistence.*;
 import java.util.List;
 import lombok.*;

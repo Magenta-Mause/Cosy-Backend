@@ -1,59 +1,87 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
-import com.magentamause.cosybackend.entities.GameServerEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.repositories.GameServerRepository;
-import com.magentamause.cosybackend.security.accessmanagement.Action;
-import com.magentamause.cosybackend.security.accessmanagement.Resource;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
+import com.magentamause.cosybackend.security.accessmanagement.Operation;
+import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
+import com.magentamause.cosybackend.security.accessmanagement.Validates;
+import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
-public class GameServerPolicy implements AccessPolicy {
+public class GameServerPolicy {
 
-    private final GameServerRepository gameServerRepository;
-
-    @Override
-    public Resource resource() {
-        return Resource.GAME_SERVER;
+    @Validates(Operation.GAME_SERVER_CREATE)
+    public static boolean canCreateGameServer(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        // every user should be able to create a game server
+        return true;
     }
 
-    @Override
-    public boolean can(UserEntity user, Action action, Object referenceId) {
-        if (user.getRole().isAdmin()) {
-            return true;
-        }
+    @Validates(Operation.GAME_SERVER_DELETE)
+    public static boolean canDeleteGameServer(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return checkPermission(
+                resolver, referenceId, user, GameServerAccessPermission.DELETE_SERVER);
+    }
 
-        if (action == Action.CREATE) {
-            return true;
-        }
+    @Validates(Operation.GAME_SERVER_START_STOP)
+    public static boolean canStartStopGameServer(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return checkPermission(
+                resolver, referenceId, user, GameServerAccessPermission.START_STOP_SERVER);
+    }
 
-        if (!(referenceId instanceof String)) {
-            return action == Action.READ;
-        }
+    @Validates(Operation.GAME_SERVER_UPDATE)
+    public static boolean canUpdateGameServer(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return checkPermission(
+                resolver, referenceId, user, GameServerAccessPermission.CHANGE_SERVER_CONFIGS);
+    }
 
-        GameServerEntity gameServerEntity =
-                gameServerRepository
-                        .findById((String) referenceId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Game server with uuid "
-                                                        + referenceId
-                                                        + " not found"));
+    @Validates(Operation.GAME_SERVER_GET)
+    public static boolean canGetGameServer(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return checkPermission(resolver, referenceId, user, GameServerAccessPermission.SEE_SERVER);
+    }
 
-        return switch (action) {
-            case READ, DELETE, UPDATE, START_STOP -> gameServerEntity
-                    .getOwner()
-                    .getUuid()
-                    .equals(user.getUuid());
-            default -> throw new IllegalStateException("Unexpected value: " + action);
-        };
+    @Validates(Operation.GAME_SERVER_GET_ALL)
+    public static boolean canGetAllGameServers(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return user.getRole().isAdmin();
+    }
+
+    @Validates(Operation.GAME_SERVER_SEND_COMMAND)
+    public static boolean canSendCommand(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return checkPermission(
+                resolver, referenceId, user, GameServerAccessPermission.SEND_COMMANDS);
+    }
+
+    @Validates(Operation.GAME_SERVER_GET_LOGS)
+    public static boolean canGetLogs(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return checkPermission(
+                resolver, referenceId, user, GameServerAccessPermission.READ_SERVER_LOGS);
+    }
+
+    @Validates(Operation.GAME_SERVER_TRANSFER_OWNERSHIP)
+    public static boolean canChangeTransferOwnership(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return checkPermission(
+                resolver, referenceId, user, GameServerAccessPermission.TRANSFER_SERVER_OWNERSHIP);
+    }
+
+    private static boolean checkPermission(
+            ResourceResolver resolver,
+            Object referenceId,
+            UserEntity user,
+            GameServerAccessPermission permission) {
+        return resolver.getGameServerEntity((String) referenceId)
+                .map(
+                        server ->
+                                GameServerPermissionsUtility.isOwnerOrHasPermission(
+                                        server, user, permission))
+                .orElse(false);
     }
 }

@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.services.engine.docker;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
-import com.magentamause.cosybackend.entities.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerContainerNameResolver;
 import java.util.Arrays;
 import java.util.Optional;

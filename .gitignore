@@ -46,4 +46,9 @@ dummy
 api-client/
 dummy/
 
+<<<<<<< HEAD
 ./src/main/resources/native/*/libcosyfs.so
+=======
+.claude
+.claude/**
+>>>>>>> f0289cba558a702eb47df16a0e2a9b88496a6bfd

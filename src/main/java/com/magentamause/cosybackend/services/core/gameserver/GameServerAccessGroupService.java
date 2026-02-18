@@ -1,0 +1,142 @@
+package com.magentamause.cosybackend.services.core.gameserver;
+
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupUpdateDto;
+import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
+import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository;
+import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
+import com.magentamause.cosybackend.services.user.UserEntityService;
+import com.magentamause.cosybackend.websockets.UserPermissionsPublisher;
+import java.util.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+@Service
+@RequiredArgsConstructor
+public class GameServerAccessGroupService {
+
+    private final GameServerRepository gameServerRepository;
+    private final GameServerService gameServerService;
+    private final GameServerAccessGroupRepository gameServerAccessGroupRepository;
+    private final UserEntityService userEntityService;
+    private final UserPermissionsPublisher userPermissionsPublisher;
+
+    public GameServerAccessGroupEntity createAccessGroup(
+            String gameServerUuid, AccessGroupCreationDto accessGroupCreationDto) {
+        GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
+        GameServerAccessGroupEntity accessGroup = new GameServerAccessGroupEntity();
+        accessGroup.setGroupName(accessGroupCreationDto.getName());
+        accessGroup.setGameServer(gameServer);
+        accessGroup.setUsers(List.of());
+        accessGroup.setPermissions(List.of());
+        return gameServerAccessGroupRepository.save(accessGroup);
+    }
+
+    public List<GameServerAccessGroupEntity> updateAccessGroup(
+            String gameServerUuid, String accessGroupUuid, AccessGroupUpdateDto updateDto) {
+        GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
+        List<GameServerAccessGroupEntity> accessGroups =
+                gameServer.getAccessGroups() != null ? gameServer.getAccessGroups() : List.of();
+        GameServerAccessGroupEntity accessGroupToUpdate = getAccessGroup(accessGroupUuid);
+        if (accessGroupToUpdate.getGameServer() == null
+                || !accessGroupToUpdate.getGameServer().getUuid().equals(gameServerUuid)
+                || accessGroups.stream().noneMatch(g -> g.getUuid().equals(accessGroupUuid))) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Access group '"
+                            + accessGroupUuid
+                            + "' is not assigned to server '"
+                            + gameServerUuid
+                            + "'");
+        }
+        HashSet<UserEntity> usersToNotify = new HashSet<>(accessGroupToUpdate.getUsers());
+
+        GameServerAccessGroupEntity updatedAccessGroup =
+                updateDto.applyOnEntity(accessGroupToUpdate, userEntityService::getUserByUuid);
+        usersToNotify.addAll(updatedAccessGroup.getUsers());
+        gameServerAccessGroupRepository.save(updatedAccessGroup);
+        sendPermissionUpdateNotification(usersToNotify.stream().toList(), gameServerUuid);
+        GameServerEntity updatedGameServer = gameServerService.getOrThrow(gameServerUuid);
+        return updatedGameServer.getAccessGroups() != null
+                ? updatedGameServer.getAccessGroups()
+                : List.of();
+    }
+
+    public void sendPermissionUpdateNotification(List<UserEntity> users, String serverId) {
+        users.forEach(
+                user ->
+                        userPermissionsPublisher.publishPermissionUpdate(
+                                user.getUuid(),
+                                serverId,
+                                getUserPermissions(serverId, user.getUuid())));
+    }
+
+    public void deleteAccessGroup(String gameServerUuid, String accessGroupUuid) {
+        GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
+        GameServerAccessGroupEntity accessGroupToDelete = getAccessGroup(accessGroupUuid);
+        if (accessGroupToDelete.getGameServer() == null
+                || !accessGroupToDelete.getGameServer().getUuid().equals(gameServerUuid)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Access group '"
+                            + accessGroupUuid
+                            + "' is not assigned to server '"
+                            + gameServerUuid
+                            + "'");
+        }
+        List<UserEntity> usersToNotify = new ArrayList<>(accessGroupToDelete.getUsers());
+        if (gameServer.getAccessGroups() != null) {
+            gameServer.getAccessGroups().remove(accessGroupToDelete);
+        }
+        gameServerRepository.save(gameServer);
+        sendPermissionUpdateNotification(usersToNotify, gameServerUuid);
+    }
+
+    private GameServerAccessGroupEntity getAccessGroup(String accessGroupUuid) {
+        return gameServerAccessGroupRepository
+                .findById(accessGroupUuid)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Access group '" + accessGroupUuid + "' not found"));
+    }
+
+    public List<GameServerAccessPermission> getUserPermissions(
+            GameServerEntity gameServer, String userUuid) {
+        if (gameServer.getOwner().getUuid().equals(userUuid)) {
+            return List.of(GameServerAccessPermission.ADMIN);
+        }
+
+        UserEntity user =
+                userEntityService
+                        .getOptionalUserByUuid(userUuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "User not found"));
+        if (user.getRole().isAdmin()) {
+            return List.of(GameServerAccessPermission.ADMIN);
+        }
+
+        return GameServerPermissionsUtility.extractUserPermissions(
+                userUuid,
+                gameServer.getAccessGroups() != null ? gameServer.getAccessGroups() : List.of());
+    }
+
+    public List<GameServerAccessPermission> getUserPermissions(
+            String gameServerUuid, String userUuid) {
+        Optional<GameServerEntity> gameServerOptional =
+                gameServerService.getOptionalGameServerOptionalById(gameServerUuid);
+        if (gameServerOptional.isEmpty()) {
+            return List.of();
+        }
+        return getUserPermissions(gameServerOptional.get(), userUuid);
+    }
+}
