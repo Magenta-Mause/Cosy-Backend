@@ -435,7 +435,7 @@ public class GameServerService {
         GameServerEntity gameServer = getOrThrow(uuid);
         return gameServer.getContainerSecret().equals(secret);
     }
-  
+
     public GameServerEntity transferGameServerOwnership(
             String gameServerUuid, TransferOwnershipDto transferOwnershipDto) {
         GameServerEntity gameServer = getOrThrow(gameServerUuid);
