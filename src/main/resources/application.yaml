@@ -42,7 +42,7 @@ cosy:
     url: https://cosy-templates.jannekeipert.de/templates
   custom-metrics:
     base-url: http://host.docker.internal:8080
-    period-seconds: 1
+    period-seconds: 2
   loki:
     username: ${COSY_LOKI_USER:loki-user}
     password: ${COSY_LOKI_PASSWORD:loki-password}
