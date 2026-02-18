@@ -51,12 +51,10 @@ public class UserInviteController {
     public ResponseEntity<UserInviteDto> createInvite(
             @Valid @RequestBody UserInviteCreationDto userInviteCreationDto) {
         log.info("Creating invite for {}", userInviteCreationDto);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(
-                        userInviteService
-                                .createInvite(
-                                        securityContextService.getUserId(), userInviteCreationDto)
-                                .convertToDto());
+        String inviterUUid = securityContextService.getUser().getUuid();
+        UserInviteEntity userInvite =
+                userInviteService.createInvite(inviterUUid, userInviteCreationDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userInvite.convertToDto());
     }
 
     @PostMapping("/use/{secretKey}")
