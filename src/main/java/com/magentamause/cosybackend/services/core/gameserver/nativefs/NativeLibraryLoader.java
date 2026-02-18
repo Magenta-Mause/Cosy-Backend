@@ -51,9 +51,8 @@ public final class NativeLibraryLoader {
             Path out = dir.resolve(fileName);
             Files.copy(in, out, StandardCopyOption.REPLACE_EXISTING);
 
-            // Best-effort perms (usually not needed, but helps on some setups)
-            out.toFile().setReadable(true, false);
-            out.toFile().setExecutable(true, false);
+            out.toFile().setReadable(true, true);
+            out.toFile().setExecutable(true, true);
             out.toFile().deleteOnExit();
 
             return out;

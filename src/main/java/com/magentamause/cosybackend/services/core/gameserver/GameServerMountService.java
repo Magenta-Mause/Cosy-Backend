@@ -157,8 +157,10 @@ public class GameServerMountService {
         PointerByReference outPtr = new PointerByReference();
         LongByReference outLen = new LongByReference();
 
+        Pointer p = null;
+        long len = 0;
+
         try {
-            // init struct memory
             err.write();
 
             int rc =
@@ -166,32 +168,34 @@ public class GameServerMountService {
                             .cosyfs_read_file(
                                     volumeRoot.toString(), relStr, maxBytes, outPtr, outLen, err);
 
-            // read back fields set by native
             err.read();
+
+            len = outLen.getValue();
+            p = outPtr.getValue();
 
             if (rc != 0) {
                 throw mapNativeErr(err, "Native read failed: " + relStr);
             }
 
-            long len = outLen.getValue();
-            Pointer p = outPtr.getValue();
-
             if (len < 0 || len > Integer.MAX_VALUE) {
-                if (p != null) {
-                    nativeLib().cosyfs_free_buf(p, len);
-                }
                 throw new ResponseStatusException(
                         HttpStatus.PAYLOAD_TOO_LARGE, "File too large to read into memory");
             }
 
-            byte[] out = (p == null) ? new byte[0] : p.getByteArray(0, (int) len);
-            if (p != null) {
-                nativeLib().cosyfs_free_buf(p, len);
-            }
-            return Optional.of(out);
+            return Optional.of(p == null ? new byte[0] : p.getByteArray(0, (int) len));
+
         } catch (UnsatisfiedLinkError | NoClassDefFoundError e) {
             log.warn("Native cosyfs not available for read (falling back): {}", e.toString());
             return Optional.empty();
+
+        } finally {
+            if (p != null) {
+                try {
+                    long freeLen = Math.max(0, len);
+                    nativeLib().cosyfs_free_buf(p, freeLen);
+                } catch (Throwable ignored) {
+                }
+            }
         }
     }
 
@@ -829,12 +833,19 @@ public class GameServerMountService {
 
         SecureTarget src = resolveSecureNoSymlink(root, oldRel, "oldPath");
         SecureTarget dst = resolveSecureNoSymlink(root, newRel, "newPath");
+
         try {
-            if (newRel.startsWith(oldRel)) {
+            Path oldN = oldRel.normalize();
+            Path newN = newRel.normalize();
+
+            // Reject moving something into itself / below itself.
+            // This is path-element based, not string-prefix based.
+            if (newN.equals(oldN) || newN.startsWith(oldN)) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "Cannot move a directory into itself or its subdirectory");
             }
+
             src.parentDir().move(src.leafName(), dst.parentDir(), dst.leafName());
         } finally {
             closeQuietly(src.toClose());
@@ -1438,31 +1449,46 @@ public class GameServerMountService {
         List<DirectoryStream<Path>> opened = new ArrayList<>();
         SecureDirectoryStream<Path> cur = root;
 
-        for (int i = 0; i < n - 1; i++) {
-            Path part = rel.getName(i);
+        try {
+            for (int i = 0; i < n - 1; i++) {
+                Path part = rel.getName(i);
 
-            BasicFileAttributes attrs =
-                    cur.getFileAttributeView(
-                                    part, BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS)
-                            .readAttributes();
+                BasicFileAttributes attrs =
+                        cur.getFileAttributeView(
+                                        part,
+                                        BasicFileAttributeView.class,
+                                        LinkOption.NOFOLLOW_LINKS)
+                                .readAttributes();
 
-            if (!attrs.isDirectory()) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Parent component is not a directory: " + part);
+                if (!attrs.isDirectory()) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST, "Parent component is not a directory: " + part);
+                }
+
+                DirectoryStream<Path> next =
+                        cur.newDirectoryStream(part, LinkOption.NOFOLLOW_LINKS);
+                opened.add(next);
+
+                if (!(next instanceof SecureDirectoryStream<Path> nextSecure)) {
+                    throw new ResponseStatusException(
+                            HttpStatus.INTERNAL_SERVER_ERROR,
+                            "SecureDirectoryStream lost while resolving");
+                }
+
+                cur = nextSecure;
             }
 
-            DirectoryStream<Path> next = cur.newDirectoryStream(part, LinkOption.NOFOLLOW_LINKS);
-            opened.add(next);
+            return new SecureTarget(cur, rel.getFileName(), opened);
 
-            if (!(next instanceof SecureDirectoryStream<Path> nextSecure)) {
-                throw new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "SecureDirectoryStream lost while resolving");
+        } catch (Throwable t) {
+            for (int i = opened.size() - 1; i >= 0; i--) {
+                try {
+                    opened.get(i).close();
+                } catch (Throwable ignored) {
+                }
             }
-            cur = nextSecure;
+            throw t;
         }
-
-        return new SecureTarget(cur, rel.getFileName(), opened);
     }
 
     private void closeQuietly(List<DirectoryStream<Path>> streams) {

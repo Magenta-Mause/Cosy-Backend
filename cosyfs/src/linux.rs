@@ -19,8 +19,7 @@ struct OpenHow {
     resolve: u64,
 }
 
-// Values come from Linux UAPI; keep local to avoid extra deps.
-const SYS_OPENAT2: libc::c_long = 437; // On x86_64. NOTE: arch-dependent.
+const SYS_OPENAT2: libc::c_long = libc::SYS_openat2;
 
 const RESOLVE_NO_XDEV: u64 = 0x01;
 const RESOLVE_NO_MAGICLINKS: u64 = 0x02;
