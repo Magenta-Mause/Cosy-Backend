@@ -14,8 +14,8 @@ public class DefaultSettingsMapper {
     public void createDefaultLayout(GameServerEntity gameServer) {
         gameServer.setMetricLayout(
                 List.of(
-                        createMetricLayout(MetricType.CPU_PERCENT),
-                        createMetricLayout(MetricType.MEMORY_USAGE)));
+                        createMetricLayout(MetricType.CPU_PERCENT.getValue()),
+                        createMetricLayout(MetricType.MEMORY_USAGE.getValue())));
         gameServer.setPrivateDashboardLayouts(
                 List.of(
                         createPrivateDashboardLayout(
@@ -23,7 +23,7 @@ public class DefaultSettingsMapper {
                         createPrivateDashboardLayout(PrivateDashboardTypes.LOGS, null)));
     }
 
-    private MetricLayout createMetricLayout(MetricType metricType) {
+    private MetricLayout createMetricLayout(String metricType) {
         MetricLayout layout = new MetricLayout();
         layout.setMetricType(metricType);
         layout.setSize(Size.MEDIUM);
