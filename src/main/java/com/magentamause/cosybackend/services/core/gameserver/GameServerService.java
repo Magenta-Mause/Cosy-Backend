@@ -62,6 +62,7 @@ public class GameServerService {
     private final HardwareQuotaChecker hardwareQuotaChecker;
     private final VolumeDirectoryService volumeDirectoryService;
     private final RCONService rCONService;
+    private final DefaultSettingsMapper defaultSettingsMapper;
 
     @PostConstruct
     public void init() {
@@ -159,6 +160,9 @@ public class GameServerService {
                 (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
 
         GameServerEntity created = gameServerDto.toEntity(user, gameResolver);
+
+        defaultSettingsMapper.createDefaultLayout(created);
+
         return saveGameServerConfiguration(created, true);
     }
 

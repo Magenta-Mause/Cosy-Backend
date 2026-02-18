@@ -18,6 +18,16 @@ public class GameServerConfigurationPolicy {
                 resolver, referenceId, user, GameServerAccessPermission.CHANGE_METRICS_SETTINGS);
     }
 
+    @Validates(Operation.GAME_SERVER_PRIVATE_DASHBOARD_CONFIG_CHANGE)
+    public static boolean canChangePrivateDashboardConfig(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return checkPermission(
+                resolver,
+                referenceId,
+                user,
+                GameServerAccessPermission.CHANGE_PRIVATE_DASHBOARD_SETTINGS);
+    }
+
     @Validates(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
     public static boolean canChangePermissionsConfig(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
