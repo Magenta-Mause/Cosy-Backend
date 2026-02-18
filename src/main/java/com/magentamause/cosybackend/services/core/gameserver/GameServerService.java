@@ -31,6 +31,7 @@ import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -63,7 +65,7 @@ public class GameServerService {
     private final GamesService gamesService;
     private final HardwareLimitPresentValidator hardwareLimitValidator;
     private final HardwareQuotaChecker hardwareQuotaChecker;
-    private final VolumeDirectoryService volumeDirectoryService;
+    private final VolumeDirectoryService entry;
     private final RCONService rCONService;
 
     @PostConstruct
@@ -175,7 +177,7 @@ public class GameServerService {
         log.info("Saving game server {}", entity);
 
         GameServerEntity saved = gameServerRepository.save(entity);
-        volumeDirectoryService.assertVolumeDirectoriesExist(saved);
+        entry.assertVolumeDirectoriesExist(saved);
         return saved;
     }
 
@@ -194,7 +196,7 @@ public class GameServerService {
             log.debug("Server '{}' was already stopped when attempting to delete", uuid, e);
         }
         gameServerRepository.deleteById(uuid);
-        volumeDirectoryService.deleteVolumeDirectories(gameServer);
+        entry.deleteVolumeDirectories(gameServer);
     }
 
     public GameServerEntity updateGameServerConfiguration(
@@ -423,6 +425,10 @@ public class GameServerService {
 
     public Map<String, Object> updateCustomMetric(
             String uuid, String secret, Map<String, Object> value) {
+        if (!value.values().stream().allMatch(this::isCustomMetricEntryValid)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid custom metric");
+        }
+
         GameServerEntity gameServer = getOrThrow(uuid);
         if (!gameServer.getContainerSecret().equals(secret)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid secret");
@@ -454,5 +460,14 @@ public class GameServerService {
                 oldOwner.getUsername(),
                 gameServer.getOwner().getUsername());
         return saveGameServerConfiguration(gameServer, false);
+    }
+
+    private boolean isCustomMetricEntryValid(Object entry) {
+        return entry instanceof Integer ||
+                entry instanceof Long ||
+                entry instanceof Float ||
+                entry instanceof Double ||
+                entry instanceof String ||
+                entry instanceof Boolean;
     }
 }
