@@ -9,7 +9,8 @@ import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
-import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
+import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
+import com.magentamause.cosybackend.entities.layout.PublicDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerFieldVisibilityPolicy;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -85,6 +86,11 @@ public class GameServerEntity {
     @OrderColumn(name = "private_dashboard_layout_index")
     private List<PrivateDashboardLayout> privateDashboardLayouts;
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "public_dashboard_layout_uuid")
+    @OrderColumn(name = "public_dashboard_layout_index")
+    private List<PublicDashboardLayout> publicDashboardLayouts;
+
     @OneToMany(
             mappedBy = "gameServer",
             cascade = CascadeType.ALL,
@@ -158,6 +164,9 @@ public class GameServerEntity {
         }
         if (GameServerFieldVisibilityPolicy.canSeePrivateDashboardLayout(permissions)) {
             builder.privateDashboardLayouts(this.getPrivateDashboardLayouts());
+        }
+        if (GameServerFieldVisibilityPolicy.canSeePublicDashboardLayout(permissions)) {
+            builder.publicDashboardLayouts(this.getPublicDashboardLayouts());
         }
         if (GameServerFieldVisibilityPolicy.canSeeAccessGroups(permissions)) {
             builder.accessGroups(
