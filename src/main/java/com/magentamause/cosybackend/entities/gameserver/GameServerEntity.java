@@ -77,10 +77,12 @@ public class GameServerEntity {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "metric_layout_uuid")
+    @OrderColumn(name = "metric_layout_index")
     private List<MetricLayout> metricLayout;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "private_dashboard_layout_uuid")
+    @OrderColumn(name = "private_dashboard_layout_index")
     private List<PrivateDashboardLayout> privateDashboardLayouts;
 
     @OneToMany(
