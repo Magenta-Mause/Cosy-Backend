@@ -438,8 +438,11 @@ public class GameServerService {
     }
 
     public Boolean checkGameServerConnection(String uuid, String secret) {
-        GameServerEntity gameServer = getOrThrow(uuid);
-        return gameServer.getContainerSecret().equals(secret);
+        Optional<GameServerEntity> gameServer = getOptionalGameServerOptionalById(uuid);
+        if (gameServer.isEmpty()) {
+            return false;
+        }
+        return gameServer.get().getContainerSecret().equals(secret);
     }
 
     public GameServerEntity transferGameServerOwnership(

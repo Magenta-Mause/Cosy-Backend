@@ -86,12 +86,11 @@ If validation fails (non-2xx), do not spam updates. Log the error and retry with
 
 To publish or update custom metrics, send the current metrics map to Cosy:
 
-- **Method:** `PUT`
-- **Body:** JSON object (flat key/value map)
-- **Auth:** includes `COSY_GAMESERVER_UUID` + `COSY_CONTAINER_SECRET` (exact placement depends on the endpoint; typically path/query/header)
+Use the following endpoints:
 
-Example JSON body (Minecraft-like):
+PUT `/api/internal/game-server/custom-metric/{game-server-uuid}`
 
+Body: JSON object (flat key/value map)
 ```json
 {
   "playerCount": 12,
@@ -99,6 +98,30 @@ Example JSON body (Minecraft-like):
   "mspt": 5.3,
   "motd": "Vanilla+ SMP",
   "pvpEnabled": true
+}
+```
+Headers:
+```
+Authorization: `{secret}`
+```
+
+Response: 2xx
+
+GET `api/internal/game-server/test-connection/{game-server-uuid}`
+
+Headers:
+```
+Authorization: `{secret}`
+```
+Response 2xx with body: 
+```json
+{
+  "data": false, // <-- true if connection successful
+  "error": null,
+  "path": "/api/internal/game-server/test-connection/f98585aa-78d0-4fdf-9b3b-2f4b8c66d6e0",
+  "status_code": 200,
+  "success": true,
+  "timestamp": "2026-02-18T20:29:54.046171033Z"
 }
 ```
 
@@ -112,7 +135,7 @@ onServerStart:
   secret = env("COSY_CONTAINER_SECRET")
   GET url + <validate-endpoint> using uuid + secret 
   if not ok:
-   retry with backoff
+   throw error
 every 5s: 
   metrics = { "playerCount": getOnlinePlayers(), "tps": getTps(), "mspt": getMspt() }
   PUT url + <custom-metrics-endpoint> using uuid + secret body = metrics
@@ -121,8 +144,7 @@ every 5s:
 ### Recommendations
 
 - Keep metric keys stable (e.g. always `playerCount`, not sometimes `players`).
-- Prefer primitive values: **number**, **string**, **boolean**.
-- If you publish frequently-changing string values, consider how often you really need to update them.
+- Use primitive values: **number**, **string**, **boolean**.
 
 ## 🛜 Dependencies
 
