@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
 import com.magentamause.cosybackend.dtos.actiondtos.WebhookCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.WebhookUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.WebhookDto;
 import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.entities.WebhookType;
@@ -35,6 +36,22 @@ public class GameServerWebhookService {
     public WebhookDto createWebhook(String gameServerUuid, WebhookCreationDto creationDto) {
         GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
         WebhookEntity webhookEntity = creationDto.toEntity(gameServer);
+        return webhookRepository.save(webhookEntity).toDto();
+    }
+
+    public WebhookDto updateWebhook(
+            String gameserverUuid, String webhookUuid, WebhookUpdateDto updateDto) {
+        WebhookEntity webhookEntity =
+                webhookRepository
+                        .findByUuidAndGameServer_Uuid(webhookUuid, gameserverUuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                String.format(
+                                                        "Webhook '%s' not found for game server '%s'",
+                                                        webhookUuid, gameserverUuid)));
+        updateDto.applyToEntity(webhookEntity);
         return webhookRepository.save(webhookEntity).toDto();
     }
 

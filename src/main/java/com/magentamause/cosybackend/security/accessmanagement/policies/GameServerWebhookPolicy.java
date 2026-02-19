@@ -25,6 +25,13 @@ public class GameServerWebhookPolicy {
                 resolver, referenceId, user, GameServerAccessPermission.CHANGE_WEBHOOK_SETTINGS);
     }
 
+    @Validates(Operation.GAME_SERVER_WEBHOOK_UPDATE)
+    public static boolean canUpdateWebhooks(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+        return checkPermission(
+                resolver, referenceId, user, GameServerAccessPermission.CHANGE_WEBHOOK_SETTINGS);
+    }
+
     @Validates(Operation.GAME_SERVER_WEBHOOK_DELETE)
     public static boolean canDeleteWebhooks(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
