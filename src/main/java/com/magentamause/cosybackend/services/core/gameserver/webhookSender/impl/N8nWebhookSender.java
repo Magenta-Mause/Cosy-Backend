@@ -11,17 +11,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class N8nWebhookSender extends BaseWebhookSender {
 
     public N8nWebhookSender(@Qualifier("webhookWebClient") WebClient webClient) {
-        super(webClient);
+        super(webClient, WebhookType.N8N);
     }
 
     @Override
     public boolean supports(WebhookType type) {
         return type == WebhookType.N8N;
-    }
-
-    @Override
-    protected String webhookTypeName() {
-        return "n8n";
     }
 
     @Override

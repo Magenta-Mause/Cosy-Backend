@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.services.core.gameserver.webhookSender.impl;
 
 import com.magentamause.cosybackend.entities.WebhookEntity;
+import com.magentamause.cosybackend.entities.WebhookType;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.WebhookSender;
 import java.util.Map;
@@ -14,6 +15,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 public abstract class BaseWebhookSender implements WebhookSender {
 
     private final WebClient webClient;
+    private final WebhookType webhookType;
 
     @Override
     public void send(WebhookEntity webhook, GameServerDomainEvent event) {
@@ -29,7 +31,7 @@ public abstract class BaseWebhookSender implements WebhookSender {
                             ex ->
                                     log.error(
                                             "Failed to send {} webhook for server {} and event {}",
-                                            webhookTypeName(),
+                                            webhookType.name().toLowerCase(),
                                             event.serverId(),
                                             event.eventType(),
                                             ex))
@@ -37,7 +39,7 @@ public abstract class BaseWebhookSender implements WebhookSender {
         } catch (Exception ex) {
             log.error(
                     "Failed to prepare {} webhook request for server {} and event {}",
-                    webhookTypeName(),
+                    webhookType.name().toLowerCase(),
                     event.serverId(),
                     event.eventType(),
                     ex);
@@ -51,8 +53,6 @@ public abstract class BaseWebhookSender implements WebhookSender {
             case SERVER_FAILED -> "❌ Server crashed: " + event.serverName();
         };
     }
-
-    protected abstract String webhookTypeName();
 
     protected abstract Map<String, Object> payload(GameServerDomainEvent event);
 }

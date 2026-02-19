@@ -11,17 +11,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class DiscordWebhookSender extends BaseWebhookSender {
 
     public DiscordWebhookSender(@Qualifier("webhookWebClient") WebClient webClient) {
-        super(webClient);
+        super(webClient, WebhookType.DISCORD);
     }
 
     @Override
     public boolean supports(WebhookType type) {
         return type == WebhookType.DISCORD;
-    }
-
-    @Override
-    protected String webhookTypeName() {
-        return "discord";
     }
 
     @Override

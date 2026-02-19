@@ -11,17 +11,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class SlackWebhookSender extends BaseWebhookSender {
 
     public SlackWebhookSender(@Qualifier("webhookWebClient") WebClient webClient) {
-        super(webClient);
+        super(webClient, WebhookType.SLACK);
     }
 
     @Override
     public boolean supports(WebhookType type) {
         return type == WebhookType.SLACK;
-    }
-
-    @Override
-    protected String webhookTypeName() {
-        return "slack";
     }
 
     @Override
