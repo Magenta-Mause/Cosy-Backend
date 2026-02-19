@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
+import com.magentamause.cosybackend.dtos.actiondtos.TransferOwnershipDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
@@ -27,6 +28,7 @@ import com.magentamause.cosybackend.services.engine.docker.util.HardwareLimitPre
 import com.magentamause.cosybackend.services.engine.docker.util.HardwareQuotaChecker;
 import com.magentamause.cosybackend.services.engine.docker.util.VolumeDirectoryService;
 import com.magentamause.cosybackend.services.technical.RCONService;
+import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
@@ -53,6 +55,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class GameServerService {
 
     private final GameServerRepository gameServerRepository;
+    private final UserEntityService userEntityService;
     private final EngineManager engineManager;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
     private final GameServerStatusPublisher statusPublisher;
@@ -63,6 +66,7 @@ public class GameServerService {
     private final HardwareQuotaChecker hardwareQuotaChecker;
     private final VolumeDirectoryService volumeDirectoryService;
     private final RCONService rCONService;
+    private final DefaultSettingsMapper defaultSettingsMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final TransactionTemplate transactionTemplate;
 
@@ -162,6 +166,9 @@ public class GameServerService {
                 (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
 
         GameServerEntity created = gameServerDto.toEntity(user, gameResolver);
+
+        defaultSettingsMapper.createDefaultLayout(created);
+
         return saveGameServerConfiguration(created, true);
     }
 
@@ -451,5 +458,25 @@ public class GameServerService {
                                         gameServer.getUuid(),
                                         user))
                 .toList();
+    }
+
+    public GameServerEntity transferGameServerOwnership(
+            String gameServerUuid, TransferOwnershipDto transferOwnershipDto) {
+        GameServerEntity gameServer = getOrThrow(gameServerUuid);
+        UserEntity oldOwner = gameServer.getOwner();
+
+        if (gameServer.getStatus() != GameServerDto.GameServerStatus.STOPPED) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Can't change the owner while the server is running");
+        }
+        UserEntity newOwner =
+                userEntityService.getUserByUsername(transferOwnershipDto.getNewOwnerName());
+        gameServer.setOwner(newOwner);
+        log.info(
+                "Changing owner of server {} from {} to {}",
+                gameServerUuid,
+                oldOwner.getUsername(),
+                gameServer.getOwner().getUsername());
+        return saveGameServerConfiguration(gameServer, false);
     }
 }

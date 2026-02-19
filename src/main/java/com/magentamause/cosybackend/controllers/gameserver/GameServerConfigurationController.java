@@ -8,6 +8,7 @@ import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
+import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
@@ -34,6 +35,15 @@ public class GameServerConfigurationController {
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody List<MetricLayout> metricLayout) {
         gameServerConfigurationService.updateMetricLayout(uuid, metricLayout);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{uuid}/layout/private-dashboard")
+    @NeedsValidation(Operation.GAME_SERVER_PRIVATE_DASHBOARD_CONFIG_CHANGE)
+    public ResponseEntity<Void> updatePrivateDashboard(
+            @PathVariable @ResourceId String uuid,
+            @Valid @RequestBody List<PrivateDashboardLayout> privateDashboardLayout) {
+        gameServerConfigurationService.updatePrivateDashboardLayout(uuid, privateDashboardLayout);
         return ResponseEntity.ok().build();
     }
 

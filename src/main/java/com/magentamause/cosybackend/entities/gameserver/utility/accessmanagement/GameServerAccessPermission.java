@@ -11,6 +11,7 @@ public enum GameServerAccessPermission {
     // Logs/Metrics
     READ_SERVER_LOGS,
     READ_SERVER_METRICS,
+    READ_SERVER_PRIVATE_DASHBOARD,
 
     SEND_COMMANDS,
 
@@ -21,6 +22,7 @@ public enum GameServerAccessPermission {
     // Configs
     CHANGE_SERVER_CONFIGS,
     CHANGE_METRICS_SETTINGS,
+    CHANGE_PRIVATE_DASHBOARD_SETTINGS,
     CHANGE_PERMISSIONS_SETTINGS,
     CHANGE_RCON_SETTINGS,
     CHANGE_WEBHOOK_SETTINGS,
