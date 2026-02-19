@@ -59,7 +59,7 @@ public class UserInviteController {
 
     @PostMapping("/use/{secretKey}")
     public ResponseEntity<UserEntityDto> useInvite(
-            @PathVariable("secretKey") String secretKey, @Valid @RequestBody UserCreationDto user) {
+            @PathVariable String secretKey, @Valid @RequestBody UserCreationDto user) {
         UserEntity createdUser =
                 userInviteService.useInvite(secretKey, user.getUsername(), user.getPassword());
         return ResponseEntity.ok(createdUser.toDto());
