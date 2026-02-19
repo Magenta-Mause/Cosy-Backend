@@ -48,9 +48,9 @@ public abstract class BaseWebhookSender implements WebhookSender {
 
     protected String toMessage(GameServerDomainEvent event) {
         return switch (event.eventType()) {
-            case SERVER_STARTED -> "✅ Server started: " + event.serverName();
-            case SERVER_STOPPED -> "🛑 Server stopped: " + event.serverName();
-            case SERVER_FAILED -> "❌ Server crashed: " + event.serverName();
+            case SERVER_STARTED -> "Server started: " + event.serverName();
+            case SERVER_STOPPED -> "Server stopped: " + event.serverName();
+            case SERVER_FAILED -> "Server crashed: " + event.serverName();
         };
     }
 
