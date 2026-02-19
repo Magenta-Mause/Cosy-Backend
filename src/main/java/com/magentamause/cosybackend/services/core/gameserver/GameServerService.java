@@ -350,13 +350,11 @@ public class GameServerService {
             GameServerEntity serverConfig,
             GameServerDto.GameServerStatus status,
             boolean publishWebhookEvent) {
+        GameServerDto.GameServerStatus previousStatus = serverConfig.getStatus();
+        serverConfig.setStatus(status);
         transactionTemplate.executeWithoutResult(
                 ignored -> {
-                    GameServerDto.GameServerStatus previousStatus = serverConfig.getStatus();
-                    serverConfig.setStatus(status);
                     gameServerRepository.save(serverConfig);
-                    statusPublisher.publishStatus(serverConfig.getUuid(), status);
-
                     if (publishWebhookEvent) {
                         mapStatusTransitionToEvent(previousStatus, status)
                                 .ifPresent(
@@ -365,9 +363,10 @@ public class GameServerService {
                                                         new GameServerDomainEvent(
                                                                 serverConfig.getUuid(),
                                                                 serverConfig.getServerName(),
-                                                                eventType)));
+                                                                 eventType)));
                     }
                 });
+        statusPublisher.publishStatus(serverConfig.getUuid(), status);
     }
 
     public GameServerDto.GameServerStatus getStatus(String serviceName) {
