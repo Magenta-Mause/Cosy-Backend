@@ -27,7 +27,7 @@ public class WebhookEntity {
     @Column(nullable = false)
     private WebhookType webhookType;
 
-    @Column(length = 2000, nullable = false)
+    @Column(nullable = false)
     private String webhookUrl;
 
     @Builder.Default private boolean enabled = true;
