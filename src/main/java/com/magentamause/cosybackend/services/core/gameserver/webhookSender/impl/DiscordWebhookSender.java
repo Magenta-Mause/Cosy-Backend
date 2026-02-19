@@ -1,24 +1,17 @@
 package com.magentamause.cosybackend.services.core.gameserver.webhookSender.impl;
 
-import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.entities.WebhookType;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
-import com.magentamause.cosybackend.services.core.gameserver.webhookSender.WebhookSender;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-@Slf4j
 @Component
-public class DiscordWebhookSender implements WebhookSender {
+public class DiscordWebhookSender extends BaseWebhookSender {
 
-    private final WebClient webClient;
-
-    public DiscordWebhookSender(@Qualifier("gamesApiWebClient") WebClient webClient) {
-        this.webClient = webClient;
+    public DiscordWebhookSender(@Qualifier("webhookWebClient") WebClient webClient) {
+        super(webClient);
     }
 
     @Override
@@ -27,39 +20,12 @@ public class DiscordWebhookSender implements WebhookSender {
     }
 
     @Override
-    public void send(WebhookEntity webhook, GameServerDomainEvent event) {
-        try {
-            webClient
-                    .mutate()
-                    .build()
-                    .post()
-                    .uri(webhook.getWebhookUrl())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(Map.of("content", toMessage(event)))
-                    .retrieve()
-                    .toBodilessEntity()
-                    .doOnError(
-                            ex ->
-                                    log.error(
-                                            "Failed to send discord webhook for server {} and event {}",
-                                            event.serverId(),
-                                            event.eventType(),
-                                            ex))
-                    .subscribe();
-        } catch (Exception ex) {
-            log.error(
-                    "Failed to prepare discord webhook request for server {} and event {}",
-                    event.serverId(),
-                    event.eventType(),
-                    ex);
-        }
+    protected String webhookTypeName() {
+        return "discord";
     }
 
-    private String toMessage(GameServerDomainEvent event) {
-        return switch (event.eventType()) {
-            case SERVER_STARTED -> "✅ Server started: " + event.serverName();
-            case SERVER_STOPPED -> "🛑 Server stopped: " + event.serverName();
-            case SERVER_FAILED -> "❌ Server crashed: " + event.serverName();
-        };
+    @Override
+    protected Map<String, Object> payload(GameServerDomainEvent event) {
+        return Map.of("content", toMessage(event));
     }
 }
