@@ -370,7 +370,7 @@ public class GameServerService {
                                                         new GameServerDomainEvent(
                                                                 serverConfig.getUuid(),
                                                                 serverConfig.getServerName(),
-                                                                 eventType)));
+                                                                eventType)));
                     }
                 });
         statusPublisher.publishStatus(serverConfig.getUuid(), status);

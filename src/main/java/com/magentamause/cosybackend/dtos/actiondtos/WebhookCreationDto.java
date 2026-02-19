@@ -25,12 +25,14 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WebhookCreationDto {
     @NotNull private WebhookType webhookType;
+
     @NotBlank
     @Pattern(
             regexp = "https?://.+",
             flags = Pattern.Flag.CASE_INSENSITIVE,
             message = "webhookUrl must be an absolute http(s) URL")
     private String webhookUrl;
+
     @Builder.Default private Boolean enabled = true;
     @NotNull private Set<GameServerEventType> subscribedEvents;
 
