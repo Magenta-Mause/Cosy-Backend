@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.controllers;
 
+import com.magentamause.cosybackend.dtos.actiondtos.user.PasswordUpdateByAdminDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.PasswordUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
 import com.magentamause.cosybackend.entities.UserEntity;
@@ -55,6 +56,18 @@ public class UserEntityController {
         UserEntity userWithChangedPassword =
                 userEntityService.changePassword(
                         user, request.getOldPassword(), request.getNewPassword());
+        return ResponseEntity.ok(userWithChangedPassword.toDto());
+    }
+
+    @PatchMapping("/{uuid}/change-password-by-admin")
+    @NeedsValidation(Operation.USER_CHANGE_PASSWORD)
+    public ResponseEntity<UserEntityDto> changePasswordByAdmin(
+            @PathVariable @ResourceId String uuid, @Valid @RequestBody PasswordUpdateByAdminDto request) {
+        log.info("Changing password for user with UUID: {}", uuid);
+        UserEntity user = userEntityService.getUserByUuid(uuid);
+        UserEntity userWithChangedPassword =
+                userEntityService.changePasswordByAdmin(
+                        user, request.getNewPassword());
         return ResponseEntity.ok(userWithChangedPassword.toDto());
     }
 

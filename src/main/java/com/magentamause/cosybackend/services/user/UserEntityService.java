@@ -72,6 +72,11 @@ public class UserEntityService {
         return saveUserEntity(user);
     }
 
+    public UserEntity changePasswordByAdmin(UserEntity user, String newPassword) {
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return saveUserEntity(user);
+    }
+
     public boolean existsByUsername(String username) {
         return userEntityRepository.existsByUsername(username);
     }

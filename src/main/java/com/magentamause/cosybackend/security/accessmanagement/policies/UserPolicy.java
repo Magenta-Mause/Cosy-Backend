@@ -43,6 +43,24 @@ public class UserPolicy {
         return user.getUuid().equals(referenceId);
     }
 
+    @Validates(Operation.USER_CHANGE_PASSWORD_BY_ADMIN)
+    public static boolean canChangePasswordByAdmin(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+
+        UserEntity userOfPassword = resolver.getUserEntity((String) referenceId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if(user.getRole().equals(UserEntity.Role.OWNER)) {
+            return true;
+        }else if(user.getUuid().equals(userOfPassword.getUuid())) {
+            return true;
+        }else if(userOfPassword.getRole().isAdmin()) {
+            return false;
+        }else {
+            return user.getRole().isAdmin();
+        }
+    }
+
     @Validates(Operation.USER_DELETE)
     public static boolean canDeleteUser(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
@@ -51,16 +69,12 @@ public class UserPolicy {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         if(user.getRole().equals(UserEntity.Role.OWNER)) {
-            log.info("1");
             return true;
         }else if(user.getUuid().equals(userToDelete.getUuid())) {
-            log.info("2");
             return true;
         }else if(userToDelete.getRole().isAdmin()) {
-            log.info("3");
             return false;
         }else {
-            log.info("4");
             return user.getRole().isAdmin();
         }
     }
