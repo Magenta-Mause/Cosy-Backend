@@ -19,8 +19,8 @@ public class PrivateDashboardLayout extends Layout {
     @Column(nullable = false)
     private PrivateDashboardTypes privateDashboardTypes;
 
-    @Enumerated(EnumType.STRING)
-    private MetricType metricType;
+    @Column
+    private String metricType;
 
     private String title;
 
