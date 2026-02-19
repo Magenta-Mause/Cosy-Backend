@@ -1,7 +1,6 @@
 package com.magentamause.cosybackend.entities.layout.privatedashboard;
 
 import com.magentamause.cosybackend.entities.layout.Layout;
-import com.magentamause.cosybackend.entities.metric.MetricType;
 import jakarta.persistence.*;
 import java.util.List;
 import lombok.Getter;
@@ -19,8 +18,7 @@ public class PrivateDashboardLayout extends Layout {
     @Column(nullable = false)
     private PrivateDashboardTypes privateDashboardTypes;
 
-    @Column
-    private String metricType;
+    @Column private String metricType;
 
     private String title;
 
