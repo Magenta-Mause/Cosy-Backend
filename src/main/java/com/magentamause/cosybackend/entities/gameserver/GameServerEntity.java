@@ -14,9 +14,13 @@ import com.magentamause.cosybackend.entities.layout.PublicDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerFieldVisibilityPolicy;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Setter
@@ -51,6 +55,12 @@ public class GameServerEntity {
     private boolean isPublicDashboardEnabled = false;
 
     private String dockerImageTag;
+
+    private String containerSecret;
+
+    @Column(columnDefinition = "json")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> customMetricHolder = new HashMap<>();
 
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
@@ -168,7 +178,7 @@ public class GameServerEntity {
         if (GameServerFieldVisibilityPolicy.canSeePrivateDashboardLayout(permissions)) {
             builder.privateDashboardLayouts(this.getPrivateDashboardLayouts());
         }
-        if(GameServerFieldVisibilityPolicy.canSeePublicDashboardLayout()) {
+        if (GameServerFieldVisibilityPolicy.canSeePublicDashboardLayout()) {
             builder.publicDashboardLayouts(this.getPublicDashboardLayouts());
         }
         if (GameServerFieldVisibilityPolicy.canSeeAccessGroups(permissions)) {

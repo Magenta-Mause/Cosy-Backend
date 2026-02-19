@@ -1,6 +1,5 @@
 package com.magentamause.cosybackend.entities.layout;
 
-import com.magentamause.cosybackend.entities.metric.MetricType;
 import jakarta.persistence.*;
 import java.util.List;
 import lombok.Getter;
@@ -18,8 +17,7 @@ public class PrivateDashboardLayout extends Layout {
     @Column(nullable = false)
     private DashboardTypes privateDashboardTypes;
 
-    @Enumerated(EnumType.STRING)
-    private MetricType metricType;
+    @Column private String metricType;
 
     private String title;
 

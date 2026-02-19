@@ -11,19 +11,16 @@ public class DefaultSettingsMapper {
     public void createDefaultLayout(GameServerEntity gameServer) {
         gameServer.setMetricLayout(
                 List.of(
-                        createMetricLayout(MetricType.CPU_PERCENT),
-                        createMetricLayout(MetricType.MEMORY_USAGE)));
+                        createMetricLayout(MetricType.CPU_PERCENT.getValue()),
+                        createMetricLayout(MetricType.MEMORY_USAGE.getValue())));
         gameServer.setPrivateDashboardLayouts(
                 List.of(
-                        createPrivateDashboardLayout(
-                                DashboardTypes.METRIC, MetricType.CPU_PERCENT),
+                        createPrivateDashboardLayout(DashboardTypes.METRIC, MetricType.CPU_PERCENT),
                         createPrivateDashboardLayout(DashboardTypes.LOGS, null)));
-        gameServer.setPublicDashboardLayouts(
-                List.of(createPublicDashboardLayout())
-        );
+        gameServer.setPublicDashboardLayouts(List.of(createPublicDashboardLayout()));
     }
 
-    private MetricLayout createMetricLayout(MetricType metricType) {
+    private MetricLayout createMetricLayout(String metricType) {
         MetricLayout layout = new MetricLayout();
         layout.setMetricType(metricType);
         layout.setSize(Size.MEDIUM);
@@ -36,7 +33,7 @@ public class DefaultSettingsMapper {
         layout.setPrivateDashboardTypes(type);
         layout.setSize(Size.MEDIUM);
         if (metricType != null) {
-            layout.setMetricType(metricType);
+            layout.setMetricType(metricType.getValue());
         }
         return layout;
     }
@@ -45,7 +42,7 @@ public class DefaultSettingsMapper {
         PublicDashboardLayout layout = new PublicDashboardLayout();
         layout.setPublicDashboardTypes(DashboardTypes.METRIC);
         layout.setSize(Size.LARGE);
-        layout.setMetricType(MetricType.CPU_PERCENT);
+        layout.setMetricType(MetricType.CPU_PERCENT.getValue());
         return layout;
     }
 }

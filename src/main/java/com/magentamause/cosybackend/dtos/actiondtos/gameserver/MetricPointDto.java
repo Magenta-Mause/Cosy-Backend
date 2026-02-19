@@ -3,6 +3,7 @@ package com.magentamause.cosybackend.dtos.actiondtos.gameserver;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.time.Instant;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,5 +34,7 @@ public class MetricPointDto {
         private Long networkOutput;
         private Long blockRead;
         private Long blockWrite;
+
+        private Map<String, Object> customMetricHolder;
     }
 }

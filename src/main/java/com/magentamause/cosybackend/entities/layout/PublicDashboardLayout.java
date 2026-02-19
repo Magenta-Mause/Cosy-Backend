@@ -1,13 +1,11 @@
 package com.magentamause.cosybackend.entities.layout;
 
-import com.magentamause.cosybackend.entities.metric.MetricType;
 import jakarta.persistence.*;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
-
-import java.util.List;
 
 @Getter
 @Setter
@@ -18,8 +16,7 @@ public class PublicDashboardLayout extends Layout {
     @Column(nullable = false)
     private DashboardTypes publicDashboardTypes;
 
-    @Enumerated(EnumType.STRING)
-    private MetricType metricType;
+    @Column private String metricType;
 
     private String title;
 
