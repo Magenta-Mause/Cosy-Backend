@@ -44,6 +44,108 @@ You can start the application using the Maven wrapper:
 
 The API will be available at http://localhost:8080/api.
 
+## Custom Metrics (Game Server → Cosy Backend)
+
+Cosy supports **custom, game-specific metrics** published directly by your game server (for example via a Minecraft mod/plugin). This is useful for values that Cosy cannot collect automatically, such as:
+
+- `playerCount`
+- `tps`
+- `mspt`
+- current game state / map name
+- modpack-specific stats
+
+The server publishes a JSON object (a simple key/value map). Cosy stores this as the server’s *current custom metrics* and will use it for display/streaming.
+
+### 1) Required environment variables
+
+Your game server process/container must have these environment variables set (your mod/plugin reads them at runtime):
+
+- `COSY_BACKEND_URL`  
+  Base URL of the Cosy backend (e.g. `https://<your-domain>`)
+
+- `COSY_GAMESERVER_UUID`  
+  The UUID of this game server in Cosy
+
+- `COSY_CONTAINER_SECRET`  
+  Secret used to authenticate custom metric updates
+
+> Tip: Read these once at server startup and fail fast (log a clear error) if any are missing.
+
+### 2) Validate credentials (GET)
+
+Before publishing metrics, verify that your credentials are correct by calling the validation endpoint:
+
+- **Method:** `GET`
+- **Goal:** Ensure the backend is reachable and that the `(uuid, secret)` pair is accepted.
+
+If validation fails (non-2xx), do not spam updates. Log the error and retry with backoff.
+
+> Note: The exact endpoint path depends on your backend API routes. Use the validation endpoint exposed by the Cosy backend (see the Metrics/GameServer controllers in this repo).
+
+### 3) Publish custom metrics (PUT)
+
+To publish or update custom metrics, send the current metrics map to Cosy:
+
+Use the following endpoints:
+
+PUT `/api/internal/game-server/custom-metric/{game-server-uuid}`
+
+Body: JSON object (flat key/value map)
+```json
+{
+  "playerCount": 12,
+  "tps": 19.8,
+  "mspt": 5.3,
+  "motd": "Vanilla+ SMP",
+  "pvpEnabled": true
+}
+```
+Headers:
+```
+Authorization: `{secret}`
+```
+
+Response: 2xx
+
+GET `api/internal/game-server/test-connection/{game-server-uuid}`
+
+Headers:
+```
+Authorization: `{secret}`
+```
+Response 2xx with body: 
+```json
+{
+  "data": false, // <-- true if connection successful
+  "error": null,
+  "path": "/api/internal/game-server/test-connection/f98585aa-78d0-4fdf-9b3b-2f4b8c66d6e0",
+  "status_code": 200,
+  "success": true,
+  "timestamp": "2026-02-18T20:29:54.046171033Z"
+}
+```
+
+Cosy treats this payload as the server’s **current custom metric holder**. Publish on an interval (e.g. every 5–10 seconds) and/or when values change.
+
+### Suggested workflow (pseudo-code)
+```text
+onServerStart: 
+  url = env("COSY_BACKEND_URL")
+  uuid = env("COSY_GAMESERVER_UUID")
+  secret = env("COSY_CONTAINER_SECRET")
+  GET url + <validate-endpoint> using uuid + secret 
+  if not ok:
+   throw error
+every 5s: 
+  metrics = { "playerCount": getOnlinePlayers(), "tps": getTps(), "mspt": getMspt() }
+  PUT url + <custom-metrics-endpoint> using uuid + secret body = metrics
+```
+
+### Recommendations
+
+- Keep metric keys stable (e.g. always `playerCount`, not sometimes `players`).
+- Use primitive values: **number**, **string**, **boolean**.
+
 ## 🛜 Dependencies
 
 Cosy uses a Postgres instance for data storage and Loki for Server Logs.

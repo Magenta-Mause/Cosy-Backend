@@ -13,9 +13,13 @@ import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDash
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerFieldVisibilityPolicy;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Setter
@@ -47,6 +51,12 @@ public class GameServerEntity {
     private String dockerImageName;
 
     private String dockerImageTag;
+
+    private String containerSecret;
+
+    @Column(columnDefinition = "json")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> customMetricHolder = new HashMap<>();
 
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 

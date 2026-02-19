@@ -4,14 +4,14 @@ import lombok.Getter;
 
 @Getter
 public enum MetricType {
-    CPU_PERCENT("cpu_percent"),
-    MEMORY_LIMIT("memory_limit"),
-    MEMORY_PERCENT("memory_percent"),
-    MEMORY_USAGE("memory_usage"),
-    NETWORK_INPUT("network_input"),
-    NETWORK_OUTPUT("network_output"),
-    BLOCK_READ("block_read"),
-    BLOCK_WRITE("block_write");
+    CPU_PERCENT("CPU_PERCENT"),
+    MEMORY_LIMIT("MEMORY_LIMIT"),
+    MEMORY_PERCENT("MEMORY_PERCENT"),
+    MEMORY_USAGE("MEMORY_USAGE"),
+    NETWORK_INPUT("NETWORK_INPUT"),
+    NETWORK_OUTPUT("NETWORK_OUTPUT"),
+    BLOCK_READ("BLOCK_READ"),
+    BLOCK_WRITE("BLOCK_WRITE");
 
     private final String value;
 

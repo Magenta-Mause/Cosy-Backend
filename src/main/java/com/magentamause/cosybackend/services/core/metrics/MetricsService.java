@@ -12,6 +12,7 @@ import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.websockets.GameServerMetricsPublisher;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -29,18 +30,97 @@ public class MetricsService {
     private final GameServerRepository gameServerRepository;
     private final GameServerMetricsPublisher gameServerMetricsPublisher;
 
+    private static final String TYPE_SUFFIX_STRING = "__s";
+    private static final String TYPE_SUFFIX_INT = "__i";
+    private static final String TYPE_SUFFIX_FLOAT = "__f";
+    private static final String TYPE_SUFFIX_BOOL = "__b";
+
     public Point convertMetricToPoint(Metric metrics) {
-        return Point.measurement("metrics")
-                .addTag("game_server_uuid", metrics.getGameServerUuid())
-                .addField(MetricType.CPU_PERCENT.getValue(), metrics.getCpuPercent())
-                .addField(MetricType.MEMORY_USAGE.getValue(), metrics.getMemoryUsage())
-                .addField(MetricType.MEMORY_LIMIT.getValue(), metrics.getMemoryLimit())
-                .addField(MetricType.MEMORY_PERCENT.getValue(), metrics.getMemoryPercent())
-                .addField(MetricType.NETWORK_INPUT.getValue(), metrics.getNetworkInput())
-                .addField(MetricType.NETWORK_OUTPUT.getValue(), metrics.getNetworkOutput())
-                .addField(MetricType.BLOCK_READ.getValue(), metrics.getBlockRead())
-                .addField(MetricType.BLOCK_WRITE.getValue(), metrics.getBlockWrite())
-                .time(metrics.getTime(), WritePrecision.NS);
+        Point point =
+                Point.measurement("metrics")
+                        .addTag("game_server_uuid", metrics.getGameServerUuid())
+                        .addField(MetricType.CPU_PERCENT.getValue(), metrics.getCpuPercent())
+                        .addField(MetricType.MEMORY_USAGE.getValue(), metrics.getMemoryUsage())
+                        .addField(MetricType.MEMORY_LIMIT.getValue(), metrics.getMemoryLimit())
+                        .addField(MetricType.MEMORY_PERCENT.getValue(), metrics.getMemoryPercent())
+                        .addField(MetricType.NETWORK_INPUT.getValue(), metrics.getNetworkInput())
+                        .addField(MetricType.NETWORK_OUTPUT.getValue(), metrics.getNetworkOutput())
+                        .addField(MetricType.BLOCK_READ.getValue(), metrics.getBlockRead())
+                        .addField(MetricType.BLOCK_WRITE.getValue(), metrics.getBlockWrite())
+                        .time(metrics.getTime(), WritePrecision.NS);
+
+        addCustomFields(point, metrics.getCustomMetricHolder());
+        return point;
+    }
+
+    private void addCustomFields(Point point, Map<String, Object> customMetricHolder) {
+        if (customMetricHolder == null || customMetricHolder.isEmpty()) {
+            return;
+        }
+
+        for (Map.Entry<String, Object> e : customMetricHolder.entrySet()) {
+            String key = e.getKey();
+            Object value = e.getValue();
+
+            if (key == null || key.isBlank() || value == null) {
+                continue;
+            }
+
+            String fieldKey = toTypedFieldKey(key, value);
+            Object normalizedValue = normalizeFieldValue(value);
+
+            if (normalizedValue == null) {
+                continue;
+            }
+
+            if (normalizedValue instanceof String s) {
+                point.addField(fieldKey, s);
+            } else if (normalizedValue instanceof Boolean b) {
+                point.addField(fieldKey, b);
+            } else if (normalizedValue instanceof Double d) {
+                point.addField(fieldKey, d);
+            } else if (normalizedValue instanceof Float f) {
+                point.addField(fieldKey, f.doubleValue());
+            } else if (normalizedValue instanceof Long l) {
+                point.addField(fieldKey, l);
+            } else if (normalizedValue instanceof Integer i) {
+                point.addField(fieldKey, i.longValue());
+            } else if (normalizedValue instanceof Number n) {
+                point.addField(fieldKey, n.doubleValue());
+            } else {
+                point.addField(fieldKey, String.valueOf(normalizedValue));
+            }
+        }
+    }
+
+    private String toTypedFieldKey(String key, Object value) {
+        if (value instanceof String) {
+            return key + TYPE_SUFFIX_STRING;
+        }
+        if (value instanceof Boolean) {
+            return key + TYPE_SUFFIX_BOOL;
+        }
+        if (value instanceof Float || value instanceof Double) {
+            return key + TYPE_SUFFIX_FLOAT;
+        }
+        if (value instanceof Number) {
+            return key + TYPE_SUFFIX_INT;
+        }
+        // fallback: store unknown types as strings
+        return key + TYPE_SUFFIX_STRING;
+    }
+
+    private Object normalizeFieldValue(Object value) {
+        if (value instanceof String || value instanceof Boolean) {
+            return value;
+        }
+        if (value instanceof Float || value instanceof Double) {
+            return ((Number) value).doubleValue();
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        return String.valueOf(value);
     }
 
     public void writeToInfluxDB(Point point) {

@@ -40,6 +40,7 @@ public class DockerMetricsCollector {
         }
 
         AtomicReference<Metric> statsRef = new AtomicReference<>();
+
         client.statsCmd(containerUuid)
                 .exec(
                         new ResultCallback.Adapter<Statistics>() {
@@ -61,6 +62,10 @@ public class DockerMetricsCollector {
                             }
                         })
                 .awaitCompletion();
+
+        if (statsRef.get() != null) {
+            statsRef.get().setCustomMetricHolder(gameServer.getCustomMetricHolder());
+        }
 
         return Optional.ofNullable(statsRef.get());
     }
