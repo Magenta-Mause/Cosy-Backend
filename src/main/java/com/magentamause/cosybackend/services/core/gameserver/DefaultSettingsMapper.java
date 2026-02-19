@@ -36,7 +36,7 @@ public class DefaultSettingsMapper {
         layout.setPrivateDashboardTypes(type);
         layout.setSize(Size.MEDIUM);
         if (metricType != null) {
-            layout.setMetricType(metricType);
+            layout.setMetricType(metricType.getValue());
         }
         return layout;
     }
