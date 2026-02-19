@@ -38,11 +38,12 @@ public class UserInviteService {
     public UserInviteEntity createInvite(
             String ownerCreationId, UserInviteCreationDto userInviteCreationDto) {
         if (!Objects.isNull(userInviteCreationDto.getUsername())) {
-            if (userInviteRepository.existsByUsername(userInviteCreationDto.getUsername())) {
+            String usernameLower = userInviteCreationDto.getUsername().toLowerCase();
+            if (userInviteRepository.existsByUsernameIgnoreCase(usernameLower)) {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "Invite with the given username already exists");
             }
-            if (userEntityService.existsByUsername(userInviteCreationDto.getUsername())) {
+            if (userEntityService.existsByUsernameIgnoreCase(usernameLower)) {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "A user with the given username already exists");
             }
@@ -54,7 +55,10 @@ public class UserInviteService {
                 UserInviteEntity.builder()
                         .invitedBy(userEntityService.getUserByUuid(ownerCreationId))
                         .secretKey(generateRandomKey())
-                        .username(userInviteCreationDto.getUsername())
+                        .username(
+                                userInviteCreationDto.getUsername() != null
+                                        ? userInviteCreationDto.getUsername().toLowerCase()
+                                        : null)
                         .role(userInviteCreationDto.getRole())
                         .dockerHardwareLimits(userInviteCreationDto.getDockerHardwareLimits())
                         .build();
@@ -100,6 +104,7 @@ public class UserInviteService {
                     case ADMIN, OWNER -> UserEntity.Role.ADMIN;
                 };
 
+        String normalizedUsername = username.toLowerCase();
         UserEntity.UserEntityBuilder userBuilder =
                 UserEntity.builder()
                         .role(inviteRole)
@@ -108,7 +113,7 @@ public class UserInviteService {
                         .defaultPasswordReset(true);
 
         if (Objects.isNull(invite.getUsername())) {
-            userBuilder.username(username);
+            userBuilder.username(normalizedUsername);
         } else {
             userBuilder.username(invite.getUsername());
         }
