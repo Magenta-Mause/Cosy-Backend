@@ -4,8 +4,12 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.Validates;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Component
 public class UserPolicy {
 
@@ -42,7 +46,23 @@ public class UserPolicy {
     @Validates(Operation.USER_DELETE)
     public static boolean canDeleteUser(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
-        return user.getUuid().equals(referenceId);
+
+        UserEntity userToDelete = resolver.getUserEntity((String) referenceId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if(user.getRole().equals(UserEntity.Role.OWNER)) {
+            log.info("1");
+            return true;
+        }else if(user.getUuid().equals(userToDelete.getUuid())) {
+            log.info("2");
+            return true;
+        }else if(userToDelete.getRole().isAdmin()) {
+            log.info("3");
+            return false;
+        }else {
+            log.info("4");
+            return user.getRole().isAdmin();
+        }
     }
 
     @Validates(Operation.USER_READ_PERMISSIONS)
