@@ -51,9 +51,9 @@ public class UserInviteController {
     public ResponseEntity<UserInviteDto> createInvite(
             @Valid @RequestBody UserInviteCreationDto userInviteCreationDto) {
         log.info("Creating invite for {}", userInviteCreationDto);
-        String inviterUUid = securityContextService.getUser().getUuid();
+        String inviterUuid = securityContextService.getUserId();
         UserInviteEntity userInvite =
-                userInviteService.createInvite(inviterUUid, userInviteCreationDto);
+                userInviteService.createInvite(inviterUuid, userInviteCreationDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(userInvite.convertToDto());
     }
 
