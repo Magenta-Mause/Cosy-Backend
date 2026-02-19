@@ -2,41 +2,38 @@ package com.magentamause.cosybackend.entities.metric;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.influxdb.annotations.Column;
-import com.influxdb.annotations.Measurement;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 @Builder
-@Measurement(name = "metrics")
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class Metric {
-    @Column(tag = true)
     private String gameServerUuid;
 
-    @Column private Double cpuPercent;
+    private Double cpuPercent;
 
-    @Column private Long memoryUsage;
+    private Long memoryUsage;
 
-    @Column private Long memoryLimit;
+    private Long memoryLimit;
 
-    @Column private Double memoryPercent;
+    private Double memoryPercent;
 
-    @Column private Long networkInput;
+    private Long networkInput;
 
-    @Column private Long networkOutput;
+    private Long networkOutput;
 
-    @Column private Long blockRead;
+    private Long blockRead;
 
-    @Column private Long blockWrite;
+    private Long blockWrite;
 
-    @Column(timestamp = true)
     private Instant time;
+
+    private Map<String, Object> customMetricHolder = new HashMap<>();
 
     public MetricPointDto toDto() {
         MetricPointDto.MetricValues metricValues =
@@ -49,6 +46,7 @@ public class Metric {
                         .networkOutput(this.getNetworkOutput())
                         .blockRead(this.getBlockRead())
                         .blockWrite(this.getBlockWrite())
+                        .customMetricHolder(this.getCustomMetricHolder())
                         .build();
 
         return MetricPointDto.builder()

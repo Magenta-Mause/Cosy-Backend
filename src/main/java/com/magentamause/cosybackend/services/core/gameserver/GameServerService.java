@@ -18,6 +18,7 @@ import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
 import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.security.SecretGenerator;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerPolicy;
 import com.magentamause.cosybackend.services.core.games.GamesService;
@@ -33,7 +34,9 @@ import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher
 import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,7 +67,7 @@ public class GameServerService {
     private final GamesService gamesService;
     private final HardwareLimitPresentValidator hardwareLimitValidator;
     private final HardwareQuotaChecker hardwareQuotaChecker;
-    private final VolumeDirectoryService volumeDirectoryService;
+    private final VolumeDirectoryService entry;
     private final RCONService rCONService;
     private final DefaultSettingsMapper defaultSettingsMapper;
     private final ApplicationEventPublisher eventPublisher;
@@ -182,7 +185,7 @@ public class GameServerService {
         log.info("Saving game server {}", entity);
 
         GameServerEntity saved = gameServerRepository.save(entity);
-        volumeDirectoryService.assertVolumeDirectoriesExist(saved);
+        entry.assertVolumeDirectoriesExist(saved);
         return saved;
     }
 
@@ -201,7 +204,7 @@ public class GameServerService {
             log.debug("Server '{}' was already stopped when attempting to delete", uuid, e);
         }
         gameServerRepository.deleteById(uuid);
-        volumeDirectoryService.deleteVolumeDirectories(gameServer);
+        entry.deleteVolumeDirectories(gameServer);
     }
 
     public GameServerEntity updateGameServerConfiguration(
@@ -247,12 +250,16 @@ public class GameServerService {
     void startServerAsync(String gameServerUuid, GameServerEntity serverConfig) {
         log.info("Starting server {}", gameServerUuid);
         try {
-
+            String gameServerContainerSecret = SecretGenerator.generateSecret();
             gameServerLogService.publishAndSaveLog(
                     serverConfig,
                     GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
                     "Starting Game Server",
                     false);
+            serverConfig.setContainerSecret(gameServerContainerSecret);
+            serverConfig.setLastStartedBy(serverConfig.getOwner());
+            serverConfig.setTimestampLastStarted(LocalDateTime.now());
+            gameServerRepository.save(serverConfig);
 
             updateStatus(serverConfig, GameServerDto.GameServerStatus.AWAITING_UPDATE);
 
@@ -459,6 +466,28 @@ public class GameServerService {
                 .toList();
     }
 
+    public Map<String, Object> updateCustomMetric(
+            String uuid, String secret, Map<String, Object> value) {
+        if (!value.values().stream().allMatch(this::isCustomMetricEntryValid)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid custom metric");
+        }
+
+        GameServerEntity gameServer = getOrThrow(uuid);
+        if (!gameServer.getContainerSecret().equals(secret)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid secret");
+        }
+        gameServer.setCustomMetricHolder(value);
+        return gameServerRepository.save(gameServer).getCustomMetricHolder();
+    }
+
+    public Boolean checkGameServerConnection(String uuid, String secret) {
+        Optional<GameServerEntity> gameServer = getOptionalGameServerOptionalById(uuid);
+        if (gameServer.isEmpty()) {
+            return false;
+        }
+        return gameServer.get().getContainerSecret().equals(secret);
+    }
+
     public GameServerEntity transferGameServerOwnership(
             String gameServerUuid, TransferOwnershipDto transferOwnershipDto) {
         GameServerEntity gameServer = getOrThrow(gameServerUuid);
@@ -477,5 +506,14 @@ public class GameServerService {
                 oldOwner.getUsername(),
                 gameServer.getOwner().getUsername());
         return saveGameServerConfiguration(gameServer, false);
+    }
+
+    private boolean isCustomMetricEntryValid(Object entry) {
+        return entry instanceof Integer
+                || entry instanceof Long
+                || entry instanceof Float
+                || entry instanceof Double
+                || entry instanceof String
+                || entry instanceof Boolean;
     }
 }

@@ -2,12 +2,10 @@ package com.magentamause.cosybackend.entities.layout;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.magentamause.cosybackend.entities.metric.MetricType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -15,7 +13,6 @@ import lombok.*;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class MetricLayout extends Layout {
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MetricType metricType;
+    private String metricType;
 }
