@@ -9,7 +9,6 @@ import com.magentamause.cosybackend.entities.UserInviteEntity;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
-import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.services.user.UserInviteService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -28,7 +27,6 @@ public class UserInviteController {
 
     private final UserInviteService userInviteService;
     private final SecurityContextService securityContextService;
-    private final UserEntityService userEntityService;
 
     @GetMapping
     @NeedsValidation(Operation.USER_INVITE_READ)
@@ -40,8 +38,7 @@ public class UserInviteController {
     }
 
     @GetMapping("/{secretKey}")
-    public ResponseEntity<UserInviteDto> getUserInvite(
-            @PathVariable("secretKey") String secretKey) {
+    public ResponseEntity<UserInviteDto> getUserInvite(@PathVariable String secretKey) {
         return ResponseEntity.ok(
                 userInviteService.getInviteBySecretKeyOrElseThrow(secretKey).convertToDto());
     }
@@ -51,17 +48,15 @@ public class UserInviteController {
     public ResponseEntity<UserInviteDto> createInvite(
             @Valid @RequestBody UserInviteCreationDto userInviteCreationDto) {
         log.info("Creating invite for {}", userInviteCreationDto);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(
-                        userInviteService
-                                .createInvite(
-                                        securityContextService.getUserId(), userInviteCreationDto)
-                                .convertToDto());
+        String inviterUuid = securityContextService.getUserId();
+        UserInviteEntity userInvite =
+                userInviteService.createInvite(inviterUuid, userInviteCreationDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userInvite.convertToDto());
     }
 
     @PostMapping("/use/{secretKey}")
     public ResponseEntity<UserEntityDto> useInvite(
-            @PathVariable("secretKey") String secretKey, @Valid @RequestBody UserCreationDto user) {
+            @PathVariable String secretKey, @Valid @RequestBody UserCreationDto user) {
         UserEntity createdUser =
                 userInviteService.useInvite(secretKey, user.getUsername(), user.getPassword());
         return ResponseEntity.ok(createdUser.toDto());
