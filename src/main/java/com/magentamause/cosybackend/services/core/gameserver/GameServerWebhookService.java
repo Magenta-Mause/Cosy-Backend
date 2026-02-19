@@ -12,6 +12,7 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.repositories.WebhookRepository;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.WebhookSender;
+import com.magentamause.cosybackend.websockets.WebhookPublisher;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class GameServerWebhookService {
     private final WebhookRepository webhookRepository;
     private final GameServerRepository gameServerRepository;
     private final List<WebhookSender> webhookSenders;
+    private final WebhookPublisher webhookPublisher;
 
     public List<WebhookDto> getAllWebhooks(String gameServerUuid) {
         if (!gameServerRepository.existsById(gameServerUuid)) {
@@ -51,7 +53,9 @@ public class GameServerWebhookService {
                                                         + gameServerUuid
                                                         + " not found"));
         WebhookEntity webhookEntity = creationDto.toEntity(gameServer);
-        return webhookRepository.save(webhookEntity).toDto();
+        WebhookDto savedWebhook = webhookRepository.save(webhookEntity).toDto();
+        webhookPublisher.publishCreated(gameServerUuid, savedWebhook);
+        return savedWebhook;
     }
 
     public WebhookDto updateWebhook(
@@ -67,10 +71,23 @@ public class GameServerWebhookService {
                                                         "Webhook '%s' not found for game server '%s'",
                                                         webhookUuid, gameserverUuid)));
         updateDto.applyToEntity(webhookEntity);
-        return webhookRepository.save(webhookEntity).toDto();
+        WebhookDto updatedWebhook = webhookRepository.save(webhookEntity).toDto();
+        webhookPublisher.publishUpdated(gameserverUuid, updatedWebhook);
+        return updatedWebhook;
     }
 
     public void deleteWebhook(String gameServerUuid, String webhookId) {
+        var webhook = webhookRepository.findByUuidAndGameServer_Uuid(webhookId, gameServerUuid);
+        if (webhook.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Webhook '"
+                            + webhookId
+                            + "' not found for game server '"
+                            + gameServerUuid
+                            + "'");
+        }
+        String deletedUuid = webhook.get().getUuid();
         long deleted = webhookRepository.deleteByUuidAndGameServer_Uuid(webhookId, gameServerUuid);
         if (deleted == 0) {
             throw new ResponseStatusException(
@@ -81,6 +98,7 @@ public class GameServerWebhookService {
                             + gameServerUuid
                             + "'");
         }
+        webhookPublisher.publishDeleted(gameServerUuid, deletedUuid);
     }
 
     public void dispatch(GameServerDomainEvent event) {

@@ -22,5 +22,7 @@ public final class WebSocketDestinations {
                 BROKER_PREFIX + "/game-servers/metrics/{serverId}";
         public static final String GAME_SERVER_PERMISSIONS_CONFIG_CHANGE =
                 BROKER_PREFIX + "/game-servers/permissions-config-change/{userId}";
+        public static final String GAME_SERVER_WEBHOOKS =
+                BROKER_PREFIX + "/game-servers/webhooks/{serverId}";
     }
 }
