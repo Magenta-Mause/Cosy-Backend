@@ -9,7 +9,6 @@ import com.magentamause.cosybackend.entities.UserInviteEntity;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
-import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.services.user.UserInviteService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -28,7 +27,6 @@ public class UserInviteController {
 
     private final UserInviteService userInviteService;
     private final SecurityContextService securityContextService;
-    private final UserEntityService userEntityService;
 
     @GetMapping
     @NeedsValidation(Operation.USER_INVITE_READ)
@@ -40,8 +38,7 @@ public class UserInviteController {
     }
 
     @GetMapping("/{secretKey}")
-    public ResponseEntity<UserInviteDto> getUserInvite(
-            @PathVariable("secretKey") String secretKey) {
+    public ResponseEntity<UserInviteDto> getUserInvite(@PathVariable String secretKey) {
         return ResponseEntity.ok(
                 userInviteService.getInviteBySecretKeyOrElseThrow(secretKey).convertToDto());
     }
