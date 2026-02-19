@@ -29,14 +29,6 @@ public class PrivateDashboardLayout extends Layout {
             joinColumns = @JoinColumn(name = "private_dashboard_layout_id"))
     private List<KeyValue> content;
 
-    @Embeddable
-    @Getter
-    @Setter
-    public static class KeyValue {
-        private String Key;
-        private String Value;
-    }
-
     public boolean isValid() {
         if (privateDashboardTypes == null) return false;
 

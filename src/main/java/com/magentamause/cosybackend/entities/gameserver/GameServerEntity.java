@@ -47,6 +47,9 @@ public class GameServerEntity {
     @Column(nullable = false)
     private String dockerImageName;
 
+    @Column(nullable = false)
+    private boolean isPublicDashboardEnabled = false;
+
     private String dockerImageTag;
 
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
@@ -165,7 +168,7 @@ public class GameServerEntity {
         if (GameServerFieldVisibilityPolicy.canSeePrivateDashboardLayout(permissions)) {
             builder.privateDashboardLayouts(this.getPrivateDashboardLayouts());
         }
-        if (GameServerFieldVisibilityPolicy.canSeePublicDashboardLayout(permissions)) {
+        if(GameServerFieldVisibilityPolicy.canSeePublicDashboardLayout()) {
             builder.publicDashboardLayouts(this.getPublicDashboardLayouts());
         }
         if (GameServerFieldVisibilityPolicy.canSeeAccessGroups(permissions)) {

@@ -1,10 +1,7 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
-import com.magentamause.cosybackend.entities.layout.DashboardTypes;
-import com.magentamause.cosybackend.entities.layout.MetricLayout;
-import com.magentamause.cosybackend.entities.layout.Size;
-import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
+import com.magentamause.cosybackend.entities.layout.*;
 import com.magentamause.cosybackend.entities.metric.MetricType;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -21,6 +18,9 @@ public class DefaultSettingsMapper {
                         createPrivateDashboardLayout(
                                 DashboardTypes.METRIC, MetricType.CPU_PERCENT),
                         createPrivateDashboardLayout(DashboardTypes.LOGS, null)));
+        gameServer.setPublicDashboardLayouts(
+                List.of(createPublicDashboardLayout())
+        );
     }
 
     private MetricLayout createMetricLayout(MetricType metricType) {
@@ -38,6 +38,14 @@ public class DefaultSettingsMapper {
         if (metricType != null) {
             layout.setMetricType(metricType);
         }
+        return layout;
+    }
+
+    private PublicDashboardLayout createPublicDashboardLayout() {
+        PublicDashboardLayout layout = new PublicDashboardLayout();
+        layout.setPublicDashboardTypes(DashboardTypes.METRIC);
+        layout.setSize(Size.LARGE);
+        layout.setMetricType(MetricType.CPU_PERCENT);
         return layout;
     }
 }

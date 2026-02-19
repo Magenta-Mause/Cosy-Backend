@@ -27,15 +27,7 @@ public class PublicDashboardLayout extends Layout {
     @CollectionTable(
             name = "public_dashboard_content",
             joinColumns = @JoinColumn(name = "public_dashboard_layout_id"))
-    private List<PublicDashboardLayout.KeyValue> content;
-
-    @Embeddable
-    @Getter
-    @Setter
-    public static class KeyValue {
-        private String Key;
-        private String Value;
-    }
+    private List<KeyValue> content;
 
     public boolean isValid() {
         if (publicDashboardTypes == null) return false;
