@@ -55,10 +55,7 @@ public class UserInviteService {
                 UserInviteEntity.builder()
                         .invitedBy(userEntityService.getUserByUuid(ownerCreationId))
                         .secretKey(generateRandomKey())
-                        .username(
-                                userInviteCreationDto.getUsername() != null
-                                        ? userInviteCreationDto.getUsername().toLowerCase()
-                                        : null)
+                        .username(userInviteCreationDto.getUsername())
                         .role(userInviteCreationDto.getRole())
                         .dockerHardwareLimits(userInviteCreationDto.getDockerHardwareLimits())
                         .build();
@@ -104,7 +101,6 @@ public class UserInviteService {
                     case ADMIN, OWNER -> UserEntity.Role.ADMIN;
                 };
 
-        String normalizedUsername = username.toLowerCase();
         UserEntity.UserEntityBuilder userBuilder =
                 UserEntity.builder()
                         .role(inviteRole)
@@ -113,13 +109,13 @@ public class UserInviteService {
                         .defaultPasswordReset(true);
 
         if (Objects.isNull(invite.getUsername())) {
-            userBuilder.username(normalizedUsername);
+            userBuilder.username(username);
         } else {
             userBuilder.username(invite.getUsername());
         }
 
         UserEntity builtUser = userBuilder.build();
-        if (userEntityService.existsByUsername(builtUser.getUsername())) {
+        if (userEntityService.existsByUsernameIgnoreCase(builtUser.getUsername())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "A user with the given username already exists");
         }
