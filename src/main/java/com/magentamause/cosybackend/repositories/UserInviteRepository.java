@@ -15,5 +15,7 @@ public interface UserInviteRepository extends JpaRepository<UserInviteEntity, St
     @Query("SELECT i FROM UserInviteEntity i WHERE i.secretKey = :secretKey")
     Optional<UserInviteEntity> findBySecretKeyLocked(@Param("secretKey") String secretKey);
 
-    boolean existsByUsername(String username);
+    @Query(
+            "SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM UserInviteEntity i WHERE LOWER(i.username) = LOWER(:username)")
+    boolean existsByUsernameIgnoreCase(@Param("username") String username);
 }
