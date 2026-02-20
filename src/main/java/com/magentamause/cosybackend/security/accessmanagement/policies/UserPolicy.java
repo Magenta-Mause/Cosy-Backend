@@ -47,7 +47,7 @@ public class UserPolicy {
     public static boolean canChangePasswordByAdmin(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
 
-        UserEntity userOfPassword =
+        UserEntity userToChangePassword =
                 resolver.getUserEntity((String) referenceId)
                         .orElseThrow(
                                 () ->
@@ -56,9 +56,9 @@ public class UserPolicy {
 
         if (user.getRole().equals(UserEntity.Role.OWNER)) {
             return true;
-        } else if (user.getUuid().equals(userOfPassword.getUuid())) {
+        } else if (user.getUuid().equals(userToChangePassword.getUuid())) {
             return true;
-        } else if (userOfPassword.getRole().isAdmin()) {
+        } else if (userToChangePassword.getRole().isAdmin()) {
             return false;
         } else {
             return user.getRole().isAdmin();
