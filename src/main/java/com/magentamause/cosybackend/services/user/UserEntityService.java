@@ -76,7 +76,7 @@ public class UserEntityService {
     }
 
     public UserEntity changePasswordByAdmin(String uuid, String newPassword) {
-        log.info("Changing password for user with UUID: {}", uuid);
+        log.info("Admin changing password for user with UUID: {}", uuid);
         UserEntity user = getUserByUuid(uuid);
 
         user.setPassword(passwordEncoder.encode(newPassword));
