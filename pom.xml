@@ -136,7 +136,12 @@
             <groupId>org.glavo</groupId>
             <artifactId>rcon-java</artifactId>
             <version>3.0</version>
-        </dependency>
+    </dependency>
+    <dependency>
+        <groupId>net.java.dev.jna</groupId>
+        <artifactId>jna</artifactId>
+        <version>5.14.0</version>
+      </dependency>
     </dependencies>
 
     <build>
@@ -165,10 +170,6 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
-                    <mainClass>com.magentamause.cosybackend.CosyBackendApplication</mainClass>
-                    <image>
-                        <name>cosy-backend:${project.version}</name>
-                    </image>
                 </configuration>
             </plugin>
             <plugin>
