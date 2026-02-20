@@ -16,7 +16,7 @@ public class UserPolicy {
     @Validates(Operation.USER_GET_ALL)
     public static boolean canGetAllUsers(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
-        return false;
+        return user.getRole().isAdmin();
     }
 
     @Validates(Operation.USER_GET_BY_UUID)
@@ -47,16 +47,20 @@ public class UserPolicy {
     public static boolean canChangePasswordByAdmin(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
 
-        UserEntity userOfPassword = resolver.getUserEntity((String) referenceId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        UserEntity userOfPassword =
+                resolver.getUserEntity((String) referenceId)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "User not found"));
 
-        if(user.getRole().equals(UserEntity.Role.OWNER)) {
+        if (user.getRole().equals(UserEntity.Role.OWNER)) {
             return true;
-        }else if(user.getUuid().equals(userOfPassword.getUuid())) {
+        } else if (user.getUuid().equals(userOfPassword.getUuid())) {
             return true;
-        }else if(userOfPassword.getRole().isAdmin()) {
+        } else if (userOfPassword.getRole().isAdmin()) {
             return false;
-        }else {
+        } else {
             return user.getRole().isAdmin();
         }
     }
@@ -65,16 +69,20 @@ public class UserPolicy {
     public static boolean canDeleteUser(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
 
-        UserEntity userToDelete = resolver.getUserEntity((String) referenceId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        UserEntity userToDelete =
+                resolver.getUserEntity((String) referenceId)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "User not found"));
 
-        if(user.getRole().equals(UserEntity.Role.OWNER)) {
+        if (user.getRole().equals(UserEntity.Role.OWNER)) {
             return true;
-        }else if(user.getUuid().equals(userToDelete.getUuid())) {
+        } else if (user.getUuid().equals(userToDelete.getUuid())) {
             return true;
-        }else if(userToDelete.getRole().isAdmin()) {
+        } else if (userToDelete.getRole().isAdmin()) {
             return false;
-        }else {
+        } else {
             return user.getRole().isAdmin();
         }
     }

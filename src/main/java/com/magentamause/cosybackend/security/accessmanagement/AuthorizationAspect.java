@@ -30,10 +30,6 @@ public class AuthorizationAspect {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
 
-        if (user.getRole().isAdmin()) {
-            return;
-        }
-
         Object resourceId = findResourceId(joinPoint);
 
         ValidatorRegistry.ValidatorEntry validator =
