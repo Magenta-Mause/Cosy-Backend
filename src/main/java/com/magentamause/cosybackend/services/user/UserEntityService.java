@@ -63,7 +63,10 @@ public class UserEntityService {
         userEntityRepository.delete(user);
     }
 
-    public UserEntity changePassword(UserEntity user, String oldPassword, String newPassword) {
+    public UserEntity changePassword(String uuid, String oldPassword, String newPassword) {
+        log.info("Changing password for user with UUID: {}", uuid);
+        UserEntity user = getUserByUuid(uuid);
+
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             log.warn("Old password is incorrect for user {}", user.getUsername());
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Old password is incorrect");
@@ -72,7 +75,10 @@ public class UserEntityService {
         return saveUserEntity(user);
     }
 
-    public UserEntity changePasswordByAdmin(UserEntity user, String newPassword) {
+    public UserEntity changePasswordByAdmin(String uuid, String newPassword) {
+        log.info("Changing password for user with UUID: {}", uuid);
+        UserEntity user = getUserByUuid(uuid);
+
         user.setPassword(passwordEncoder.encode(newPassword));
         return saveUserEntity(user);
     }

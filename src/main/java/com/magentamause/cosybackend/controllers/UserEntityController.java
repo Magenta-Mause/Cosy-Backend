@@ -51,11 +51,9 @@ public class UserEntityController {
     @NeedsValidation(Operation.USER_CHANGE_PASSWORD)
     public ResponseEntity<UserEntityDto> changePassword(
             @PathVariable @ResourceId String uuid, @Valid @RequestBody PasswordUpdateDto request) {
-        log.info("Changing password for user with UUID: {}", uuid);
-        UserEntity user = userEntityService.getUserByUuid(uuid);
         UserEntity userWithChangedPassword =
                 userEntityService.changePassword(
-                        user, request.getOldPassword(), request.getNewPassword());
+                        uuid, request.getOldPassword(), request.getNewPassword());
         return ResponseEntity.ok(userWithChangedPassword.toDto());
     }
 
@@ -64,10 +62,8 @@ public class UserEntityController {
     public ResponseEntity<UserEntityDto> changePasswordByAdmin(
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody PasswordUpdateByAdminDto request) {
-        log.info("Changing password for user with UUID: {}", uuid);
-        UserEntity user = userEntityService.getUserByUuid(uuid);
         UserEntity userWithChangedPassword =
-                userEntityService.changePasswordByAdmin(user, request.getNewPassword());
+                userEntityService.changePasswordByAdmin(uuid, request.getNewPassword());
         return ResponseEntity.ok(userWithChangedPassword.toDto());
     }
 
