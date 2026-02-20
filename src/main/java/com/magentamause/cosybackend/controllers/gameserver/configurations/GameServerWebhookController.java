@@ -1,4 +1,4 @@
-package com.magentamause.cosybackend.controllers.gameserver;
+package com.magentamause.cosybackend.controllers.gameserver.configurations;
 
 import com.magentamause.cosybackend.dtos.actiondtos.WebhookCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.WebhookUpdateDto;
