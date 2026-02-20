@@ -31,6 +31,13 @@ public class GameServerRootController {
     @GetMapping
     public ResponseEntity<List<GameServerDto>> getAllGameServers() {
         UserEntity user = securityContextService.getUser();
+        if (user == null) {
+            List<GameServerDto> dtos = gameServerService.getPubliclyEvaluableGameServer().stream()
+                    .map(GameServerEntity::toPublicDto)
+                    .toList();
+            return ResponseEntity.ok(dtos);
+        }
+
         List<GameServerDto> dtos =
                 gameServerService.getGameServersVisibleToUser(user).stream()
                         .map(server -> server.toDto(user))

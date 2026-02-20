@@ -139,6 +139,15 @@ public class GameServerEntity {
                 .build();
     }
 
+    public GameServerDto toPublicDto() {
+        return GameServerDto.builder()
+                .gameUuid(Optional.ofNullable(this.getGame()).map(GameEntity::getUuid).orElse(null))
+                .serverName(this.getServerName())
+                .status(this.getStatus())
+                .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
+                .build();
+    }
+
     public GameServerDto toDto(UserEntity user) {
         List<GameServerAccessPermission> permissions =
                 GameServerFieldVisibilityPolicy.resolvePermissions(this, user);

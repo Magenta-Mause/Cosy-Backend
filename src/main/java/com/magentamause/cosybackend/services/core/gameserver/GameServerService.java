@@ -475,4 +475,10 @@ public class GameServerService {
                 || entry instanceof String
                 || entry instanceof Boolean;
     }
+
+    public List<GameServerEntity> getPubliclyEvaluableGameServer() {
+        List<GameServerEntity> allGameServers = getAllGameServers();
+
+        return allGameServers.stream().filter(GameServerEntity::isPublicDashboardEnabled).toList();
+    }
 }
