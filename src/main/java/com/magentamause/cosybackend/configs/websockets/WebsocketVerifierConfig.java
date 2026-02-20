@@ -47,6 +47,12 @@ public class WebsocketVerifierConfig {
                                 resourceResolverProvider::getObject))
                 .addVerifier(
                         new AccessManagementVerifier(
+                                WebSocketDestinations.Topics.GAME_SERVER_WEBHOOKS,
+                                Operation.GAME_SERVER_WEBHOOK_READ,
+                                validatorRegistryProvider::getObject,
+                                resourceResolverProvider::getObject))
+                .addVerifier(
+                        new AccessManagementVerifier(
                                 WebSocketDestinations.Topics.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE,
                                 Operation.USER_READ_PERMISSIONS,
                                 validatorRegistryProvider::getObject,

@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
@@ -54,7 +55,7 @@ public class GameServerWebhookService {
                                                         + " not found"));
         WebhookEntity webhookEntity = creationDto.toEntity(gameServer);
         WebhookDto savedWebhook = webhookRepository.save(webhookEntity).toDto();
-        webhookPublisher.publishCreated(gameServerUuid, savedWebhook);
+        webhookPublisher.publishChange(gameServerUuid, savedWebhook);
         return savedWebhook;
     }
 
@@ -72,10 +73,11 @@ public class GameServerWebhookService {
                                                         webhookUuid, gameserverUuid)));
         updateDto.applyToEntity(webhookEntity);
         WebhookDto updatedWebhook = webhookRepository.save(webhookEntity).toDto();
-        webhookPublisher.publishUpdated(gameserverUuid, updatedWebhook);
+        webhookPublisher.publishChange(gameserverUuid, updatedWebhook);
         return updatedWebhook;
     }
 
+    @Transactional
     public void deleteWebhook(String gameServerUuid, String webhookId) {
         var webhook = webhookRepository.findByUuidAndGameServer_Uuid(webhookId, gameServerUuid);
         if (webhook.isEmpty()) {
@@ -87,7 +89,7 @@ public class GameServerWebhookService {
                             + gameServerUuid
                             + "'");
         }
-        String deletedUuid = webhook.get().getUuid();
+        WebhookDto deletedWebhook = webhook.get().toDto();
         long deleted = webhookRepository.deleteByUuidAndGameServer_Uuid(webhookId, gameServerUuid);
         if (deleted == 0) {
             throw new ResponseStatusException(
@@ -98,7 +100,7 @@ public class GameServerWebhookService {
                             + gameServerUuid
                             + "'");
         }
-        webhookPublisher.publishDeleted(gameServerUuid, deletedUuid);
+        webhookPublisher.publishChange(gameServerUuid, deletedWebhook);
     }
 
     public void dispatch(GameServerDomainEvent event) {

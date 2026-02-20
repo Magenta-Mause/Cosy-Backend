@@ -15,29 +15,12 @@ public class WebhookPublisher {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    public void publishCreated(String serverUuid, WebhookDto webhook) {
-        publish("webhook.created", serverUuid, webhook);
-    }
-
-    public void publishUpdated(String serverUuid, WebhookDto webhook) {
-        publish("webhook.updated", serverUuid, webhook);
-    }
-
-    public void publishDeleted(String serverUuid, String webhookUuid) {
-        var topic =
-                WebSocketDestinations.Topics.GAME_SERVER_WEBHOOKS.replace("{serverId}", serverUuid);
-        var payload = new WebhookEventDto("webhook.deleted", serverUuid, null);
-
-        log.debug("Publishing webhook.deleted to {}: webhookUuid={}", topic, webhookUuid);
-        messagingTemplate.convertAndSend(topic, payload);
-    }
-
-    private void publish(String eventType, String serverUuid, WebhookDto webhook) {
+    public void publishChange(String serverUuid, WebhookDto webhook) {
         String topic =
                 WebSocketDestinations.Topics.GAME_SERVER_WEBHOOKS.replace("{serverId}", serverUuid);
-        var payload = new WebhookEventDto(eventType, serverUuid, webhook);
+        var payload = new WebhookEventDto(serverUuid, webhook);
 
-        log.debug("Publishing {} to {}: {}", eventType, topic, webhook);
+        log.info("Publishing webhook change to {}: {}", topic, webhook);
         messagingTemplate.convertAndSend(topic, payload);
     }
 }

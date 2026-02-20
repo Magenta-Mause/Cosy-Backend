@@ -16,7 +16,7 @@ public class GameServerDockerProgressPublisher {
     private final SimpMessagingTemplate messagingTemplate;
 
     public void publishDockerProgress(String serverUuid, PullProgressDto pullProgress) {
-        log.debug("Publishing log message to websocket for server {}: {}", serverUuid, serverUuid);
+        log.info("Publishing log message to websocket for server {}: {}", serverUuid, serverUuid);
         String topic =
                 WebSocketDestinations.Topics.GAME_SERVER_DOCKER_PROGRESS.replace(
                         "{serverId}", serverUuid);

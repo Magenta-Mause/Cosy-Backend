@@ -20,7 +20,7 @@ public class GameServerStatusPublisher {
                 WebSocketDestinations.Topics.GAME_SERVER_STATUS.replace("{serverId}", serverUuid);
         var payload = new GameServerStatusUpdateDto(serverUuid, status);
 
-        log.debug("Publishing status update to {}: {}", topic, status);
+        log.info("Publishing status update to {}: {}", topic, status);
         messagingTemplate.convertAndSend(topic, payload);
     }
 }
