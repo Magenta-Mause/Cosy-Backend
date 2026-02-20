@@ -12,7 +12,7 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.repositories.WebhookRepository;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.WebhookSender;
-import com.magentamause.cosybackend.websockets.WebhookPublisher;
+import com.magentamause.cosybackend.websockets.WebhookChangePublisher;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class GameServerWebhookService {
     private final WebhookRepository webhookRepository;
     private final GameServerRepository gameServerRepository;
     private final List<WebhookSender> webhookSenders;
-    private final WebhookPublisher webhookPublisher;
+    private final WebhookChangePublisher webhookChangePublisher;
 
     public List<WebhookDto> getAllWebhooks(String gameServerUuid) {
         if (!gameServerRepository.existsById(gameServerUuid)) {
@@ -55,7 +55,7 @@ public class GameServerWebhookService {
                                                         + " not found"));
         WebhookEntity webhookEntity = creationDto.toEntity(gameServer);
         WebhookDto savedWebhook = webhookRepository.save(webhookEntity).toDto();
-        webhookPublisher.publishChange(gameServerUuid, savedWebhook);
+        webhookChangePublisher.publishChange(gameServerUuid, savedWebhook);
         return savedWebhook;
     }
 
@@ -73,7 +73,7 @@ public class GameServerWebhookService {
                                                         webhookUuid, gameserverUuid)));
         updateDto.applyToEntity(webhookEntity);
         WebhookDto updatedWebhook = webhookRepository.save(webhookEntity).toDto();
-        webhookPublisher.publishChange(gameserverUuid, updatedWebhook);
+        webhookChangePublisher.publishChange(gameserverUuid, updatedWebhook);
         return updatedWebhook;
     }
 
@@ -100,7 +100,7 @@ public class GameServerWebhookService {
                             + gameServerUuid
                             + "'");
         }
-        webhookPublisher.publishChange(gameServerUuid, deletedWebhook);
+        webhookChangePublisher.publishChange(gameServerUuid, deletedWebhook);
     }
 
     public void dispatch(GameServerDomainEvent event) {

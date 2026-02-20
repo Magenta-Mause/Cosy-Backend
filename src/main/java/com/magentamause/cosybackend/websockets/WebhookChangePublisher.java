@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class WebhookPublisher {
+public class WebhookChangePublisher {
 
     private final SimpMessagingTemplate messagingTemplate;
 
