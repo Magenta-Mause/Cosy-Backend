@@ -26,35 +26,35 @@ jobs:
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
 
       - name: Get short SHA
         id: short-sha
         run: echo "sha=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
-      - name: Set lowercase image name
-        id: image
-        run: echo "IMAGE_NAME_LOWER=$(echo ${{ env.IMAGE_NAME }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update image name in pom.xml
-        run: |
-          sed -i "s|<name>cosy-backend:\${project.version}</name>|<name>${{ env.REGISTRY }}/${{ steps.image.outputs.IMAGE_NAME_LOWER }}:sha-${{ steps.short-sha.outputs.sha }}</name>|" pom.xml
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: type=sha
 
-      - name: Build image
-        run: ./mvnw spring-boot:build-image
-
-      - name: Push image
-        run: |
-          docker push ${{ env.REGISTRY }}/${{ steps.image.outputs.IMAGE_NAME_LOWER }}:sha-${{ steps.short-sha.outputs.sha }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
   update-deployment:
     needs: build-and-push-image
@@ -78,4 +78,3 @@ jobs:
             -H "Authorization: token ${{ steps.app-token.outputs.token }}" \
             https://api.github.com/repos/${{ github.repository_owner }}/cosy-internal-deployment/dispatches \
             -d '{"event_type":"update_image","client_payload":{"service":"backend","commit_sha":"sha-${{ needs.build-and-push-image.outputs.short-sha }}"}}'
-

@@ -78,6 +78,10 @@ public class UserEntityService {
     }
 
     public boolean existsByUsername(String username) {
-        return userEntityRepository.existsByUsername(username);
+        return userEntityRepository.existsByUsernameIgnoreCase(username);
+    }
+
+    public boolean existsByUsernameIgnoreCase(String username) {
+        return userEntityRepository.existsByUsernameIgnoreCase(username);
     }
 }
