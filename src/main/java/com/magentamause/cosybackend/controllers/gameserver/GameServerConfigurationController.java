@@ -48,12 +48,12 @@ public class GameServerConfigurationController {
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{uuid}/layout/public-dashboard")
+    @PatchMapping("/{uuid}/layout/public-dashboard/{is_public}")
     @NeedsValidation(Operation.GAME_SERVER_PUBLIC_DASHBOARD_CONFIG_CHANGE)
     public ResponseEntity<Void> updatePublicDashboardLayout(
-            @PathVariable @ResourceId String uuid,
+            @PathVariable @ResourceId String uuid, @PathVariable("is_public") boolean isPublic,
             @Valid @RequestBody List<PublicDashboardLayout> publicDashboardLayouts) {
-        gameServerConfigurationService.updatePublicDashboardLayout(uuid, publicDashboardLayouts);
+        gameServerConfigurationService.updatePublicDashboardLayout(uuid, publicDashboardLayouts, isPublic);
         return ResponseEntity.ok().build();
     }
 

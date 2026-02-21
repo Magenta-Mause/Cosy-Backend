@@ -56,7 +56,7 @@ public class GameServerDto {
 
     @NotNull private List<GameServerAccessGroupDto> accessGroups;
 
-    @NotNull private boolean isPublicDashboardEnabled;
+    private boolean publicDashboardEnabled;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     public enum GameServerStatus {

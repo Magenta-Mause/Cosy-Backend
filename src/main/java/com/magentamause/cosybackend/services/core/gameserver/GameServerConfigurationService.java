@@ -64,7 +64,7 @@ public class GameServerConfigurationService {
     }
 
     public void updatePublicDashboardLayout(
-            String gameServerUuid, List<PublicDashboardLayout> publicDashboardLayouts) {
+            String gameServerUuid, List<PublicDashboardLayout> publicDashboardLayouts, boolean isPublic) {
         GameServerEntity gameServer =
                 gameServerRepository
                         .findById(gameServerUuid)
@@ -83,6 +83,7 @@ public class GameServerConfigurationService {
 
         gameServer.getPublicDashboardLayouts().clear();
         gameServer.getPublicDashboardLayouts().addAll(publicDashboardLayouts);
+        gameServer.setPublicDashboardEnabled(isPublic);
         gameServerRepository.save(gameServer);
     }
 }
