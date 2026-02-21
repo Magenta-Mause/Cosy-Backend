@@ -14,7 +14,7 @@ public class SecurityContextService {
     public AuthenticationToken getAuthenticationToken() {
         Object auth = SecurityContextHolder.getContext().getAuthentication();
         if (!(auth instanceof AuthenticationToken)) {
-            throw new NoAuthenticationFoundException();
+            return null;
         }
         return (AuthenticationToken) auth;
     }
@@ -28,6 +28,10 @@ public class SecurityContextService {
     }
 
     public UserEntity getUser() {
-        return getAuthenticationToken().getUser();
+        AuthenticationToken token = getAuthenticationToken();
+        if (token == null) {
+            return null;
+        }
+        return token.getUser();
     }
 }

@@ -28,7 +28,7 @@ public class GameServerRootController {
     private final GameServerService gameServerService;
     private final SecurityContextService securityContextService;
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<GameServerDto>> getAllGameServers() {
         UserEntity user = securityContextService.getUser();
         if (user == null) {
