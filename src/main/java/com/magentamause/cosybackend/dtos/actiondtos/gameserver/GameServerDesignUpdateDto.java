@@ -13,6 +13,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class GameServerDesignUpdateDto {
-    @NotNull
-    private GameServerDesign design;
+    @NotNull private GameServerDesign design;
 }

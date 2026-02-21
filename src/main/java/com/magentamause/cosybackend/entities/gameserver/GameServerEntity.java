@@ -47,8 +47,7 @@ public class GameServerEntity {
     @Enumerated(EnumType.STRING)
     private GameServerDesign design;
 
-    @CreationTimestamp
-    private LocalDateTime createdOn;
+    @CreationTimestamp private LocalDateTime createdOn;
 
     private LocalDateTime timestampLastStarted;
 
