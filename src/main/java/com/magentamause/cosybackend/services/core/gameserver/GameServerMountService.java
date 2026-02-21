@@ -4,17 +4,10 @@ import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerFileSystemDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
-import com.magentamause.cosybackend.services.core.gameserver.nativefs.CosyFsHandle;
-import com.magentamause.cosybackend.services.core.gameserver.nativefs.CosyFsNative;
-import com.sun.jna.Memory;
-import com.sun.jna.Pointer;
-import com.sun.jna.ptr.LongByReference;
-import com.sun.jna.ptr.PointerByReference;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -22,11 +15,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SecureDirectoryStream;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
@@ -48,7 +37,6 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class GameServerMountService {
-
     private record ResolvedBindMount(
             String volumeUuid,
             String containerPathNormalized,
@@ -60,8 +48,6 @@ public class GameServerMountService {
     private final GameServerService gameServerService;
     private final ConcurrentHashMap<String, ReadWriteLock> locks = new ConcurrentHashMap<>();
     private final EngineProperties engineProperties;
-
-    private final CosyFsHandle cosyFsHandle;
 
     private ReadWriteLock lockForServer(String serverUuid) {
         return locks.computeIfAbsent(serverUuid, k -> new ReentrantReadWriteLock(true));
@@ -91,196 +77,11 @@ public class GameServerMountService {
         }
     }
 
-    private boolean nativeAvailable() {
-        return cosyFsHandle.available();
-    }
-
-    private CosyFsNative nativeLib() {
-        return cosyFsHandle.require();
-    }
-
-    private RuntimeException mapNativeErr(CosyFsNative.CosyfsError err, String fallbackMsg) {
-        String msg = fallbackMsg;
-        int code = 0;
-
-        try {
-            if (err != null) {
-                // defensive: make sure fields are current
-                try {
-                    err.read();
-                } catch (Throwable ignored) {
-                }
-
-                code = err.code;
-                String m = err.messageString();
-                if (m != null && !m.isBlank()) {
-                    msg = m;
-                }
-            }
-        } catch (Throwable ignored) {
-            // don't let mapping fail
-        } finally {
-            // free error message if provided
-            try {
-                if (err != null) {
-                    try {
-                        err.read();
-                    } catch (Throwable ignored) {
-                    }
-                    if (err.message != null) {
-                        nativeLib().cosyfs_free_cstring(err.message);
-                        err.message = null;
-                    }
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-
-        return switch (code) {
-            case 2 -> new ResponseStatusException(HttpStatus.NOT_FOUND, msg); // ENOENT
-            case 13 -> new ResponseStatusException(HttpStatus.FORBIDDEN, msg); // EACCES
-            case 17 -> new ResponseStatusException(HttpStatus.CONFLICT, msg); // EEXIST
-            case 21 -> new ResponseStatusException(HttpStatus.BAD_REQUEST, msg); // EISDIR
-            case 22 -> new ResponseStatusException(HttpStatus.BAD_REQUEST, msg); // EINVAL
-            case 27 -> new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, msg); // EFBIG
-            default -> new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, msg + " (errno=" + code + ")");
-        };
-    }
-
-    private Optional<byte[]> tryReadFileNative(Path volumeRoot, Path rel, long maxBytes) {
-        if (!nativeAvailable()) return Optional.empty();
-
-        String relStr = rel.toString().replace("\\", "/");
-
-        CosyFsNative.CosyfsError err = new CosyFsNative.CosyfsError();
-        PointerByReference outPtr = new PointerByReference();
-        LongByReference outLen = new LongByReference();
-
-        Pointer p = null;
-        long len = 0;
-
-        try {
-            err.write();
-
-            int rc =
-                    nativeLib()
-                            .cosyfs_read_file(
-                                    volumeRoot.toString(), relStr, maxBytes, outPtr, outLen, err);
-
-            err.read();
-
-            len = outLen.getValue();
-            p = outPtr.getValue();
-
-            if (rc != 0) {
-                throw mapNativeErr(err, "Native read failed: " + relStr);
-            }
-
-            if (len < 0 || len > Integer.MAX_VALUE) {
-                throw new ResponseStatusException(
-                        HttpStatus.PAYLOAD_TOO_LARGE, "File too large to read into memory");
-            }
-
-            return Optional.of(p == null ? new byte[0] : p.getByteArray(0, (int) len));
-
-        } catch (UnsatisfiedLinkError | NoClassDefFoundError e) {
-            log.warn("Native cosyfs not available for read (falling back): {}", e.toString());
-            return Optional.empty();
-
-        } finally {
-            if (p != null) {
-                try {
-                    long freeLen = Math.max(0, len);
-                    nativeLib().cosyfs_free_buf(p, freeLen);
-                } catch (Throwable ignored) {
-                }
-            }
-        }
-    }
-
-    private boolean tryWriteFileNative(Path volumeRoot, Path rel, byte[] content, int mode) {
-        if (!nativeAvailable()) return false;
-
-        String relStr = rel.toString().replace("\\", "/");
-        CosyFsNative.CosyfsError err = new CosyFsNative.CosyfsError();
-
-        try {
-            Memory mem = new Memory(Math.max(content.length, 1));
-            if (content.length > 0) {
-                mem.write(0, content, 0, content.length);
-            }
-
-            err.write();
-
-            int rc =
-                    nativeLib()
-                            .cosyfs_write_file_truncate(
-                                    volumeRoot.toString(), relStr, mem, content.length, mode, err);
-
-            err.read();
-
-            if (rc != 0) {
-                throw mapNativeErr(err, "Native write failed: " + relStr);
-            }
-            return true;
-        } catch (UnsatisfiedLinkError | NoClassDefFoundError e) {
-            log.warn("Native cosyfs not available for write (falling back): {}", e.toString());
-            return false;
-        }
-    }
-
-    private boolean tryRenameNative(Path volumeRoot, Path oldRel, Path newRel) {
-        if (!nativeAvailable()) return false;
-
-        String oldStr = oldRel.toString().replace("\\", "/");
-        String newStr = newRel.toString().replace("\\", "/");
-        CosyFsNative.CosyfsError err = new CosyFsNative.CosyfsError();
-
-        try {
-            err.write();
-
-            int rc = nativeLib().cosyfs_rename(volumeRoot.toString(), oldStr, newStr, err);
-
-            err.read();
-
-            if (rc != 0) {
-                throw mapNativeErr(err, "Native rename failed");
-            }
-            return true;
-        } catch (UnsatisfiedLinkError | NoClassDefFoundError e) {
-            log.warn("Native cosyfs not available for rename (falling back): {}", e.toString());
-            return false;
-        }
-    }
-
-    private boolean tryDeleteFileNative(Path volumeRoot, Path rel) {
-        if (!nativeAvailable()) return false;
-
-        String relStr = rel.toString().replace("\\", "/");
-        CosyFsNative.CosyfsError err = new CosyFsNative.CosyfsError();
-
-        try {
-            err.write();
-
-            int rc = nativeLib().cosyfs_delete_file(volumeRoot.toString(), relStr, err);
-
-            err.read();
-
-            if (rc != 0) {
-                throw mapNativeErr(err, "Native delete failed: " + relStr);
-            }
-            return true;
-        } catch (UnsatisfiedLinkError | NoClassDefFoundError e) {
-            log.warn("Native cosyfs not available for delete (falling back): {}", e.toString());
-            return false;
-        }
-    }
-
-    // =========================
-    // Public API
-    // =========================
-
+    /**
+     * Reads a bind mount filesystem by using the requested path as-is, selecting the bind mount by
+     * matching the requested path against a volume's containerPath prefix. The part after the
+     * containerPath is used to query inside the selected hostPath.
+     */
     public GameServerFileSystemDto readBindMountFileSystem(
             String serverUuid, String requestedPath, int fetchDepth) {
         return withReadLock(
@@ -319,8 +120,8 @@ public class GameServerMountService {
     }
 
     /**
-     * Priority order: 1) Native Rust lib (if available) 2) SecureDirectoryStream ops (best-effort)
-     * 3) Path-based TOCTOU-vulnerable fallback
+     * Reads a file from a bind mount volume by using the requested path as-is (container path +
+     * optional subpath). The bind mount is selected by containerPath prefix match.
      */
     public byte[] readFileFromBindMountVolume(String serverUuid, String requestedPath) {
         return withReadLock(
@@ -328,47 +129,20 @@ public class GameServerMountService {
                 () -> {
                     ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
 
-                    if (resolved.isRootRequest()) {
-                        throw new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST, "File path must not be volume root");
-                    }
-
-                    Path rel = safeRelativePath(resolved.innerRelative(), "File path", false);
                     Path volumeRoot = resolved.volumeRoot();
+                    Path requested = resolved.requested();
 
-                    // (1) Native first
-                    long maxFileSize = 128L * 1024L * 1024L;
-                    Optional<byte[]> nativeResult = tryReadFileNative(volumeRoot, rel, maxFileSize);
-                    if (nativeResult.isPresent()) {
-                        return nativeResult.get();
-                    }
+                    String cleanedInner =
+                            requireNonBlank(
+                                    cleanRelative(resolved.innerRelative()),
+                                    "File path must not be empty");
 
-                    // (2) SecureDirectoryStream next
-                    SecureRoot sr = openRootDirectoryStream(volumeRoot);
-                    if (sr.secure()) {
-                        try (SecureDirectoryStream<Path> root = sr.sds()) {
-                            return readFileSecure(root, rel);
-                        } catch (AccessDeniedException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.FORBIDDEN, "Access denied", e);
-                        } catch (NoSuchFileException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.NOT_FOUND, "Path not found: " + rel, e);
-                        } catch (IOException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.INTERNAL_SERVER_ERROR,
-                                    "Failed to read file: " + rel,
-                                    e);
-                        }
-                    }
+                    requireExists(requested, cleanedInner);
+                    requireNotDirectory(requested, cleanedInner);
+                    requireRealPathInsideRoot(volumeRoot, requested, cleanedInner);
+                    requireReadable(requested, cleanedInner);
 
-                    // (3) Fallback: not TOCTOU-safe
-                    Path requested = volumeRoot.resolve(rel).normalize();
-                    requireExists(requested, rel.toString());
-                    requireNotDirectory(requested, rel.toString());
-                    requireRealPathInsideRoot(volumeRoot, requested, rel.toString());
-                    requireReadable(requested, rel.toString());
-
+                    long maxFileSize = 128L * 1024L * 1024L; // 128 MB
                     try {
                         long fileSize = Files.size(requested);
                         if (fileSize > maxFileSize) {
@@ -379,81 +153,43 @@ public class GameServerMountService {
                         return Files.readAllBytes(requested);
                     } catch (IOException e) {
                         throw new ResponseStatusException(
-                                HttpStatus.INTERNAL_SERVER_ERROR, "Failed to read file: " + rel, e);
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Failed to read file: " + cleanedInner,
+                                e);
                     }
                 });
     }
 
-    private byte[] readFileSecure(SecureDirectoryStream<Path> root, Path rel) throws IOException {
-        SecureTarget t = resolveSecureNoSymlink(root, rel, "File path");
-        try {
-            BasicFileAttributes attrs =
-                    t.parentDir()
-                            .getFileAttributeView(
-                                    t.leafName(),
-                                    BasicFileAttributeView.class,
-                                    LinkOption.NOFOLLOW_LINKS)
-                            .readAttributes();
-
-            if (attrs.isSymbolicLink()) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Symlinks are not allowed: " + rel);
-            }
-            if (attrs.isDirectory()) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Path is a directory: " + rel);
-            }
-
-            try (SeekableByteChannel ch =
-                    t.parentDir().newByteChannel(t.leafName(), Set.of(StandardOpenOption.READ))) {
-                long max = 128L * 1024L * 1024L;
-                long size = ch.size();
-                if (size > max) {
-                    throw new ResponseStatusException(
-                            HttpStatus.PAYLOAD_TOO_LARGE,
-                            "File size exceeds maximum allowed size of 128MB");
-                }
-                if (size > Integer.MAX_VALUE) {
-                    throw new ResponseStatusException(
-                            HttpStatus.PAYLOAD_TOO_LARGE, "File is too large to read into memory");
-                }
-
-                byte[] out = new byte[(int) size];
-                ByteBuffer buf = ByteBuffer.wrap(out);
-                while (buf.hasRemaining()) {
-                    int r = ch.read(buf);
-                    if (r < 0) break;
-                }
-                return out;
-            }
-        } finally {
-            closeQuietly(t.toClose());
-        }
-    }
-
+    /**
+     * Creates a directory at the given container-style requested path. The mount is selected by
+     * containerPath prefix match.
+     */
     public void createDirectoryInBindMountVolume(String serverUuid, String requestedPath) {
         withWriteLock(
                 serverUuid,
                 () -> {
                     ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
 
+                    Path volumeRoot = resolved.volumeRoot();
+                    Path requested = resolved.requested();
+
+                    String cleaned =
+                            requireNonBlank(
+                                    cleanRelative(resolved.innerRelative()),
+                                    "Directory path must not be empty");
+
                     if (resolved.isRootRequest()) {
                         throw new ResponseStatusException(
                                 HttpStatus.BAD_REQUEST, "Refusing to create volume root");
                     }
 
-                    Path rel = safeRelativePath(resolved.innerRelative(), "Directory path", false);
-                    Path volumeRoot = resolved.volumeRoot();
-
-                    Path requested = volumeRoot.resolve(rel).normalize();
-
                     Path parent =
                             requireParentExistsAndDirectory(
-                                    requested, rel.toString(), "Parent directory does not exist: ");
-                    requireRealPathInsideRoot(volumeRoot, parent, rel.toString());
+                                    requested, cleaned, "Parent directory does not exist: ");
+                    requireRealPathInsideRoot(volumeRoot, parent, cleaned);
 
                     requireWritable(parent, "No permission to create directory in: " + parent);
-                    requireNotExists(requested, rel.toString(), "Directory already exists: ");
+                    requireNotExists(requested, cleaned, "Directory already exists: ");
 
                     try {
                         Files.createDirectory(requested);
@@ -463,12 +199,16 @@ public class GameServerMountService {
                     } catch (IOException e) {
                         throw new ResponseStatusException(
                                 HttpStatus.INTERNAL_SERVER_ERROR,
-                                "Failed to create directory: " + rel,
+                                "Failed to create directory: " + cleaned,
                                 e);
                     }
                 });
     }
 
+    /**
+     * Uploads (writes) a file to the given container-style requested path. Creates/overwrites the
+     * file atomically where supported.
+     */
     public void uploadFileToBindMountVolume(
             String serverUuid, String requestedPath, byte[] fileContent) {
         withWriteLock(
@@ -476,53 +216,29 @@ public class GameServerMountService {
                 () -> {
                     ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
 
+                    Path volumeRoot = resolved.volumeRoot();
+                    Path requested = resolved.requested();
+
+                    String cleaned =
+                            requireNonBlank(
+                                    cleanRelative(resolved.innerRelative()),
+                                    "File path must not be empty");
+
                     if (resolved.isRootRequest()) {
                         throw new ResponseStatusException(
                                 HttpStatus.BAD_REQUEST, "File path must not be volume root");
                     }
 
-                    Path rel = safeRelativePath(resolved.innerRelative(), "File path", false);
-                    Path volumeRoot = resolved.volumeRoot();
-
-                    // (1) Native first (truncate+write). Mode: choose something reasonable.
-                    if (tryWriteFileNative(volumeRoot, rel, fileContent, 0644)) {
-                        return;
-                    }
-
-                    // (2) SecureDirectoryStream next
-                    SecureRoot sr = openRootDirectoryStream(volumeRoot);
-                    if (sr.secure()) {
-                        try (SecureDirectoryStream<Path> root = sr.sds()) {
-                            uploadFileSecure(root, rel, fileContent);
-                            return;
-                        } catch (AccessDeniedException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.FORBIDDEN, "Access denied while writing file", e);
-                        } catch (NoSuchFileException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.NOT_FOUND,
-                                    "Parent directory does not exist: " + rel,
-                                    e);
-                        } catch (IOException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.INTERNAL_SERVER_ERROR,
-                                    "Failed to write file: " + rel,
-                                    e);
-                        }
-                    }
-
-                    // (3) Fallback (not TOCTOU-safe)
-                    Path requested = volumeRoot.resolve(rel).normalize();
                     Path parent =
                             requireParentExistsAndDirectory(
-                                    requested, rel.toString(), "Parent directory does not exist: ");
-                    requireRealPathInsideRoot(volumeRoot, parent, rel.toString());
+                                    requested, cleaned, "Parent directory does not exist: ");
+                    requireRealPathInsideRoot(volumeRoot, parent, cleaned);
 
                     requireWritable(parent, "No write permission for directory: " + parent);
 
                     if (Files.exists(requested, LinkOption.NOFOLLOW_LINKS)) {
-                        requireNotDirectory(requested, rel.toString());
-                        requireWritable(requested, "No write permission for file: " + rel);
+                        requireNotDirectory(requested, cleaned);
+                        requireWritable(requested, "No write permission for file: " + cleaned);
                     }
 
                     Path tempFile = null;
@@ -538,105 +254,36 @@ public class GameServerMountService {
                                     requested,
                                     StandardCopyOption.REPLACE_EXISTING,
                                     StandardCopyOption.ATOMIC_MOVE);
-                            tempFile = null;
+                            tempFile = null; // ownership transferred, don't delete in finally
                         } catch (AtomicMoveNotSupportedException e) {
                             Files.move(tempFile, requested, StandardCopyOption.REPLACE_EXISTING);
-                            tempFile = null;
+                            tempFile = null; // same here
                         }
+
                     } catch (AccessDeniedException e) {
                         throw new ResponseStatusException(
                                 HttpStatus.FORBIDDEN, "Access denied while writing file", e);
                     } catch (IOException e) {
                         throw new ResponseStatusException(
                                 HttpStatus.INTERNAL_SERVER_ERROR,
-                                "Failed to write file: " + rel,
+                                "Failed to write file: " + cleaned,
                                 e);
                     } finally {
                         if (tempFile != null) {
                             try {
                                 Files.deleteIfExists(tempFile);
-                            } catch (IOException ignored) {
+                            } catch (IOException cleanupEx) {
+                                log.warn("Failed to cleanup temp file: " + tempFile.toString());
                             }
                         }
                     }
                 });
     }
 
-    private void uploadFileSecure(SecureDirectoryStream<Path> root, Path rel, byte[] fileContent)
-            throws IOException {
-
-        SecureTarget t = resolveSecureNoSymlink(root, rel, "File path");
-        try {
-            String base = t.leafName().toString();
-            Path tmp = Paths.get(base + ".upload." + java.util.UUID.randomUUID());
-
-            try (SeekableByteChannel ch =
-                    t.parentDir()
-                            .newByteChannel(
-                                    tmp,
-                                    Set.of(
-                                            StandardOpenOption.CREATE_NEW,
-                                            StandardOpenOption.WRITE))) {
-
-                ByteBuffer buf = ByteBuffer.wrap(fileContent);
-                while (buf.hasRemaining()) {
-                    ch.write(buf);
-                }
-            }
-
-            try {
-                BasicFileAttributes tgtAttrs =
-                        t.parentDir()
-                                .getFileAttributeView(
-                                        t.leafName(),
-                                        BasicFileAttributeView.class,
-                                        LinkOption.NOFOLLOW_LINKS)
-                                .readAttributes();
-                if (tgtAttrs.isSymbolicLink()) {
-                    try {
-                        t.parentDir().deleteFile(tmp);
-                    } catch (IOException ignored) {
-                    }
-                    throw new ResponseStatusException(
-                            HttpStatus.BAD_REQUEST, "Refusing to overwrite symlink: " + rel);
-                }
-                if (tgtAttrs.isDirectory()) {
-                    try {
-                        t.parentDir().deleteFile(tmp);
-                    } catch (IOException ignored) {
-                    }
-                    throw new ResponseStatusException(
-                            HttpStatus.BAD_REQUEST, "Target is a directory: " + rel);
-                }
-            } catch (NoSuchFileException ignored) {
-                // ok
-            }
-
-            try {
-                t.parentDir().move(tmp, t.parentDir(), t.leafName());
-            } catch (FileAlreadyExistsException alreadyExists) {
-                try {
-                    t.parentDir().deleteFile(t.leafName());
-                } catch (IOException delEx) {
-                    try {
-                        t.parentDir().deleteFile(tmp);
-                    } catch (IOException ignored) {
-                    }
-                    throw delEx;
-                }
-                t.parentDir().move(tmp, t.parentDir(), t.leafName());
-            } catch (IOException moveEx) {
-                try {
-                    t.parentDir().deleteFile(tmp);
-                } catch (IOException ignored) {
-                }
-                throw moveEx;
-            }
-        } finally {
-            closeQuietly(t.toClose());
-        }
-    }
-
+    /**
+     * Renames/moves an object inside a mount. Both paths are container-style. Cross-mount moves are
+     * rejected.
+     */
     public void renameInBindMountVolume(
             String serverUuid, String oldRequestedPath, String newRequestedPath) {
         withWriteLock(
@@ -645,150 +292,115 @@ public class GameServerMountService {
                     ResolvedBindMount oldResolved = resolveBindMount(serverUuid, oldRequestedPath);
                     ResolvedBindMount newResolved = resolveBindMount(serverUuid, newRequestedPath);
 
+                    Path sourceRoot = oldResolved.volumeRoot();
+                    Path targetRoot = newResolved.volumeRoot();
+
+                    Path source = oldResolved.requested();
+                    Path target = newResolved.requested();
+
+                    String oldClean =
+                            requireNonBlank(
+                                    cleanRelative(oldResolved.innerRelative()),
+                                    "oldPath must not be empty");
+                    String newClean =
+                            requireNonBlank(
+                                    cleanRelative(newResolved.innerRelative()),
+                                    "newPath must not be empty");
+
                     if (oldResolved.isRootRequest() || newResolved.isRootRequest()) {
                         throw new ResponseStatusException(
                                 HttpStatus.BAD_REQUEST, "Renaming volume root is not allowed");
                     }
 
-                    Path oldRel = safeRelativePath(oldResolved.innerRelative(), "oldPath", false);
-                    Path newRel = safeRelativePath(newResolved.innerRelative(), "newPath", false);
+                    requireExists(source, oldClean);
+
+                    if (Files.isSymbolicLink(source)) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Renaming symlinks is not allowed: " + oldClean);
+                    }
+
+                    Path sourceParent = requireParent(source, "Invalid oldPath");
+                    Path targetParent = requireParent(target, "Invalid newPath");
+
+                    requireExists(
+                            targetParent, newClean, "Target parent directory does not exist: ");
+                    requireDirectory(targetParent, newClean, "Target parent is not a directory: ");
+                    requireNotExists(target, newClean, "Target already exists: ");
+
+                    requireRealPathInsideRoot(sourceRoot, source, oldClean);
+                    requireRealPathInsideRoot(sourceRoot, sourceParent, oldClean);
+
+                    requireRealPathInsideRoot(targetRoot, targetParent, newClean);
+
+                    try {
+                        requireTargetNotInsideSourceDir(source, target);
+                    } catch (AccessDeniedException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.FORBIDDEN, "Access denied while validating rename", e);
+                    } catch (NoSuchFileException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "Path not found", e);
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR, "Failed to validate rename", e);
+                    }
+
+                    requireReadable(source, oldClean);
+                    requireWritable(sourceParent, "No permission to modify: " + sourceParent);
+                    requireWritable(targetParent, "No permission to write into: " + targetParent);
 
                     boolean sameMount = oldResolved.volumeUuid().equals(newResolved.volumeUuid());
-                    if (!sameMount) {
-                        renameInBindMountVolumeFallback(
-                                serverUuid, oldRequestedPath, newRequestedPath);
-                        return;
-                    }
 
-                    Path volumeRoot = oldResolved.volumeRoot();
-
-                    // (1) Native first (same-root rename)
-                    if (tryRenameNative(volumeRoot, oldRel, newRel)) {
-                        return;
-                    }
-
-                    // (2) SecureDirectoryStream next
-                    SecureRoot sr = openRootDirectoryStream(volumeRoot);
-                    if (sr.secure()) {
-                        try (SecureDirectoryStream<Path> root = sr.sds()) {
-                            renameSecureSameMount(root, oldRel, newRel);
+                    try {
+                        if (sameMount) {
+                            try {
+                                Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+                            } catch (AtomicMoveNotSupportedException e) {
+                                Files.move(source, target);
+                            }
                             return;
-                        } catch (FileAlreadyExistsException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.CONFLICT, "Target already exists: " + newRel, e);
-                        } catch (NoSuchFileException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.NOT_FOUND, "Path not found", e);
-                        } catch (AccessDeniedException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.FORBIDDEN, "Access denied while renaming", e);
-                        } catch (IOException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to rename/move", e);
                         }
-                    }
 
-                    // (3) Fallback
-                    renameInBindMountVolumeFallback(serverUuid, oldRequestedPath, newRequestedPath);
+                        if (Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) {
+                            Files.createDirectory(target);
+                            copyDirectoryRecursiveNoSymlinks(source, target);
+
+                            deleteDirectoryRecursive(source);
+                        } else {
+                            Files.copy(source, target, StandardCopyOption.COPY_ATTRIBUTES);
+
+                            // delete original
+                            Files.delete(source);
+                        }
+                    } catch (AccessDeniedException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.FORBIDDEN, "Access denied while renaming", e);
+                    } catch (FileAlreadyExistsException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.CONFLICT, "Target already exists: " + newClean, e);
+                    } catch (NoSuchFileException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "Path not found", e);
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR, "Failed to rename/move", e);
+                    }
                 });
     }
 
-    private void renameInBindMountVolumeFallback(
-            String serverUuid, String oldRequestedPath, String newRequestedPath) {
-
-        ResolvedBindMount oldResolved = resolveBindMount(serverUuid, oldRequestedPath);
-        ResolvedBindMount newResolved = resolveBindMount(serverUuid, newRequestedPath);
-
-        Path sourceRoot = oldResolved.volumeRoot();
-        Path targetRoot = newResolved.volumeRoot();
-
-        Path source = oldResolved.requested();
-        Path target = newResolved.requested();
-
-        String oldClean =
-                requireNonBlank(
-                        cleanRelative(oldResolved.innerRelative()), "oldPath must not be empty");
-        String newClean =
-                requireNonBlank(
-                        cleanRelative(newResolved.innerRelative()), "newPath must not be empty");
-
-        if (oldResolved.isRootRequest() || newResolved.isRootRequest()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Renaming volume root is not allowed");
-        }
-
-        requireExists(source, oldClean);
-
-        if (Files.isSymbolicLink(source)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Renaming symlinks is not allowed: " + oldClean);
-        }
-
-        Path sourceParent = requireParent(source, "Invalid oldPath");
-        Path targetParent = requireParent(target, "Invalid newPath");
-
-        requireExists(targetParent, newClean, "Target parent directory does not exist: ");
-        requireDirectory(targetParent, newClean, "Target parent is not a directory: ");
-        requireNotExists(target, newClean, "Target already exists: ");
-
-        requireRealPathInsideRoot(sourceRoot, source, oldClean);
-        requireRealPathInsideRoot(sourceRoot, sourceParent, oldClean);
-
-        requireRealPathInsideRoot(targetRoot, targetParent, newClean);
-
-        try {
-            requireTargetNotInsideSourceDir(source, target);
-        } catch (AccessDeniedException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Access denied while validating rename", e);
-        } catch (NoSuchFileException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Path not found", e);
-        } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to validate rename", e);
-        }
-
-        requireReadable(source, oldClean);
-        requireWritable(sourceParent, "No permission to modify: " + sourceParent);
-        requireWritable(targetParent, "No permission to write into: " + targetParent);
-
-        boolean sameMount = oldResolved.volumeUuid().equals(newResolved.volumeUuid());
-
-        try {
-            if (sameMount) {
-                try {
-                    Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
-                } catch (AtomicMoveNotSupportedException e) {
-                    Files.move(source, target);
-                }
-                return;
-            }
-
-            if (Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) {
-                Files.createDirectory(target);
-                copyDirectoryRecursiveNoSymlinks(source, target);
-                deleteDirectoryRecursive(source);
-            } else {
-                Files.copy(source, target, StandardCopyOption.COPY_ATTRIBUTES);
-                Files.delete(source);
-            }
-        } catch (AccessDeniedException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Access denied while renaming", e);
-        } catch (FileAlreadyExistsException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Target already exists: " + newClean, e);
-        } catch (NoSuchFileException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Path not found", e);
-        } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to rename/move", e);
-        }
-    }
-
+    /**
+     * Recursively copies a directory tree from sourceDir to targetDir. Disallows symlinks anywhere
+     * in the copied tree.
+     *
+     * <p>Preconditions: - sourceDir exists and is a directory (NOFOLLOW) - targetDir exists and is
+     * a directory (NOFOLLOW) - target does not yet contain any of the copied children (enforced by
+     * create + not-exists checks)
+     */
     private void copyDirectoryRecursiveNoSymlinks(Path sourceDir, Path targetDir)
             throws IOException {
         try (java.util.stream.Stream<Path> walk = Files.walk(sourceDir)) {
+            // Walk includes sourceDir itself; skip it (targetDir already created)
             walk.forEach(
                     p -> {
                         try {
@@ -805,6 +417,7 @@ public class GameServerMountService {
 
                             if (Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS)) {
                                 if (Files.exists(dest, LinkOption.NOFOLLOW_LINKS)) {
+                                    // If it exists but isn't a directory, fail
                                     if (!Files.isDirectory(dest, LinkOption.NOFOLLOW_LINKS)) {
                                         throw new ResponseStatusException(
                                                 HttpStatus.CONFLICT,
@@ -815,6 +428,7 @@ public class GameServerMountService {
                                     Files.createDirectory(dest);
                                 }
                             } else {
+                                // Copy file; do not overwrite
                                 Files.copy(p, dest, StandardCopyOption.COPY_ATTRIBUTES);
                             }
                         } catch (ResponseStatusException rse) {
@@ -828,97 +442,40 @@ public class GameServerMountService {
         }
     }
 
-    private void renameSecureSameMount(SecureDirectoryStream<Path> root, Path oldRel, Path newRel)
-            throws IOException {
-
-        SecureTarget src = resolveSecureNoSymlink(root, oldRel, "oldPath");
-        SecureTarget dst = resolveSecureNoSymlink(root, newRel, "newPath");
-
-        try {
-            Path oldN = oldRel.normalize();
-            Path newN = newRel.normalize();
-
-            // Reject moving something into itself / below itself.
-            // This is path-element based, not string-prefix based.
-            if (newN.equals(oldN) || newN.startsWith(oldN)) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Cannot move a directory into itself or its subdirectory");
-            }
-
-            src.parentDir().move(src.leafName(), dst.parentDir(), dst.leafName());
-        } finally {
-            closeQuietly(src.toClose());
-            closeQuietly(dst.toClose());
-        }
-    }
-
+    /** Deletes a file or directory (recursively) at the given container-style requested path. */
     public void deleteInBindMountVolume(String serverUuid, String requestedPath) {
         withWriteLock(
                 serverUuid,
                 () -> {
                     ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
 
-                    if (resolved.isRootRequest()) {
-                        throw new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST, "Refusing to delete volume root");
-                    }
-
-                    Path rel = safeRelativePath(resolved.innerRelative(), "Path", false);
                     Path volumeRoot = resolved.volumeRoot();
+                    Path requested = resolved.requested();
 
-                    // (1) Native first (only handles file unlink in minimal Rust API).
-                    // If it succeeds, we're done. If it fails with "is a directory", we'll
-                    // continue.
-                    try {
-                        if (tryDeleteFileNative(volumeRoot, rel)) {
-                            return;
-                        }
-                    } catch (ResponseStatusException rse) {
-                        // If native said it's a directory, fall through to Java deletion
-                        if (rse.getStatusCode() != HttpStatus.BAD_REQUEST) {
-                            throw rse;
-                        }
-                    }
+                    String cleaned =
+                            requireNonBlank(
+                                    cleanRelative(resolved.innerRelative()),
+                                    "Path must not be empty");
 
-                    // (2) SecureDirectoryStream next
-                    SecureRoot sr = openRootDirectoryStream(volumeRoot);
-                    if (sr.secure()) {
-                        try (SecureDirectoryStream<Path> root = sr.sds()) {
-                            deleteSecure(root, rel);
-                            return;
-                        } catch (AccessDeniedException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.FORBIDDEN,
-                                    "Access denied while deleting: " + rel,
-                                    e);
-                        } catch (NoSuchFileException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.NOT_FOUND, "Path not found: " + rel, e);
-                        } catch (IOException e) {
-                            throw new ResponseStatusException(
-                                    HttpStatus.INTERNAL_SERVER_ERROR,
-                                    "Failed to delete: " + rel,
-                                    e);
-                        }
-                    }
-
-                    // (3) Fallback (not TOCTOU-safe)
-                    Path requested = volumeRoot.resolve(rel).normalize();
-                    if (requested.equals(volumeRoot)) {
+                    if (resolved.isRootRequest() || requested.equals(volumeRoot)) {
                         throw new ResponseStatusException(
                                 HttpStatus.BAD_REQUEST, "Refusing to delete volume root");
                     }
 
-                    requireExists(requested, rel.toString());
+                    requireExists(requested, cleaned);
+
                     if (Files.isSymbolicLink(requested)) {
                         throw new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST, "Deleting symlinks is not allowed: " + rel);
+                                HttpStatus.BAD_REQUEST,
+                                "Deleting symlinks is not allowed: " + cleaned);
                     }
 
-                    Path parent = requireParent(requested, "Invalid path: " + rel);
-                    requireRealPathInsideRoot(volumeRoot, requested, rel.toString());
-                    requireRealPathInsideRoot(volumeRoot, parent, rel.toString());
+                    Path parent = requireParent(requested, "Invalid path: " + cleaned);
+
+                    // Containment checks
+                    requireRealPathInsideRoot(volumeRoot, requested, cleaned);
+                    requireRealPathInsideRoot(volumeRoot, parent, cleaned);
+
                     requireWritable(parent, "No permission to delete from: " + parent);
 
                     try {
@@ -927,77 +484,31 @@ public class GameServerMountService {
                         } else {
                             Files.delete(requested);
                         }
+                    } catch (AccessDeniedException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.FORBIDDEN,
+                                "Access denied while deleting: " + cleaned,
+                                e);
+                    } catch (NoSuchFileException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "Path not found: " + cleaned, e);
+                    } catch (DirectoryNotEmptyException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.CONFLICT, "Directory not empty: " + cleaned, e);
                     } catch (IOException e) {
                         throw new ResponseStatusException(
-                                HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete: " + rel, e);
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Failed to delete: " + cleaned,
+                                e);
                     }
                 });
     }
 
-    private void deleteSecure(SecureDirectoryStream<Path> root, Path rel) throws IOException {
-        SecureTarget t = resolveSecureNoSymlink(root, rel, "Path");
-        try {
-            BasicFileAttributes attrs =
-                    t.parentDir()
-                            .getFileAttributeView(
-                                    t.leafName(),
-                                    BasicFileAttributeView.class,
-                                    LinkOption.NOFOLLOW_LINKS)
-                            .readAttributes();
-
-            if (attrs.isSymbolicLink()) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Deleting symlinks is not allowed: " + rel);
-            }
-
-            if (attrs.isDirectory()) {
-                deleteDirRecursiveSecure(t.parentDir(), t.leafName());
-            } else {
-                t.parentDir().deleteFile(t.leafName());
-            }
-        } finally {
-            closeQuietly(t.toClose());
-        }
-    }
-
-    private void deleteDirRecursiveSecure(SecureDirectoryStream<Path> parentDir, Path dirName)
-            throws IOException {
-        try (DirectoryStream<Path> ds =
-                parentDir.newDirectoryStream(dirName, LinkOption.NOFOLLOW_LINKS)) {
-            if (!(ds instanceof SecureDirectoryStream<Path> sds)) {
-                throw new ResponseStatusException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "SecureDirectoryStream lost while deleting");
-            }
-
-            for (Path child : ds) {
-                Path name = child.getFileName();
-                if (name == null) continue;
-
-                BasicFileAttributes attrs =
-                        sds.getFileAttributeView(
-                                        name,
-                                        BasicFileAttributeView.class,
-                                        LinkOption.NOFOLLOW_LINKS)
-                                .readAttributes();
-
-                if (attrs.isSymbolicLink()) {
-                    throw new ResponseStatusException(
-                            HttpStatus.BAD_REQUEST,
-                            "Symlinks are not allowed in delete tree: " + name);
-                }
-
-                if (attrs.isDirectory()) {
-                    deleteDirRecursiveSecure(sds, name);
-                } else {
-                    sds.deleteFile(name);
-                }
-            }
-        }
-
-        parentDir.deleteDirectory(dirName);
-    }
-
+    /**
+     * Selects the volume mount by checking whether the requested path starts with any mount's
+     * containerPath (boundary-aware), then strips that prefix and resolves the remainder inside the
+     * hostPath.
+     */
     private ResolvedBindMount resolveBindMount(String serverUuid, String requestedPath) {
         GameServerEntity server = gameServerService.getOrThrow(serverUuid);
 
@@ -1009,7 +520,7 @@ public class GameServerMountService {
         VolumeMountConfiguration mount = findMountByContainerPathPrefix(server, serverUuid, req);
 
         String containerPathNorm = normalizeContainerLikePath(mount.getContainerPath());
-        String inner = stripContainerPrefix(req, containerPathNorm);
+        String inner = stripContainerPrefix(req, containerPathNorm); // may be "" (root)
 
         Path volumeRoot = requireVolumeRootFromMount(mount);
 
@@ -1050,6 +561,7 @@ public class GameServerMountService {
                                                 HttpStatus.BAD_REQUEST,
                                                 "Volume mount does not have a uuid"));
 
+        // basic hardening
         if (uuid.contains("/") || uuid.contains("\\") || uuid.contains("..")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid volume uuid");
         }
@@ -1065,6 +577,8 @@ public class GameServerMountService {
                     e);
         }
 
+        // Optional: still keep a friendly error if something is weird (file instead of
+        // dir)
         if (!Files.isDirectory(volumeRoot, LinkOption.NOFOLLOW_LINKS)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "Mount root is not a directory: " + volumeRoot);
@@ -1081,10 +595,12 @@ public class GameServerMountService {
 
         Path sourceReal = source.toRealPath(LinkOption.NOFOLLOW_LINKS).normalize();
 
+        // Target might not exist; use parent real path + target file name.
         Path targetParent = requireParent(target, "Invalid newPath");
         Path targetParentReal = targetParent.toRealPath().normalize();
         Path targetAbs = targetParentReal.resolve(target.getFileName()).normalize();
 
+        // Reject same path or descendant
         if (targetAbs.equals(sourceReal) || targetAbs.startsWith(sourceReal)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -1092,6 +608,11 @@ public class GameServerMountService {
         }
     }
 
+    /**
+     * Finds the best matching mount for the requested path: - boundary-aware prefix match: "/data"
+     * matches "/data" and "/data/..." but NOT "/database/..." - prefers the longest matching
+     * containerPath (more specific mount wins)
+     */
     private VolumeMountConfiguration findMountByContainerPathPrefix(
             GameServerEntity server, String serverUuid, String requestedPathNormalized) {
 
@@ -1120,14 +641,19 @@ public class GameServerMountService {
     private boolean isBoundaryAwarePrefixMatch(
             String requestedPathNormalized, String containerPathNormalized) {
         if (containerPathNormalized.isBlank() || "/".equals(containerPathNormalized)) {
-            return false;
+            return false; // avoid "match everything" mount definitions
         }
         if (requestedPathNormalized.equals(containerPathNormalized)) {
             return true;
         }
+        // ensure boundary so "/data" doesn't match "/database"
         return requestedPathNormalized.startsWith(containerPathNormalized + "/");
     }
 
+    /**
+     * Strips the container path prefix and returns the remainder as a relative path without leading
+     * "/". If requested equals containerPath, returns "".
+     */
     private String stripContainerPrefix(
             String requestedPathNormalized, String containerPathNormalized) {
         if (requestedPathNormalized.equals(containerPathNormalized)) {
@@ -1142,6 +668,10 @@ public class GameServerMountService {
                 HttpStatus.BAD_REQUEST, "Path does not start with container path");
     }
 
+    /**
+     * Normalizes a container-style path: - trims - replaces backslashes with slashes - ensures a
+     * single leading "/" - removes trailing "/" (except for "/")
+     */
     private String normalizeContainerLikePath(String input) {
         String s = (input == null) ? "" : input.trim();
         s = s.replace("\\", "/");
@@ -1166,6 +696,9 @@ public class GameServerMountService {
         return requested;
     }
 
+    // =========================
+    // Directory listing helpers
+    // =========================
     private GameServerFileSystemDto.FileSystemObjectDto buildTree(Path root, int fetchDepth) {
         GameServerFileSystemDto.FileSystemObjectDto node = toNode(root, fetchDepth);
 
@@ -1251,6 +784,10 @@ public class GameServerMountService {
                 .build();
     }
 
+    /**
+     * Returns a Unix-like permission bitmask (e.g. 0755 -> 493 decimal) when supported. Optional is
+     * empty if permissions could not be fetched.
+     */
     private Optional<Integer> tryReadPermissions(Path p) {
         try {
             PosixFileAttributes attrs =
@@ -1388,115 +925,6 @@ public class GameServerMountService {
                             });
         } catch (java.io.UncheckedIOException e) {
             throw e.getCause();
-        }
-    }
-
-    private record SecureRoot(SecureDirectoryStream<Path> sds, boolean secure) {}
-
-    private SecureRoot openRootDirectoryStream(Path volumeRoot) {
-        try {
-            DirectoryStream<Path> ds = Files.newDirectoryStream(volumeRoot);
-            if (ds instanceof SecureDirectoryStream<Path> sds) {
-                return new SecureRoot(sds, true);
-            }
-            ds.close();
-            return new SecureRoot(null, false);
-        } catch (IOException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to open volume root", e);
-        }
-    }
-
-    private static Path safeRelativePath(String input, String label, boolean allowEmpty) {
-        String s = (input == null) ? "" : input.trim();
-        s = s.replace("\\", "/");
-        while (s.startsWith("/")) s = s.substring(1);
-
-        Path rel = Paths.get(s).normalize();
-
-        if (rel.toString().isBlank()) {
-            if (allowEmpty) return rel;
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, label + " must not be empty");
-        }
-
-        if (rel.isAbsolute()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, label + " must be relative");
-        }
-
-        for (Path part : rel) {
-            if ("..".equals(part.toString())) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, label + " must not contain '..'");
-            }
-        }
-
-        return rel;
-    }
-
-    private record SecureTarget(
-            SecureDirectoryStream<Path> parentDir,
-            Path leafName,
-            List<DirectoryStream<Path>> toClose) {}
-
-    private SecureTarget resolveSecureNoSymlink(
-            SecureDirectoryStream<Path> root, Path rel, String label) throws IOException {
-
-        int n = rel.getNameCount();
-        if (n == 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, label + " must not be empty");
-        }
-
-        List<DirectoryStream<Path>> opened = new ArrayList<>();
-        SecureDirectoryStream<Path> cur = root;
-
-        try {
-            for (int i = 0; i < n - 1; i++) {
-                Path part = rel.getName(i);
-
-                BasicFileAttributes attrs =
-                        cur.getFileAttributeView(
-                                        part,
-                                        BasicFileAttributeView.class,
-                                        LinkOption.NOFOLLOW_LINKS)
-                                .readAttributes();
-
-                if (!attrs.isDirectory()) {
-                    throw new ResponseStatusException(
-                            HttpStatus.BAD_REQUEST, "Parent component is not a directory: " + part);
-                }
-
-                DirectoryStream<Path> next =
-                        cur.newDirectoryStream(part, LinkOption.NOFOLLOW_LINKS);
-                opened.add(next);
-
-                if (!(next instanceof SecureDirectoryStream<Path> nextSecure)) {
-                    throw new ResponseStatusException(
-                            HttpStatus.INTERNAL_SERVER_ERROR,
-                            "SecureDirectoryStream lost while resolving");
-                }
-
-                cur = nextSecure;
-            }
-
-            return new SecureTarget(cur, rel.getFileName(), opened);
-
-        } catch (Throwable t) {
-            for (int i = opened.size() - 1; i >= 0; i--) {
-                try {
-                    opened.get(i).close();
-                } catch (Throwable ignored) {
-                }
-            }
-            throw t;
-        }
-    }
-
-    private void closeQuietly(List<DirectoryStream<Path>> streams) {
-        for (int i = streams.size() - 1; i >= 0; i--) {
-            try {
-                streams.get(i).close();
-            } catch (IOException ignored) {
-            }
         }
     }
 }

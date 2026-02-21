@@ -42,7 +42,7 @@ You can start the application using the Maven wrapper:
 ./mvnw spring-boot:run
 ```
 
-The API will be available at <http://localhost:8080/api>.
+The API will be available at http://localhost:8080/api.
 
 ## Custom Metrics (Game Server → Cosy Backend)
 
@@ -154,13 +154,10 @@ The Loki setup is a bit more involved as Loki itself doesn't have any authorizat
 reverse proxy in front of it to add basic auth. For this inside this Repository we have a `infrastructure/htpasswd` file checked in, which contains a development username/password: [user: `loki-user`, password: `loki-password`].
 This needs to be changed in prod. For this you can use this command to generate a password hashed htpasswd file:
 powershell:
-
 ```powershell
 docker run --rm httpd:2.4-alpine htpasswd -nbB loki-user loki-password | Out-File -Encoding ASCII htpasswd
 ```
-
 bash:
-
 ```bash
 docker run --rm httpd:2.4-alpine htpasswd -nbB loki-user loki-password > infrastructure/htpasswd
 ```
@@ -192,13 +189,11 @@ To automatically format your code:
 The backend uses a **Strategy Pattern** to handle different environments without changing application logic.
 
 * **RuntimeService Interface:** The main contract for server management.
-  * **DockerRuntimeStrategy:** Uses the local Docker Socket (/var/run/docker.sock). Used for single-node setups.
+    * **DockerRuntimeStrategy:** Uses the local Docker Socket (/var/run/docker.sock). Used for single-node setups.
 
 ### **File I/O**
 
 Unlike traditional cloud apps, Cosy uses **Direct I/O** for file management.
-Cosy will attempt to utilize a native linux library to ensure secure file operations. When running on other operating systems, this
-security cannot be ensured so a potentially vulnerable fallback will be used.
 
 * **Docker Mode:** Uses Java NIO to read Bind Mounts directly on the host.
 
@@ -214,7 +209,7 @@ Run unit and integration tests:
 
 Once the application is running, you can explore the REST API via Swagger UI:
 
-* <http://localhost:8080/api/swagger-ui/index.html>
+* http://localhost:8080/api/swagger-ui/index.html
 
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -253,3 +248,4 @@ cd infrastructure
 docker compose down -v
 docker compose up -d
 ```
+
