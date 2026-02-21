@@ -86,7 +86,7 @@ RUN mvn clean package -DskipTests -B
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-RUN apk add --no-cache zip libc6-compat
+RUN apk add --no-cache zip libc6-compat libgcc
 
 # Copy the fat jar
 COPY --from=builder /app/target/*.jar app.jar
