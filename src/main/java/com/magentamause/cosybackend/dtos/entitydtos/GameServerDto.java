@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
+import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -47,6 +48,8 @@ public class GameServerDto {
     @NotNull @Valid private List<VolumeMountConfiguration> volumeMounts;
 
     @NotNull private List<MetricLayout> metricLayout;
+
+    @NotNull private List<PrivateDashboardLayout> privateDashboardLayouts;
 
     @NotNull private List<GameServerAccessGroupDto> accessGroups;
 

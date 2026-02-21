@@ -9,12 +9,17 @@ import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
+import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerFieldVisibilityPolicy;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Setter
@@ -47,6 +52,12 @@ public class GameServerEntity {
 
     private String dockerImageTag;
 
+    private String containerSecret;
+
+    @Column(columnDefinition = "json")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> customMetricHolder = new HashMap<>();
+
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
     @Embedded private RCONConfiguration rconConfiguration;
@@ -76,7 +87,13 @@ public class GameServerEntity {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "metric_layout_uuid")
+    @OrderColumn(name = "metric_layout_index")
     private List<MetricLayout> metricLayout;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "private_dashboard_layout_uuid")
+    @OrderColumn(name = "private_dashboard_layout_index")
+    private List<PrivateDashboardLayout> privateDashboardLayouts;
 
     @OneToMany(
             mappedBy = "gameServer",
@@ -148,6 +165,9 @@ public class GameServerEntity {
         }
         if (GameServerFieldVisibilityPolicy.canSeeMetricLayout(permissions)) {
             builder.metricLayout(this.getMetricLayout());
+        }
+        if (GameServerFieldVisibilityPolicy.canSeePrivateDashboardLayout(permissions)) {
+            builder.privateDashboardLayouts(this.getPrivateDashboardLayouts());
         }
         if (GameServerFieldVisibilityPolicy.canSeeAccessGroups(permissions)) {
             builder.accessGroups(

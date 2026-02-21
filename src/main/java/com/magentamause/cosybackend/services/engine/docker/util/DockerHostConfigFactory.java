@@ -28,6 +28,8 @@ public class DockerHostConfigFactory {
         applyVolumeBinds(hostConfig, serverConfig);
         applyHardwareLimits(hostConfig, serverConfig);
 
+        hostConfig.withExtraHosts("host.docker.internal:host-gateway");
+
         log.debug("Host config: {}", hostConfig);
 
         return hostConfig;
