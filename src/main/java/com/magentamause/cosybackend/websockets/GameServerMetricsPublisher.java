@@ -14,7 +14,6 @@ public class GameServerMetricsPublisher {
     private final SimpMessagingTemplate messagingTemplate;
 
     public void publishMetrics(String serverUuid, MetricPointDto metric) {
-        log.info("Publishing metrics to websocket for server {}: {}", serverUuid, metric);
         String topic =
                 WebSocketDestinations.Topics.GAME_SERVER_METRICS.replace("{serverId}", serverUuid);
         messagingTemplate.convertAndSend(topic, metric);

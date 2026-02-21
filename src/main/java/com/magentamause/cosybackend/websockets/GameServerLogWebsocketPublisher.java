@@ -15,7 +15,6 @@ public class GameServerLogWebsocketPublisher {
     private final SimpMessagingTemplate messagingTemplate;
 
     public void publishLog(String serverUuid, GameServerLogMessageEntity logMessage) {
-        log.info("Publishing log message to websocket for server {}: {}", serverUuid, logMessage);
         String topic =
                 WebSocketDestinations.Topics.GAME_SERVER_LOGS_CREATION.replace(
                         "{serverId}", serverUuid);
