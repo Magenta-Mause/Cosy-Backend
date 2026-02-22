@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.security.accessmanagement.policies;
 
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
+import com.magentamause.cosybackend.entities.layout.DashboardTypes;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.Validates;
@@ -16,9 +17,17 @@ public class GameServerLogPolicy {
             ResourceResolver resolver, Object referenceId, UserEntity user) {
         return resolver.getGameServerEntity((String) referenceId)
                 .map(
-                        server ->
-                                GameServerPermissionsUtility.isOwnerOrHasPermission(
-                                        server, user, GameServerAccessPermission.READ_SERVER_LOGS))
+                        server -> {
+                            if (server.isPublicDashboardEnabled()
+                                    && server.getPublicDashboardLayouts().stream()
+                                            .anyMatch(
+                                                    layout ->
+                                                            layout.getPublicDashboardTypes()
+                                                                    == DashboardTypes.LOGS))
+                                return true;
+                            return GameServerPermissionsUtility.isOwnerOrHasPermission(
+                                    server, user, GameServerAccessPermission.READ_SERVER_LOGS);
+                        })
                 .orElse(false);
     }
 }

@@ -23,7 +23,7 @@ public class MetricsController {
     private final MetricsQueryService queryService;
 
     @GetMapping("/{gameServerUuid}")
-    @NeedsValidation(Operation.GAME_SERVER_METRIC_READ)
+    @NeedsValidation(value = Operation.GAME_SERVER_METRIC_READ, allowUnauthorized = true)
     public ResponseEntity<List<MetricPointDto>> getMetrics(
             @ResourceId @PathVariable String gameServerUuid,
             @RequestParam(required = false) Instant end,
