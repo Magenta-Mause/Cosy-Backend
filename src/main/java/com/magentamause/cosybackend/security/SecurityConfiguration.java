@@ -38,6 +38,8 @@ public class SecurityConfiguration {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/user-invites/*")
                                         .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/footer")
+                                        .permitAll()
                                         .requestMatchers(
                                                 HttpMethod.PUT,
                                                 "/internal/game-server/custom-metric/**")

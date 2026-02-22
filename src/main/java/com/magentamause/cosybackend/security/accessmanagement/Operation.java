@@ -44,5 +44,8 @@ public enum Operation {
     // User Invite operations
     USER_INVITE_READ,
     USER_INVITE_CREATE,
-    USER_INVITE_DELETE
+    USER_INVITE_DELETE,
+
+    // Footer operations
+    FOOTER_UPDATE
 }
