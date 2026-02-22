@@ -2,11 +2,10 @@ package com.magentamause.cosybackend.entities;
 
 import com.magentamause.cosybackend.entities.layout.PublicDashboardLayout;
 import jakarta.persistence.*;
+import java.util.List;
 import lombok.*;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
-
-import java.util.List;
 
 @Setter
 @Getter

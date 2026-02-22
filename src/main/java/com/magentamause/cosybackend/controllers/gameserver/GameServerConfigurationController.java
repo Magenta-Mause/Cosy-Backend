@@ -11,7 +11,6 @@ import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguratio
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
-import com.magentamause.cosybackend.entities.layout.PublicDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
@@ -56,7 +55,9 @@ public class GameServerConfigurationController {
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody PublicDashboard publicDashboard) {
         gameServerConfigurationService.updatePublicDashboardLayout(
-                uuid, publicDashboard.getPublicDashboardLayouts(), publicDashboard.isPublicDashboardEnabled());
+                uuid,
+                publicDashboard.getPublicDashboardLayouts(),
+                publicDashboard.isPublicDashboardEnabled());
         return ResponseEntity.ok().build();
     }
 

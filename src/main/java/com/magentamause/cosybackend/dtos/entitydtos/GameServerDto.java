@@ -8,7 +8,6 @@ import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
-import com.magentamause.cosybackend.entities.layout.PublicDashboardLayout;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
