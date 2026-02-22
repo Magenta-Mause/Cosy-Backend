@@ -28,6 +28,10 @@ public class GameServerDto {
 
     @NotNull @Valid private GameServerStatus status;
 
+    private GameServerDesign design;
+
+    private LocalDateTime createdOn;
+
     @NotNull @Valid private LocalDateTime timestampLastStarted;
 
     @Valid private RCONConfiguration rconConfiguration;

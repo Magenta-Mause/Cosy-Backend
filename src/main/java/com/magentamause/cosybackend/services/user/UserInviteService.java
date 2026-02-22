@@ -38,9 +38,14 @@ public class UserInviteService {
     public UserInviteEntity createInvite(
             String ownerCreationId, UserInviteCreationDto userInviteCreationDto) {
         if (!Objects.isNull(userInviteCreationDto.getUsername())) {
-            if (userInviteRepository.existsByUsername(userInviteCreationDto.getUsername())) {
+            String usernameLower = userInviteCreationDto.getUsername().toLowerCase();
+            if (userInviteRepository.existsByUsernameIgnoreCase(usernameLower)) {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "Invite with the given username already exists");
+            }
+            if (userEntityService.existsByUsernameIgnoreCase(usernameLower)) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT, "A user with the given username already exists");
             }
         }
 
@@ -110,7 +115,7 @@ public class UserInviteService {
         }
 
         UserEntity builtUser = userBuilder.build();
-        if (userEntityService.existsByUsername(builtUser.getUsername())) {
+        if (userEntityService.existsByUsernameIgnoreCase(builtUser.getUsername())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "A user with the given username already exists");
         }

@@ -93,7 +93,6 @@ public class GameServerRootController {
     @NeedsValidation(Operation.GAME_SERVER_START_STOP)
     public ResponseEntity<Void> startService(@PathVariable @ResourceId String uuid) {
         gameServerService.startServer(uuid, securityContextService.getUser());
-
         return ResponseEntity.accepted().build();
     }
 

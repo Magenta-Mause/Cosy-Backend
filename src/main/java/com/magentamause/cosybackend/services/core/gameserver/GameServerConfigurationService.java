@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.GameServerDesign;
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
@@ -22,6 +23,12 @@ public class GameServerConfigurationService {
     public GameServerEntity updateRconConfig(String uuid, RCONConfiguration updateDto) {
         GameServerEntity gameServer = gameServerService.getOrThrow(uuid);
         gameServer.setRconConfiguration(updateDto);
+        return gameServerService.saveGameServerConfiguration(gameServer, false);
+    }
+
+    public GameServerEntity updateDesign(String uuid, GameServerDesign design) {
+        GameServerEntity gameServer = gameServerService.getOrThrow(uuid);
+        gameServer.setDesign(design);
         return gameServerService.saveGameServerConfiguration(gameServer, false);
     }
 

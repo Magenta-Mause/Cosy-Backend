@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.gameserver.utility.EnvironmentVariableConfiguration;
+import com.magentamause.cosybackend.entities.gameserver.utility.GameServerDesign;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GameServerCreationDto {
     private Integer externalGameId;
+    private GameServerDesign design;
     @NotBlank private String serverName;
     @NotBlank private String dockerImageName;
     @NotBlank private String dockerImageTag;
@@ -55,6 +57,7 @@ public class GameServerCreationDto {
         return GameServerEntity.builder()
                 .game(gameProvider.apply(this.externalGameId))
                 .owner(user)
+                .design(this.getDesign())
                 .serverName(this.getServerName())
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())

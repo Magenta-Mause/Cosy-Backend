@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -43,6 +44,11 @@ public class GameServerEntity {
 
     @Enumerated(EnumType.STRING)
     private GameServerDto.GameServerStatus status;
+
+    @Enumerated(EnumType.STRING)
+    private GameServerDesign design;
+
+    @CreationTimestamp private LocalDateTime createdOn;
 
     private LocalDateTime timestampLastStarted;
 
@@ -117,6 +123,8 @@ public class GameServerEntity {
                 .serverName(this.getServerName())
                 .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
                 .status(this.getStatus())
+                .design(this.getDesign())
+                .createdOn(this.getCreatedOn())
                 .timestampLastStarted(this.getTimestampLastStarted())
                 .gameUuid(Optional.ofNullable(this.getGame()).map(GameEntity::getUuid).orElse(null))
                 .rconConfiguration(this.getRconConfiguration())
@@ -171,6 +179,8 @@ public class GameServerEntity {
                                         .map(UserEntity::toDto)
                                         .orElse(null))
                         .status(this.getStatus())
+                        .design(this.getDesign())
+                        .createdOn(this.getCreatedOn())
                         .timestampLastStarted(this.getTimestampLastStarted())
                         .gameUuid(
                                 Optional.ofNullable(this.getGame())
