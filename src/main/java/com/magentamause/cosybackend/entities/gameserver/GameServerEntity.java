@@ -128,6 +128,8 @@ public class GameServerEntity {
                 .environmentVariables(this.getEnvironmentVariables())
                 .volumeMounts(this.getVolumeMounts())
                 .metricLayout(this.getMetricLayout())
+                .publicDashboardLayouts(this.getPublicDashboardLayouts())
+                .publicDashboardEnabled(this.isPublicDashboardEnabled())
                 .accessGroups(
                         Optional.ofNullable(this.getAccessGroups())
                                 .map(
@@ -162,6 +164,8 @@ public class GameServerEntity {
                 GameServerDto.builder()
                         .uuid(this.getUuid())
                         .serverName(this.getServerName())
+                        .publicDashboardLayouts(this.getPublicDashboardLayouts())
+                        .publicDashboardEnabled(this.isPublicDashboardEnabled())
                         .owner(
                                 Optional.ofNullable(this.getOwner())
                                         .map(UserEntity::toDto)
