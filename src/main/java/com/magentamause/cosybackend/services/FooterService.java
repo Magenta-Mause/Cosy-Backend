@@ -16,9 +16,7 @@ public class FooterService {
     private final FooterRepository footerRepository;
 
     public FooterEntity getFooter() {
-        return footerRepository
-                .findAll()
-                .stream()
+        return footerRepository.findAll().stream()
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Footer not found"));
     }

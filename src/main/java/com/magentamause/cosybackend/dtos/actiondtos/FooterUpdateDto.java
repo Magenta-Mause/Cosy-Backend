@@ -32,7 +32,6 @@ public class FooterUpdateDto {
     @NotBlank(message = "City is required")
     private String city;
 
-
     public FooterEntity applyToEntity(FooterEntity entity) {
         entity.setFullName(this.fullName);
         entity.setEmail(this.email);
