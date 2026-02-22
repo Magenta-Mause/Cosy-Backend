@@ -1,5 +1,7 @@
 package com.magentamause.cosybackend.dtos.actiondtos;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.entities.FooterEntity;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -12,6 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class FooterUpdateDto {
     @NotBlank(message = "Full name is required")
     private String fullName;
