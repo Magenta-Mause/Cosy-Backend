@@ -26,7 +26,7 @@ public class GameServerDesignController {
             @PathVariable @ResourceId String uuid,
             @RequestBody @Valid GameServerDesignUpdateDto updateDto) {
         GameServerEntity gameServer =
-        gameServerConfigurationService.updateDesign(uuid, updateDto.getDesign());
+                gameServerConfigurationService.updateDesign(uuid, updateDto.getDesign());
         return ResponseEntity.ok(gameServer.toDto(securityContextService.getUser()));
     }
 }

@@ -43,41 +43,34 @@ public class DiscordWebhookSender extends BaseWebhookSender {
             }
         }
 
-        Map<String, Object> fieldServer = Map.of(
-                "name", "Server",
-                "value", event.serverName(),
-                "inline", true
-        );
+        Map<String, Object> fieldServer =
+                Map.of("name", "Server", "value", event.serverName(), "inline", true);
 
-        Map<String, Object> fieldId = Map.of(
-                "name", "Server ID",
-                "value", event.serverId(),
-                "inline", true
-        );
+        Map<String, Object> fieldId =
+                Map.of("name", "Server ID", "value", event.serverId(), "inline", true);
 
-        Map<String, Object> fieldEvent = Map.of(
-                "name", "Event",
-                "value", event.eventType().name(),
-                "inline", false
-        );
+        Map<String, Object> fieldEvent =
+                Map.of("name", "Event", "value", event.eventType().name(), "inline", false);
 
-        Map<String, Object> footer = Map.of(
-                "text", "Cosy Game Server"
-        );
+        Map<String, Object> footer = Map.of("text", "Cosy Game Server");
 
-        Map<String, Object> embed = Map.of(
-                "title", statusEmoji + " " + toMessage(event),
-                "description", "Status update for your game server.",
-                "color", color,
-                "fields", java.util.List.of(fieldServer, fieldId, fieldEvent),
-                "footer", footer,
-                "timestamp", java.time.OffsetDateTime.now().toString()
-        );
+        Map<String, Object> embed =
+                Map.of(
+                        "title",
+                        statusEmoji + " " + toMessage(event),
+                        "description",
+                        "Status update for your game server.",
+                        "color",
+                        color,
+                        "fields",
+                        java.util.List.of(fieldServer, fieldId, fieldEvent),
+                        "footer",
+                        footer,
+                        "timestamp",
+                        java.time.OffsetDateTime.now().toString());
 
         return Map.of(
                 // Optional plain text line above the embed
-                "content", "",
-                "embeds", java.util.List.of(embed)
-        );
+                "content", "", "embeds", java.util.List.of(embed));
     }
 }
