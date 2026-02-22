@@ -1,7 +1,6 @@
 package com.magentamause.cosybackend.services.auth;
 
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.exceptions.NoAuthenticationFoundException;
 import com.magentamause.cosybackend.security.jwtfilter.AuthenticationToken;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;

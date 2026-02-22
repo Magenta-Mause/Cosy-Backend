@@ -32,9 +32,10 @@ public class GameServerRootController {
     public ResponseEntity<List<GameServerDto>> getAllGameServers() {
         UserEntity user = securityContextService.getUser();
         if (user == null) {
-            List<GameServerDto> dtos = gameServerService.getPubliclyEvaluableGameServer().stream()
-                    .map(GameServerEntity::toPublicDto)
-                    .toList();
+            List<GameServerDto> dtos =
+                    gameServerService.getPubliclyEvaluableGameServer().stream()
+                            .map(GameServerEntity::toPublicDto)
+                            .toList();
             return ResponseEntity.ok(dtos);
         }
 
