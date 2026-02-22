@@ -30,13 +30,6 @@ public class AuthorizationAspect {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
 
-        // Skip admin bypass for operations that require explicit OWNER-only permission
-        boolean requiresExplicitCheck = needsValidation.value() == Operation.FOOTER_UPDATE;
-
-        if (user.getRole().isAdmin() && !requiresExplicitCheck) {
-            return;
-        }
-
         Object resourceId = findResourceId(joinPoint);
 
         ValidatorRegistry.ValidatorEntry validator =
