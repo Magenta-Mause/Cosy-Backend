@@ -4,7 +4,9 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.Validates;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class UserPolicy {
@@ -12,7 +14,7 @@ public class UserPolicy {
     @Validates(Operation.USER_GET_ALL)
     public static boolean canGetAllUsers(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
-        return false;
+        return user.getRole().isAdmin();
     }
 
     @Validates(Operation.USER_GET_BY_UUID)
@@ -39,10 +41,48 @@ public class UserPolicy {
         return user.getUuid().equals(referenceId);
     }
 
+    @Validates(Operation.USER_CHANGE_PASSWORD_BY_ADMIN)
+    public static boolean canChangePasswordByAdmin(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+
+        UserEntity userToChangePassword =
+                resolver.getUserEntity((String) referenceId)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.getRole().equals(UserEntity.Role.OWNER)) {
+            return true;
+        } else if (user.getUuid().equals(userToChangePassword.getUuid())) {
+            return true;
+        } else if (userToChangePassword.getRole().isAdmin()) {
+            return false;
+        } else {
+            return user.getRole().isAdmin();
+        }
+    }
+
     @Validates(Operation.USER_DELETE)
     public static boolean canDeleteUser(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
-        return user.getUuid().equals(referenceId);
+
+        UserEntity userToDelete =
+                resolver.getUserEntity((String) referenceId)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.getRole().equals(UserEntity.Role.OWNER)) {
+            return true;
+        } else if (user.getUuid().equals(userToDelete.getUuid())) {
+            return true;
+        } else if (userToDelete.getRole().isAdmin()) {
+            return false;
+        } else {
+            return user.getRole().isAdmin();
+        }
     }
 
     @Validates(Operation.USER_READ_PERMISSIONS)
