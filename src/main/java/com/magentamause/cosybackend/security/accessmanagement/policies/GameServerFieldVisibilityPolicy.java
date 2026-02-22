@@ -35,10 +35,6 @@ public class GameServerFieldVisibilityPolicy {
                         GameServerAccessPermission.READ_SERVER_PRIVATE_DASHBOARD, permissions);
     }
 
-    public static boolean canSeePublicDashboardLayout() {
-        return true;
-    }
-
     public static boolean canSeeAccessGroups(List<GameServerAccessPermission> permissions) {
         return GameServerPermissionsUtility.can(
                 GameServerAccessPermission.CHANGE_PERMISSIONS_SETTINGS, permissions);

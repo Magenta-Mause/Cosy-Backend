@@ -141,11 +141,13 @@ public class GameServerEntity {
 
     public GameServerDto toPublicDto() {
         return GameServerDto.builder()
+                .uuid(this.getUuid())
                 .gameUuid(Optional.ofNullable(this.getGame()).map(GameEntity::getUuid).orElse(null))
                 .serverName(this.getServerName())
                 .status(this.getStatus())
                 .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
                 .publicDashboardLayouts(this.getPublicDashboardLayouts())
+                .publicDashboardEnabled(this.isPublicDashboardEnabled())
                 .build();
     }
 
@@ -187,10 +189,6 @@ public class GameServerEntity {
         }
         if (GameServerFieldVisibilityPolicy.canSeePrivateDashboardLayout(permissions)) {
             builder.privateDashboardLayouts(this.getPrivateDashboardLayouts());
-        }
-        if (GameServerFieldVisibilityPolicy.canSeePublicDashboardLayout()) {
-            builder.publicDashboardLayouts(this.getPublicDashboardLayouts())
-                    .publicDashboardEnabled(this.isPublicDashboardEnabled());
         }
         if (GameServerFieldVisibilityPolicy.canSeeAccessGroups(permissions)) {
             builder.accessGroups(
