@@ -17,7 +17,6 @@ public class DefaultSettingsMapper {
                 List.of(
                         createPrivateDashboardLayout(DashboardTypes.METRIC, MetricType.CPU_PERCENT),
                         createPrivateDashboardLayout(DashboardTypes.LOGS, null)));
-        gameServer.setPublicDashboardLayouts(List.of(createPublicDashboardLayout()));
     }
 
     private MetricLayout createMetricLayout(String metricType) {
@@ -35,14 +34,6 @@ public class DefaultSettingsMapper {
         if (metricType != null) {
             layout.setMetricType(metricType.getValue());
         }
-        return layout;
-    }
-
-    private PublicDashboardLayout createPublicDashboardLayout() {
-        PublicDashboardLayout layout = new PublicDashboardLayout();
-        layout.setPublicDashboardTypes(DashboardTypes.METRIC);
-        layout.setSize(Size.LARGE);
-        layout.setMetricType(MetricType.CPU_PERCENT.getValue());
         return layout;
     }
 }
