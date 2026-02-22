@@ -5,6 +5,7 @@ import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.Acc
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerAccessGroupDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
@@ -49,14 +50,13 @@ public class GameServerConfigurationController {
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{uuid}/layout/public-dashboard/{is_public}")
+    @PatchMapping("/{uuid}/layout/public-dashboard}")
     @NeedsValidation(Operation.GAME_SERVER_PUBLIC_DASHBOARD_CONFIG_CHANGE)
     public ResponseEntity<Void> updatePublicDashboardLayout(
             @PathVariable @ResourceId String uuid,
-            @PathVariable("is_public") boolean isPublic,
-            @Valid @RequestBody List<PublicDashboardLayout> publicDashboardLayouts) {
+            @Valid @RequestBody PublicDashboard publicDashboard) {
         gameServerConfigurationService.updatePublicDashboardLayout(
-                uuid, publicDashboardLayouts, isPublic);
+                uuid, publicDashboard.getPublicDashboardLayouts(), publicDashboard.isPublicDashboardEnabled());
         return ResponseEntity.ok().build();
     }
 

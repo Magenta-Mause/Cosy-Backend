@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
+import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.GameServerDesign;
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
@@ -90,9 +91,10 @@ public class GameServerConfigurationService {
                     }
                 });
 
-        gameServer.getPublicDashboardLayouts().clear();
-        gameServer.getPublicDashboardLayouts().addAll(publicDashboardLayouts);
-        gameServer.setPublicDashboardEnabled(isPublic);
+        PublicDashboard layout = gameServer.getPublicDashboard();
+        layout.getPublicDashboardLayouts().clear();
+        layout.getPublicDashboardLayouts().addAll(publicDashboardLayouts);
+        layout.setPublicDashboardEnabled(isPublic);
         gameServerRepository.save(gameServer);
     }
 }

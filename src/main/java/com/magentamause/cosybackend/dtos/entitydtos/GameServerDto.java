@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
@@ -56,11 +57,9 @@ public class GameServerDto {
 
     @NotNull private List<PrivateDashboardLayout> privateDashboardLayouts;
 
-    @NotNull private List<PublicDashboardLayout> publicDashboardLayouts;
-
     @NotNull private List<GameServerAccessGroupDto> accessGroups;
 
-    private boolean publicDashboardEnabled;
+    @NotNull private PublicDashboard publicDashboard;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     public enum GameServerStatus {

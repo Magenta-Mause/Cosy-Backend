@@ -4,13 +4,13 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameEntity;
+import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
-import com.magentamause.cosybackend.entities.layout.PublicDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerFieldVisibilityPolicy;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -56,9 +58,6 @@ public class GameServerEntity {
 
     @Column(nullable = false)
     private String dockerImageName;
-
-    @Column(nullable = false)
-    private boolean publicDashboardEnabled = false;
 
     private String dockerImageTag;
 
@@ -105,17 +104,16 @@ public class GameServerEntity {
     @OrderColumn(name = "private_dashboard_layout_index")
     private List<PrivateDashboardLayout> privateDashboardLayouts;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "public_dashboard_layout_uuid")
-    @OrderColumn(name = "public_dashboard_layout_index")
-    private List<PublicDashboardLayout> publicDashboardLayouts;
-
     @OneToMany(
             mappedBy = "gameServer",
             cascade = CascadeType.ALL,
             orphanRemoval = true,
             fetch = FetchType.EAGER)
     private List<GameServerAccessGroupEntity> accessGroups;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "public_dashboard_id", nullable = false)
+    private PublicDashboard publicDashboard;
 
     public GameServerDto toDto() {
         return GameServerDto.builder()
@@ -136,8 +134,7 @@ public class GameServerEntity {
                 .environmentVariables(this.getEnvironmentVariables())
                 .volumeMounts(this.getVolumeMounts())
                 .metricLayout(this.getMetricLayout())
-                .publicDashboardLayouts(this.getPublicDashboardLayouts())
-                .publicDashboardEnabled(this.isPublicDashboardEnabled())
+                .publicDashboard(this.getPublicDashboard())
                 .accessGroups(
                         Optional.ofNullable(this.getAccessGroups())
                                 .map(
@@ -156,8 +153,7 @@ public class GameServerEntity {
                 .serverName(this.getServerName())
                 .status(this.getStatus())
                 .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
-                .publicDashboardLayouts(this.getPublicDashboardLayouts())
-                .publicDashboardEnabled(this.isPublicDashboardEnabled())
+                .publicDashboard(this.publicDashboard)
                 .build();
     }
 
@@ -172,8 +168,7 @@ public class GameServerEntity {
                 GameServerDto.builder()
                         .uuid(this.getUuid())
                         .serverName(this.getServerName())
-                        .publicDashboardLayouts(this.getPublicDashboardLayouts())
-                        .publicDashboardEnabled(this.isPublicDashboardEnabled())
+                        .publicDashboard(this.publicDashboard)
                         .owner(
                                 Optional.ofNullable(this.getOwner())
                                         .map(UserEntity::toDto)
