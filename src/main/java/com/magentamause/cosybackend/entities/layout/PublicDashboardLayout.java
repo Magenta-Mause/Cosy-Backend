@@ -24,7 +24,7 @@ public class PublicDashboardLayout extends Layout {
     @CollectionTable(
             name = "public_dashboard_content",
             joinColumns = @JoinColumn(name = "public_dashboard_layout_id"))
-    private List<KeyValue> content;
+    private List<KeyValueEntry> content;
 
     public boolean isValid() {
         if (publicDashboardTypes == null) return false;

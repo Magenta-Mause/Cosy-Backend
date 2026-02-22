@@ -25,7 +25,7 @@ public class PrivateDashboardLayout extends Layout {
     @CollectionTable(
             name = "private_dashboard_content",
             joinColumns = @JoinColumn(name = "private_dashboard_layout_id"))
-    private List<KeyValue> content;
+    private List<KeyValueEntry> content;
 
     public boolean isValid() {
         if (privateDashboardTypes == null) return false;

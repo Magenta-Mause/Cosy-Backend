@@ -7,7 +7,7 @@ import lombok.Setter;
 @Embeddable
 @Getter
 @Setter
-public class KeyValue {
+public class KeyValueEntry {
     private String Key;
     private String Value;
 }
