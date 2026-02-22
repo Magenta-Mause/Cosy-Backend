@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.entities.GameServerEventType;
 import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.entities.WebhookType;
-import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -36,9 +35,8 @@ public class WebhookCreationDto {
     @Builder.Default private Boolean enabled = true;
     @NotNull private Set<GameServerEventType> subscribedEvents;
 
-    public WebhookEntity toEntity(GameServerEntity gameServer) {
+    public WebhookEntity toEntity() {
         return WebhookEntity.builder()
-                .gameServer(gameServer)
                 .webhookType(this.webhookType)
                 .webhookUrl(this.webhookUrl)
                 .enabled(Objects.requireNonNullElse(this.enabled, true))

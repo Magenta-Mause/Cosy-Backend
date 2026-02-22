@@ -9,10 +9,10 @@ import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.entities.WebhookType;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
-import com.magentamause.cosybackend.repositories.WebhookRepository;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.WebhookSender;
-import com.magentamause.cosybackend.websockets.WebhookChangePublisher;
+import com.magentamause.cosybackend.websockets.GameServerPublisher;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -27,21 +27,27 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class GameServerWebhookService {
 
-    private final WebhookRepository webhookRepository;
     private final GameServerRepository gameServerRepository;
     private final List<WebhookSender> webhookSenders;
-    private final WebhookChangePublisher webhookChangePublisher;
+    private final GameServerPublisher gameServerPublisher;
 
     public List<WebhookDto> getAllWebhooks(String gameServerUuid) {
-        if (!gameServerRepository.existsById(gameServerUuid)) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Game server with uuid " + gameServerUuid + " not found");
-        }
-        List<WebhookEntity> webhookEntities =
-                webhookRepository.findByGameServer_Uuid(gameServerUuid);
-        return webhookEntities.stream().map(WebhookEntity::toDto).toList();
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(gameServerUuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game server with uuid "
+                                                        + gameServerUuid
+                                                        + " not found"));
+        return Optional.ofNullable(gameServer.getWebhooks()).orElse(new ArrayList<>()).stream()
+                .map(WebhookEntity::toDto)
+                .toList();
     }
 
+    @Transactional
     public WebhookDto createWebhook(String gameServerUuid, WebhookCreationDto creationDto) {
         GameServerEntity gameServer =
                 gameServerRepository
@@ -53,17 +59,43 @@ public class GameServerWebhookService {
                                                 "Game server with uuid "
                                                         + gameServerUuid
                                                         + " not found"));
-        WebhookEntity webhookEntity = creationDto.toEntity(gameServer);
-        WebhookDto savedWebhook = webhookRepository.save(webhookEntity).toDto();
-        webhookChangePublisher.publishChange(gameServerUuid, savedWebhook);
+        WebhookEntity webhookEntity = creationDto.toEntity();
+
+        if (gameServer.getWebhooks() == null) {
+            gameServer.setWebhooks(new ArrayList<>());
+        }
+        gameServer.getWebhooks().add(webhookEntity);
+
+        GameServerEntity savedGameServer = gameServerRepository.save(gameServer);
+        WebhookDto savedWebhook =
+                savedGameServer.getWebhooks().stream()
+                        .filter(w -> w.getWebhookUrl().equals(webhookEntity.getWebhookUrl()))
+                        .findFirst()
+                        .orElseThrow()
+                        .toDto();
+
+        gameServerPublisher.publishGameServer(gameServerUuid, savedGameServer.toDto());
         return savedWebhook;
     }
 
+    @Transactional
     public WebhookDto updateWebhook(
             String gameserverUuid, String webhookUuid, WebhookUpdateDto updateDto) {
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(gameserverUuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game server with uuid "
+                                                        + gameserverUuid
+                                                        + " not found"));
+
         WebhookEntity webhookEntity =
-                webhookRepository
-                        .findByUuidAndGameServer_Uuid(webhookUuid, gameserverUuid)
+                Optional.ofNullable(gameServer.getWebhooks()).orElse(new ArrayList<>()).stream()
+                        .filter(w -> w.getUuid().equals(webhookUuid))
+                        .findFirst()
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(
@@ -71,16 +103,34 @@ public class GameServerWebhookService {
                                                 String.format(
                                                         "Webhook '%s' not found for game server '%s'",
                                                         webhookUuid, gameserverUuid)));
+
         updateDto.applyToEntity(webhookEntity);
-        WebhookDto updatedWebhook = webhookRepository.save(webhookEntity).toDto();
-        webhookChangePublisher.publishChange(gameserverUuid, updatedWebhook);
+        GameServerEntity savedGameServer = gameServerRepository.save(gameServer);
+        WebhookDto updatedWebhook = webhookEntity.toDto();
+
+        gameServerPublisher.publishGameServer(gameserverUuid, savedGameServer.toDto());
         return updatedWebhook;
     }
 
     @Transactional
     public void deleteWebhook(String gameServerUuid, String webhookId) {
-        var webhook = webhookRepository.findByUuidAndGameServer_Uuid(webhookId, gameServerUuid);
-        if (webhook.isEmpty()) {
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(gameServerUuid)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game server with uuid "
+                                                        + gameServerUuid
+                                                        + " not found"));
+
+        boolean removed =
+                Optional.ofNullable(gameServer.getWebhooks())
+                        .orElse(new ArrayList<>())
+                        .removeIf(w -> w.getUuid().equals(webhookId));
+
+        if (!removed) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "Webhook '"
@@ -89,22 +139,26 @@ public class GameServerWebhookService {
                             + gameServerUuid
                             + "'");
         }
-        WebhookDto deletedWebhook = webhook.get().toDto();
-        long deleted = webhookRepository.deleteByUuidAndGameServer_Uuid(webhookId, gameServerUuid);
-        if (deleted == 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Webhook '"
-                            + webhookId
-                            + "' not found for game server '"
-                            + gameServerUuid
-                            + "'");
-        }
-        webhookChangePublisher.publishChange(gameServerUuid, deletedWebhook);
+
+        GameServerEntity savedGameServer = gameServerRepository.save(gameServer);
+        gameServerPublisher.publishGameServer(gameServerUuid, savedGameServer.toDto());
     }
 
     public void dispatch(GameServerDomainEvent event) {
-        List<WebhookEntity> webhooks = webhookRepository.findByGameServer_Uuid(event.serverId());
+        GameServerEntity gameServer =
+                gameServerRepository
+                        .findById(event.serverId())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Game server with uuid "
+                                                        + event.serverId()
+                                                        + " not found"));
+
+        List<WebhookEntity> webhooks =
+                Optional.ofNullable(gameServer.getWebhooks()).orElse(new ArrayList<>());
+
         for (WebhookEntity webhook : webhooks) {
             if (!webhook.isEnabled()
                     || !webhook.getSubscribedEvents().contains(event.eventType())) {

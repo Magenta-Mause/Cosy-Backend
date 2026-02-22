@@ -1,7 +1,6 @@
 package com.magentamause.cosybackend.entities;
 
 import com.magentamause.cosybackend.dtos.entitydtos.WebhookDto;
-import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,10 +17,6 @@ public class WebhookEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String uuid;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "game_server_uuid", nullable = false)
-    private GameServerEntity gameServer;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

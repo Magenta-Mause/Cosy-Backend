@@ -57,6 +57,8 @@ public class GameServerDto {
 
     @NotNull private List<GameServerAccessGroupDto> accessGroups;
 
+    private List<WebhookDto> webhooks;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     public enum GameServerStatus {
         RUNNING,
