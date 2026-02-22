@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.controllers.gameserver;
 
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerDesignUpdateDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerAccessGroupDto;
@@ -45,6 +46,16 @@ public class GameServerConfigurationController {
             @Valid @RequestBody List<PrivateDashboardLayout> privateDashboardLayout) {
         gameServerConfigurationService.updatePrivateDashboardLayout(uuid, privateDashboardLayout);
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{uuid}/design")
+    @NeedsValidation(Operation.GAME_SERVER_UPDATE)
+    public ResponseEntity<GameServerDto> updateDesign(
+            @PathVariable @ResourceId String uuid,
+            @RequestBody @Valid GameServerDesignUpdateDto updateDto) {
+        GameServerEntity gameServer =
+                gameServerConfigurationService.updateDesign(uuid, updateDto.getDesign());
+        return ResponseEntity.ok(gameServer.toDto(securityContextService.getUser()));
     }
 
     @PatchMapping("/{uuid}/rcon-configuration")
