@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/game-server")
 public class GameServerDesignController {
-    GameServerConfigurationService gameServerConfigurationService;
-    SecurityContextService securityContextService;
+    private final GameServerConfigurationService gameServerConfigurationService;
+    private final SecurityContextService securityContextService;
 
     @PatchMapping("/{uuid}/design")
     @NeedsValidation(Operation.GAME_SERVER_UPDATE)

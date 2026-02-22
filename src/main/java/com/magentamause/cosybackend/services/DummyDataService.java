@@ -5,6 +5,7 @@ import com.magentamause.cosybackend.dtos.actiondtos.gameserver.VolumeMountConfig
 import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
+import com.magentamause.cosybackend.entities.gameserver.utility.GameServerDesign;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.repositories.DummyInstantiatedPropertiesRepository;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
@@ -53,6 +54,7 @@ public class DummyDataService {
                 List.of(
                         GameServerCreationDto.builder()
                                 .serverName("TOSIOS - No Limits")
+                                .design(GameServerDesign.CASTLE)
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
                                 .dockerHardwareLimits(DockerHardwareLimits.builder().build())
@@ -67,6 +69,7 @@ public class DummyDataService {
                                 .build(),
                         GameServerCreationDto.builder()
                                 .serverName("TOSIOS - Memory Only")
+                                .design(GameServerDesign.HOUSE)
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
                                 .dockerHardwareLimits(
@@ -84,6 +87,7 @@ public class DummyDataService {
                                 .build(),
                         GameServerCreationDto.builder()
                                 .serverName("TOSIOS - CPU Only")
+                                .design(GameServerDesign.CASTLE)
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
                                 .dockerHardwareLimits(
@@ -101,6 +105,7 @@ public class DummyDataService {
                                 .build(),
                         GameServerCreationDto.builder()
                                 .serverName("TOSIOS - Memory and CPU")
+                                .design(GameServerDesign.HOUSE)
                                 .dockerImageName("halftheopposite/tosios")
                                 .dockerImageTag("latest")
                                 .dockerHardwareLimits(
