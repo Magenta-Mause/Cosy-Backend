@@ -1,6 +1,8 @@
 package com.magentamause.cosybackend.security.accessmanagement.policies;
 
+import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.DashboardTypes;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
@@ -9,25 +11,29 @@ import com.magentamause.cosybackend.security.accessmanagement.Validates;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Component
 public class GameServerMetricPolicy {
 
     @Validates(Operation.GAME_SERVER_METRIC_READ)
     public static boolean canReadMetrics(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
-        return resolver.getGameServerEntity((String) referenceId)
-                .map(
-                        server -> {
-                            if (server.isPublicDashboardEnabled()
-                                    && server.getPublicDashboardLayouts().stream()
-                                            .anyMatch(
-                                                    layout ->
-                                                            layout.getPublicDashboardTypes()
-                                                                    == DashboardTypes.METRIC))
-                                return true;
-                            return GameServerPermissionsUtility.isOwnerOrHasPermission(
-                                    server, user, GameServerAccessPermission.READ_SERVER_METRICS);
-                        })
-                .orElse(false);
+        Optional<GameServerEntity> gameServerEntity =
+                resolver.getGameServerEntity((String) referenceId);
+        if (gameServerEntity.isEmpty()) {
+            return false;
+        }
+        PublicDashboard publicDashboard = gameServerEntity.get().getPublicDashboard();
+        if (publicDashboard.isPublicDashboardEnabled()
+                && publicDashboard.getPublicDashboardLayouts().stream()
+                .anyMatch(
+                        layout ->
+                                layout.getPublicDashboardTypes() == DashboardTypes.METRIC)) {
+            return true;
+        }
+        return GameServerPermissionsUtility.isOwnerOrHasPermission(
+                gameServerEntity.get(), user, GameServerAccessPermission.READ_SERVER_METRICS);
     }
+
 }
