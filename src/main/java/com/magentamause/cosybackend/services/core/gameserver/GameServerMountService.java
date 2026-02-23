@@ -1016,7 +1016,6 @@ public class GameServerMountService {
         boolean isRootRequest = inner.isBlank();
         Path requested =
                 isRootRequest ? volumeRoot : resolveInsideRoot(volumeRoot, inner, true, "Path");
-
         if (!isRootRequest) {
             if (!requested.startsWith(volumeRoot)) {
                 throw new ResponseStatusException(
@@ -1034,7 +1033,7 @@ public class GameServerMountService {
         String baseDir =
                 Optional.ofNullable(engineProperties)
                         .map(EngineProperties::docker)
-                        .map(EngineProperties.Docker::volumeDirectory)
+                        .map(EngineProperties.Docker::inBackendVolumeMountPath)
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(

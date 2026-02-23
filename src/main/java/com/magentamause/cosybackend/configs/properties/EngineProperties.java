@@ -11,5 +11,6 @@ public record EngineProperties(Docker docker) {
             boolean tls,
             String certPath,
             String volumeDirectory,
-            String containerNamePrefix) {}
+            String containerNamePrefix,
+            String inBackendVolumeMountPath) {}
 }

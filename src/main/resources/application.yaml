@@ -61,6 +61,7 @@ cosy:
       cert-path: "" # Path to TLS certs if enabled
       volume-directory: ${COSY_DOCKER_VOLUME_DIRECTORY:./dummy/cosy/volume-mounts}
       container-name-prefix: ${COSY_DOCKER_CONTAINER_PREFIX:cosy-} # Prefix for container names
+      in-backend-volume-mount-path: ${COSY_DOCKER_BACKEND_VOLUME_MOUNT_PATH:./dummy/cosy/volume-mounts}
   footer:
     full-name: ${COSY_FOOTER_FULL_NAME:Full Name}
     email: ${COSY_FOOTER_EMAIL:yourEmail@example.org}
