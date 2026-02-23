@@ -128,11 +128,14 @@ public class GameServerFileController {
         if (name.isBlank()) name = "archive";
 
         StreamingResponseBody body =
-                outputStream -> gameServerMountService.streamDirectoryAsZip(uuid, path, outputStream);
+                outputStream ->
+                        gameServerMountService.streamDirectoryAsZip(uuid, path, outputStream);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + ".zip\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + name + ".zip\"")
                 .body(body);
     }
 

@@ -10,10 +10,8 @@ import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDash
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
 import java.time.LocalDateTime;
 import java.util.List;
-
 import lombok.Builder;
 import lombok.Data;
 
@@ -22,64 +20,42 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Builder
 public class GameServerDto {
-    @NotBlank
-    private String uuid;
-    @NotBlank
-    private String serverName;
+    @NotBlank private String uuid;
+    @NotBlank private String serverName;
 
-    @NotBlank
-    @Valid
-    private UserEntityDto owner;
+    @NotBlank @Valid private UserEntityDto owner;
 
-    @NotNull
-    @Valid
-    private GameServerStatus status;
+    @NotNull @Valid private GameServerStatus status;
 
     private GameServerDesign design;
 
     private LocalDateTime createdOn;
 
-    @NotNull
-    @Valid
-    private LocalDateTime timestampLastStarted;
+    @NotNull @Valid private LocalDateTime timestampLastStarted;
 
-    @Valid
-    private RCONConfiguration rconConfiguration;
+    @Valid private RCONConfiguration rconConfiguration;
 
-    @NotBlank
-    private String gameUuid;
+    @NotBlank private String gameUuid;
 
-    @NotBlank
-    private String dockerImageName;
+    @NotBlank private String dockerImageName;
 
-    @NotBlank
-    private String dockerImageTag;
+    @NotBlank private String dockerImageTag;
 
-    @Valid
-    private DockerHardwareLimits dockerHardwareLimits;
+    @Valid private DockerHardwareLimits dockerHardwareLimits;
 
     private List<String> executionCommand;
 
-    @NotNull
-    @Valid
-    private List<PortMapping> portMappings;
+    @NotNull @Valid private List<PortMapping> portMappings;
 
-    @NotNull
-    @Valid
-    private List<EnvironmentVariableConfiguration> environmentVariables;
+    @NotNull @Valid private List<EnvironmentVariableConfiguration> environmentVariables;
 
-    @NotNull
-    @Valid
-    private List<VolumeMountConfiguration> volumeMounts;
+    @NotNull @Valid private List<VolumeMountConfiguration> volumeMounts;
 
-    @NotNull
-    private List<MetricLayout> metricLayout;
+    @NotNull private List<MetricLayout> metricLayout;
 
-    @NotNull
-    private List<PrivateDashboardLayout> privateDashboardLayouts;
+    @NotNull private List<PrivateDashboardLayout> privateDashboardLayouts;
 
-    @NotNull
-    private List<GameServerAccessGroupDto> accessGroups;
+    @NotNull private List<GameServerAccessGroupDto> accessGroups;
 
     private List<WebhookDto> webhooks;
 

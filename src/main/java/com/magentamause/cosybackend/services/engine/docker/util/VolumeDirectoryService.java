@@ -135,7 +135,8 @@ public class VolumeDirectoryService {
                     deleteDirectoryRecursive(dir);
                 }
             } catch (IOException e) {
-                log.error("Failed to delete volume directory '{}' during selective cleanup", dir, e);
+                log.error(
+                        "Failed to delete volume directory '{}' during selective cleanup", dir, e);
             }
         }
     }
