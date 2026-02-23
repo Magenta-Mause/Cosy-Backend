@@ -11,7 +11,7 @@ import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.WebhookSender;
-import com.magentamause.cosybackend.websockets.GameServerPublisher;
+import com.magentamause.cosybackend.websockets.GameServerUpdatePublisher;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +29,7 @@ public class GameServerWebhookService {
 
     private final GameServerRepository gameServerRepository;
     private final List<WebhookSender> webhookSenders;
-    private final GameServerPublisher gameServerPublisher;
+    private final GameServerUpdatePublisher gameServerUpdatePublisher;
 
     public List<WebhookDto> getAllWebhooks(String gameServerUuid) {
         GameServerEntity gameServer =
@@ -74,7 +74,7 @@ public class GameServerWebhookService {
                         .orElseThrow()
                         .toDto();
 
-        gameServerPublisher.publishGameServer(gameServerUuid, savedGameServer.toDto());
+        gameServerUpdatePublisher.publishGameServerUpdate(gameServerUuid, savedGameServer.toDto());
         return savedWebhook;
     }
 
@@ -108,7 +108,7 @@ public class GameServerWebhookService {
         GameServerEntity savedGameServer = gameServerRepository.save(gameServer);
         WebhookDto updatedWebhook = webhookEntity.toDto();
 
-        gameServerPublisher.publishGameServer(gameserverUuid, savedGameServer.toDto());
+        gameServerUpdatePublisher.publishGameServerUpdate(gameserverUuid, savedGameServer.toDto());
         return updatedWebhook;
     }
 
@@ -141,7 +141,7 @@ public class GameServerWebhookService {
         }
 
         GameServerEntity savedGameServer = gameServerRepository.save(gameServer);
-        gameServerPublisher.publishGameServer(gameServerUuid, savedGameServer.toDto());
+        gameServerUpdatePublisher.publishGameServerUpdate(gameServerUuid, savedGameServer.toDto());
     }
 
     public void dispatch(GameServerDomainEvent event) {

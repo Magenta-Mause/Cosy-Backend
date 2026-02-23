@@ -29,7 +29,7 @@ import com.magentamause.cosybackend.services.engine.docker.util.VolumeDirectoryS
 import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
-import com.magentamause.cosybackend.websockets.GameServerPublisher;
+import com.magentamause.cosybackend.websockets.GameServerUpdatePublisher;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -57,7 +57,7 @@ public class GameServerService {
     private final UserEntityService userEntityService;
     private final EngineManager engineManager;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
-    private final GameServerPublisher gameServerPublisher;
+    private final GameServerUpdatePublisher gameServerUpdatePublisher;
     private final GameServerDockerProgressPublisher dockerProgressPublisher;
     private final GameServerLogService gameServerLogService;
     private final GamesService gamesService;
@@ -348,7 +348,8 @@ public class GameServerService {
         GameServerDto.GameServerStatus previousStatus = serverConfig.getStatus();
         serverConfig.setStatus(status);
         GameServerEntity savedServer = gameServerRepository.save(serverConfig);
-        gameServerPublisher.publishGameServer(savedServer.getUuid(), savedServer.toDto());
+        gameServerUpdatePublisher.publishGameServerUpdate(
+                savedServer.getUuid(), savedServer.toDto());
         webhookService.handleStatusTransition(
                 serverConfig.getUuid(), serverConfig.getServerName(), previousStatus, status);
     }

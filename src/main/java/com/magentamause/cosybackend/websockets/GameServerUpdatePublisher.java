@@ -10,15 +10,15 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GameServerPublisher {
+public class GameServerUpdatePublisher {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    public void publishGameServer(String serverUuid, GameServerDto gameServer) {
+    public void publishGameServerUpdate(String serverUuid, GameServerDto gameServer) {
         String topic =
                 WebSocketDestinations.Topics.GAME_SERVER_UPDATES.replace("{serverId}", serverUuid);
 
-        log.info("Publishing game server update to {}: {}", topic, gameServer.getUuid());
+        log.debug("Publishing game server update to {}: {}", topic, gameServer.getUuid());
         messagingTemplate.convertAndSend(topic, gameServer);
     }
 }
