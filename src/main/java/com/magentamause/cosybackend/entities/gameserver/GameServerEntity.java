@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
@@ -108,6 +109,10 @@ public class GameServerEntity {
             fetch = FetchType.EAGER)
     private List<GameServerAccessGroupEntity> accessGroups;
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "game_server_uuid")
+    private List<WebhookEntity> webhooks;
+
     public GameServerDto toDto() {
         return GameServerDto.builder()
                 .uuid(this.getUuid())
@@ -133,6 +138,14 @@ public class GameServerEntity {
                                         access ->
                                                 access.stream()
                                                         .map(GameServerAccessGroupEntity::toDto)
+                                                        .toList())
+                                .orElse(null))
+                .webhooks(
+                        Optional.ofNullable(this.getWebhooks())
+                                .map(
+                                        webhooks ->
+                                                webhooks.stream()
+                                                        .map(WebhookEntity::toDto)
                                                         .toList())
                                 .orElse(null))
                 .build();
@@ -187,6 +200,12 @@ public class GameServerEntity {
                                             access.stream()
                                                     .map(GameServerAccessGroupEntity::toDto)
                                                     .toList())
+                            .orElse(null));
+        }
+        if (GameServerFieldVisibilityPolicy.canSeeWebhooks(permissions)) {
+            builder.webhooks(
+                    Optional.ofNullable(this.getWebhooks())
+                            .map(webhooks -> webhooks.stream().map(WebhookEntity::toDto).toList())
                             .orElse(null));
         }
         return builder.build();
