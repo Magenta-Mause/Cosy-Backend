@@ -73,11 +73,8 @@ public class UserPolicy {
         if (userToDelete == null) {
             return false;
         }
-        if (user.getRole().equals(UserEntity.Role.OWNER) && user.getUuid().equals(userToDelete.getUuid())) {
-            return false;
-        }
         if (user.getRole().equals(UserEntity.Role.OWNER)) {
-            return true;
+            return !user.getUuid().equals(userToDelete.getUuid());
         } else if (user.getUuid().equals(userToDelete.getUuid())) {
             return true;
         } else if (userToDelete.getRole().isAdmin()) {
