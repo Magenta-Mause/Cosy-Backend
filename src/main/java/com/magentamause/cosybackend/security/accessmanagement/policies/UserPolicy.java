@@ -48,7 +48,6 @@ public class UserPolicy {
         UserEntity userToChangePassword =
                 resolver.getUserEntity((String) referenceId)
                         .orElse(null);
-
         if (userToChangePassword == null) {
             return false;
         }
@@ -71,11 +70,12 @@ public class UserPolicy {
         UserEntity userToDelete =
                 resolver.getUserEntity((String) referenceId)
                         .orElse(null);
-
         if (userToDelete == null) {
             return false;
         }
-
+        if (user.getRole().equals(UserEntity.Role.OWNER) && user.getUuid().equals(userToDelete.getUuid())) {
+            return false;
+        }
         if (user.getRole().equals(UserEntity.Role.OWNER)) {
             return true;
         } else if (user.getUuid().equals(userToDelete.getUuid())) {
