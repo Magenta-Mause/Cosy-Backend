@@ -1,8 +1,10 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
+import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.layout.*;
 import com.magentamause.cosybackend.entities.metric.MetricType;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +19,11 @@ public class DefaultSettingsMapper {
                 List.of(
                         createPrivateDashboardLayout(DashboardTypes.METRIC, MetricType.CPU_PERCENT),
                         createPrivateDashboardLayout(DashboardTypes.LOGS, null)));
+        gameServer.setPublicDashboard(
+                PublicDashboard.builder()
+                        .publicDashboardEnabled(false)
+                        .publicDashboardLayouts(new ArrayList<>())
+                        .build());
     }
 
     private MetricLayout createMetricLayout(String metricType) {

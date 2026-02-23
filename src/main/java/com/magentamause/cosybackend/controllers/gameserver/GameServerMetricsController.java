@@ -10,7 +10,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -80,8 +79,9 @@ public class GameServerMetricsController {
                     HttpStatus.BAD_REQUEST, "start and end must not be equal");
         }
 
-        if (gameServerService.getPubliclyEvaluableGameServer().stream().anyMatch(gameServer -> !Objects.equals(gameServer.getUuid(), gameServerUuid))) {
-           return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        if (gameServerService.getPubliclyEvaluableGameServer().stream()
+                .anyMatch(gameServer -> !Objects.equals(gameServer.getUuid(), gameServerUuid))) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         return ResponseEntity.ok(

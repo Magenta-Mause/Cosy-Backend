@@ -14,7 +14,7 @@ import tools.jackson.databind.annotation.JsonNaming;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-    public class PublicDashboard {
+public class PublicDashboard {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String uuid;
@@ -23,7 +23,7 @@ import tools.jackson.databind.annotation.JsonNaming;
     private boolean publicDashboardEnabled = false;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "public_dashboard_layout_uuid")
+    @JoinColumn(name = "public_dashboard_uuid")
     @OrderColumn(name = "public_dashboard_layout_index")
     private List<PublicDashboardLayout> publicDashboardLayouts;
 }
