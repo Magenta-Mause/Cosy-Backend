@@ -11,6 +11,7 @@ public enum Operation {
     USER_GET_BY_USERNAME,
     USER_UPDATE,
     USER_CHANGE_PASSWORD,
+    USER_CHANGE_PASSWORD_BY_ADMIN,
     USER_DELETE,
     USER_READ_PERMISSIONS,
 
@@ -50,5 +51,8 @@ public enum Operation {
     // User Invite operations
     USER_INVITE_READ,
     USER_INVITE_CREATE,
-    USER_INVITE_DELETE
+    USER_INVITE_DELETE,
+
+    // Footer operations
+    FOOTER_UPDATE
 }
