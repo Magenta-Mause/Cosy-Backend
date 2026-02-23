@@ -10,7 +10,9 @@ import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.LongByReference;
 import com.sun.jna.ptr.PointerByReference;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessDeniedException;
@@ -38,6 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -934,6 +938,98 @@ public class GameServerMountService {
                 });
     }
 
+    public void streamDirectoryAsZip(
+            String serverUuid, String requestedPath, OutputStream outputStream) throws IOException {
+        // Resolve and validate the path under the read lock, then release it before
+        // doing any network I/O. Holding the lock across the entire transfer would
+        // block all write operations (upload/delete/rename) on this server for the
+        // duration of the download.
+        final Path volumeRoot;
+        final Path startPath;
+
+        Lock l = lockForServer(serverUuid).readLock();
+        l.lock();
+        try {
+            ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
+            volumeRoot = resolved.volumeRoot();
+            startPath = resolved.requested();
+
+            if (!resolved.isRootRequest()) {
+                requireExists(startPath, resolved.innerRelative());
+                requireRealPathInsideRoot(volumeRoot, startPath, resolved.innerRelative());
+            }
+        } finally {
+            l.unlock();
+        }
+
+        // Stream the zip without holding the lock. Files modified or deleted between
+        // now and when they are read are skipped gracefully.
+        try (ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(outputStream))) {
+            if (!Files.isDirectory(startPath, LinkOption.NOFOLLOW_LINKS)) {
+                String name =
+                        startPath.getFileName() != null
+                                ? startPath.getFileName().toString()
+                                : "file";
+                addFileToZip(zos, startPath, name);
+            } else {
+                // Use Files.walk (iterative, heap-based) instead of recursion to avoid
+                // stack overflow on pathologically deep directory trees.
+                try (java.util.stream.Stream<Path> walk = Files.walk(startPath)) {
+                    for (Path entry : (Iterable<Path>) walk::iterator) {
+                        BasicFileAttributes attrs;
+                        try {
+                            attrs =
+                                    Files.readAttributes(
+                                            entry,
+                                            BasicFileAttributes.class,
+                                            LinkOption.NOFOLLOW_LINKS);
+                        } catch (NoSuchFileException e) {
+                            log.debug("Skipping deleted entry in zip: {}", entry);
+                            continue;
+                        }
+
+                        if (attrs.isSymbolicLink()) {
+                            log.debug("Skipping symlink in zip: {}", entry);
+                            continue;
+                        }
+                        if (attrs.isDirectory()) {
+                            continue;
+                        }
+
+                        Path normalized = entry.normalize();
+                        if (!normalized.startsWith(volumeRoot)) {
+                            log.warn("Skipping path outside volume root in zip: {}", entry);
+                            continue;
+                        }
+
+                        String entryName =
+                                startPath.relativize(normalized).toString().replace("\\", "/");
+                        try {
+                            addFileToZip(zos, entry, entryName);
+                        } catch (NoSuchFileException e) {
+                            log.debug("Skipping deleted file in zip: {}", entry);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void addFileToZip(ZipOutputStream zos, Path file, String entryName) throws IOException {
+        zos.putNextEntry(new ZipEntry(entryName));
+        try {
+            Files.copy(file, zos);
+        } catch (IOException e) {
+            try {
+                zos.closeEntry();
+            } catch (IOException ignored) {
+                // suppress secondary exception so the original propagates
+            }
+            throw e;
+        }
+        zos.closeEntry();
+    }
+
     private void deleteSecure(SecureDirectoryStream<Path> root, Path rel) throws IOException {
         SecureTarget t = resolveSecureNoSymlink(root, rel, "Path");
         try {
@@ -1497,5 +1593,11 @@ public class GameServerMountService {
             } catch (IOException ignored) {
             }
         }
+    }
+
+    public String buildZipArchiveName(String path) {
+        String name = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
+        if (name.isBlank()) return "archive";
+        return name;
     }
 }

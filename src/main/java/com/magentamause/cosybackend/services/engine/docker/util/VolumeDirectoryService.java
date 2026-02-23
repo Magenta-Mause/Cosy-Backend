@@ -106,6 +106,41 @@ public class VolumeDirectoryService {
         }
     }
 
+    public void deleteVolumeDirectoriesByUuids(List<String> uuids) {
+        if (uuids == null || uuids.isEmpty()) {
+            return;
+        }
+
+        Path base = volumeBaseDir();
+
+        for (String id : uuids) {
+            if (id == null || id.isBlank()) {
+                log.warn("Skipping null or blank UUID in selective volume cleanup");
+                continue;
+            }
+
+            if (!isValidUuid(id)) {
+                log.warn("Skipping invalid UUID '{}' in selective volume cleanup", id);
+                continue;
+            }
+
+            Path dir = base.resolve(id).normalize();
+            if (!dir.startsWith(base)) {
+                log.warn("Skipping invalid path '{}' in selective volume cleanup", dir);
+                continue;
+            }
+
+            try {
+                if (Files.exists(dir, LinkOption.NOFOLLOW_LINKS)) {
+                    deleteDirectoryRecursive(dir);
+                }
+            } catch (IOException e) {
+                log.error(
+                        "Failed to delete volume directory '{}' during selective cleanup", dir, e);
+            }
+        }
+    }
+
     private static void assertValidUuidOrThrow(String value, HttpStatus status, String message) {
         try {
             UUID.fromString(value);

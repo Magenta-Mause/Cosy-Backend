@@ -66,6 +66,10 @@ public class GameServerDto {
         FAILED,
         PULLING_IMAGE,
         AWAITING_UPDATE,
-        STOPPING
+        STOPPING;
+
+        public boolean isStopped() {
+            return this == STOPPED || this == FAILED;
+        }
     }
 }

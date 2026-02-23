@@ -13,8 +13,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.Data;
 
 @Data
@@ -41,7 +43,7 @@ public class GameServerUpdateDto {
             fieldNames = {"containerPath"},
             message = "duplicate volume mounts")
     @Valid
-    private List<VolumeMountConfigurationCreationDto> volumeMounts;
+    private List<VolumeMountConfigurationDto> volumeMounts;
 
     public void applyToEntity(GameServerEntity target, Function<Integer, GameEntity> gameProvider) {
         target.setGame(gameProvider.apply(this.externalGameId));
@@ -58,15 +60,41 @@ public class GameServerUpdateDto {
                         target.getEnvironmentVariables(),
                         this.getEnvironmentVariables(),
                         ArrayList::new));
-        target.setVolumeMounts(
-                updateList(
-                        target.getVolumeMounts(),
-                        this.getVolumeMounts() != null
-                                ? this.getVolumeMounts().stream()
-                                        .map(VolumeMountConfiguration::fromDto)
-                                        .toList()
-                                : null,
-                        ArrayList::new));
+        updateVolumeMounts(target);
+    }
+
+    private void updateVolumeMounts(GameServerEntity target) {
+        List<VolumeMountConfiguration> existing = target.getVolumeMounts();
+        if (existing == null) {
+            existing = new ArrayList<>();
+            target.setVolumeMounts(existing);
+        }
+
+        if (this.getVolumeMounts() == null) {
+            existing.clear();
+            return;
+        }
+
+        Map<String, VolumeMountConfiguration> existingByUuid =
+                existing.stream()
+                        .filter(vm -> vm.getUuid() != null)
+                        .collect(Collectors.toMap(VolumeMountConfiguration::getUuid, vm -> vm));
+
+        List<VolumeMountConfiguration> updated = new ArrayList<>();
+        for (VolumeMountConfigurationDto dto : this.getVolumeMounts()) {
+            if (dto.getUuid() != null && existingByUuid.containsKey(dto.getUuid())) {
+                VolumeMountConfiguration reused = existingByUuid.get(dto.getUuid());
+                reused.setContainerPath(dto.getContainerPath());
+                updated.add(reused);
+            } else {
+                VolumeMountConfiguration fresh = VolumeMountConfiguration.fromDto(dto);
+                fresh.setUuid(null);
+                updated.add(fresh);
+            }
+        }
+
+        existing.clear();
+        existing.addAll(updated);
     }
 
     private <T> List<T> updateList(List<T> target, List<T> source, Supplier<List<T>> listSupplier) {

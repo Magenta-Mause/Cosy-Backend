@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: cosy-backend
+  mvc:
+    async:
+      request-timeout: -1
   datasource:
     url: jdbc:postgresql://localhost:5432/cosy
     username: cosy

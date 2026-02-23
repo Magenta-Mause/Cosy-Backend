@@ -127,6 +127,7 @@ public class GameServerEntity {
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
                 .dockerHardwareLimits(this.getDockerHardwareLimits())
+                .privateDashboardLayouts(this.getPrivateDashboardLayouts())
                 .executionCommand(this.getDockerExecutionCommand())
                 .portMappings(this.getPortMappings())
                 .environmentVariables(this.getEnvironmentVariables())

@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
+import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
@@ -205,13 +206,42 @@ public class GameServerService {
     public GameServerEntity updateGameServerConfiguration(
             String uuid, GameServerUpdateDto updateDto) {
         GameServerEntity gameServer = getOrThrow(uuid);
+        if (!gameServer.getStatus().isStopped()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Cannot update server while it is running");
+        }
+
+        Set<String> oldVolumeUuids =
+                gameServer.getVolumeMounts() != null
+                        ? gameServer.getVolumeMounts().stream()
+                                .map(VolumeMountConfiguration::getUuid)
+                                .filter(id -> id != null)
+                                .collect(Collectors.toSet())
+                        : Set.of();
 
         Function<Integer, GameEntity> gameResolver =
                 (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
 
         updateDto.applyToEntity(gameServer, gameResolver);
 
-        return saveGameServerConfiguration(gameServer, false);
+        GameServerEntity saved = saveGameServerConfiguration(gameServer, false);
+
+        Set<String> newVolumeUuids =
+                saved.getVolumeMounts() != null
+                        ? saved.getVolumeMounts().stream()
+                                .map(VolumeMountConfiguration::getUuid)
+                                .filter(id -> id != null)
+                                .collect(Collectors.toSet())
+                        : Set.of();
+
+        List<String> removedUuids =
+                oldVolumeUuids.stream().filter(id -> !newVolumeUuids.contains(id)).toList();
+
+        if (!removedUuids.isEmpty()) {
+            entry.deleteVolumeDirectoriesByUuids(removedUuids);
+        }
+
+        return saved;
     }
 
     public void startServer(String gameServerUuid, UserEntity user) {
