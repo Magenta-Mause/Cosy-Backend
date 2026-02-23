@@ -47,10 +47,11 @@ public class UserPolicy {
 
         UserEntity userToChangePassword =
                 resolver.getUserEntity((String) referenceId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND, "User not found"));
+                        .orElse(null);
+
+        if (userToChangePassword == null) {
+            return false;
+        }
 
         if (user.getRole().equals(UserEntity.Role.OWNER)) {
             return true;
@@ -69,10 +70,11 @@ public class UserPolicy {
 
         UserEntity userToDelete =
                 resolver.getUserEntity((String) referenceId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND, "User not found"));
+                        .orElse(null);
+
+        if (userToDelete == null) {
+            return false;
+        }
 
         if (user.getRole().equals(UserEntity.Role.OWNER)) {
             return true;
