@@ -156,7 +156,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         env.add("COSY_GAME_SERVER_NAME=" + serverConfig.getServerName());
         env.add("COSY_GAME_SERVER_OWNER=" + serverConfig.getOwner().getUsername());
         env.add("COSY_CONTAINER_SECRET=" + serverConfig.getContainerSecret());
-        env.add("COSY_METRICS_BASE_URL=" + COSY_METRICS_BASE_URL);
+        env.add("COSY_BASE_URL=" + COSY_METRICS_BASE_URL);
         env.add("COSY_METRICS_PERIOD_SECONDS=" + COSY_METRICS_PERIOD_SECONDS);
     }
 
