@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.magentamause.cosybackend.entities.layout.PublicDashboardLayout;
 import jakarta.persistence.*;
 import java.util.List;
@@ -20,8 +21,10 @@ public class PublicDashboard {
     private String uuid;
 
     @Column(nullable = false)
+    @JsonProperty("public_dashboard_enabled")
     private boolean publicDashboardEnabled = false;
 
+    @JsonProperty("public_dashboard_layouts")
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "public_dashboard_uuid")
     @OrderColumn(name = "public_dashboard_layout_index")

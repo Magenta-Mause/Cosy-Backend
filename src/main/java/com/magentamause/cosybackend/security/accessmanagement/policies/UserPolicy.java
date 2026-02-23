@@ -12,7 +12,7 @@ public class UserPolicy {
     @Validates(Operation.USER_GET_ALL)
     public static boolean canGetAllUsers(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
-        return false;
+        return user.getRole().isAdmin();
     }
 
     @Validates(Operation.USER_GET_BY_UUID)
@@ -39,10 +39,43 @@ public class UserPolicy {
         return user.getUuid().equals(referenceId);
     }
 
+    @Validates(Operation.USER_CHANGE_PASSWORD_BY_ADMIN)
+    public static boolean canChangePasswordByAdmin(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+
+        UserEntity userToChangePassword = resolver.getUserEntity((String) referenceId).orElse(null);
+        if (userToChangePassword == null) {
+            return false;
+        }
+
+        if (user.getRole().equals(UserEntity.Role.OWNER)) {
+            return true;
+        } else if (user.getUuid().equals(userToChangePassword.getUuid())) {
+            return true;
+        } else if (userToChangePassword.getRole().isAdmin()) {
+            return false;
+        } else {
+            return user.getRole().isAdmin();
+        }
+    }
+
     @Validates(Operation.USER_DELETE)
     public static boolean canDeleteUser(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
-        return user.getUuid().equals(referenceId);
+
+        UserEntity userToDelete = resolver.getUserEntity((String) referenceId).orElse(null);
+        if (userToDelete == null) {
+            return false;
+        }
+        if (user.getRole().equals(UserEntity.Role.OWNER)) {
+            return !user.getUuid().equals(userToDelete.getUuid());
+        } else if (user.getUuid().equals(userToDelete.getUuid())) {
+            return true;
+        } else if (userToDelete.getRole().isAdmin()) {
+            return false;
+        } else {
+            return user.getRole().isAdmin();
+        }
     }
 
     @Validates(Operation.USER_READ_PERMISSIONS)

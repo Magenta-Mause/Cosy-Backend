@@ -50,8 +50,8 @@ public class GameServerMetricsController {
         TimeRange range = resolveAndValidateTimeRange(start, end);
 
         if (!isPubliclyEvaluable(gameServerUuid)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Game server is not publicly evaluable");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Game server is not publicly evaluable");
         }
 
         return ResponseEntity.ok(
@@ -64,13 +64,12 @@ public class GameServerMetricsController {
         Instant resolvedStart = start != null ? start : now.minus(Duration.ofHours(1));
 
         if (resolvedEnd.isAfter(now)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "end must not be in the future");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "end must not be in the future");
         }
 
         if (!resolvedStart.isBefore(resolvedEnd)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "start must be before end");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "start must be before end");
         }
 
         return new TimeRange(resolvedStart, resolvedEnd);

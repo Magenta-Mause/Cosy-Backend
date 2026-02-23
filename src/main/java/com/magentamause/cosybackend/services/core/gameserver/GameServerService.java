@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
+import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
@@ -29,7 +30,7 @@ import com.magentamause.cosybackend.services.engine.docker.util.VolumeDirectoryS
 import com.magentamause.cosybackend.services.technical.RCONService;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
-import com.magentamause.cosybackend.websockets.GameServerStatusPublisher;
+import com.magentamause.cosybackend.websockets.GameServerUpdatePublisher;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -57,7 +58,7 @@ public class GameServerService {
     private final UserEntityService userEntityService;
     private final EngineManager engineManager;
     private final Set<String> startingServers = ConcurrentHashMap.newKeySet();
-    private final GameServerStatusPublisher statusPublisher;
+    private final GameServerUpdatePublisher gameServerUpdatePublisher;
     private final GameServerDockerProgressPublisher dockerProgressPublisher;
     private final GameServerLogService gameServerLogService;
     private final GamesService gamesService;
@@ -66,6 +67,7 @@ public class GameServerService {
     private final VolumeDirectoryService entry;
     private final RCONService rCONService;
     private final DefaultSettingsMapper defaultSettingsMapper;
+    private final GameServerWebhookService webhookService;
 
     @PostConstruct
     public void init() {
@@ -204,13 +206,42 @@ public class GameServerService {
     public GameServerEntity updateGameServerConfiguration(
             String uuid, GameServerUpdateDto updateDto) {
         GameServerEntity gameServer = getOrThrow(uuid);
+        if (!gameServer.getStatus().isStopped()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Cannot update server while it is running");
+        }
+
+        Set<String> oldVolumeUuids =
+                gameServer.getVolumeMounts() != null
+                        ? gameServer.getVolumeMounts().stream()
+                                .map(VolumeMountConfiguration::getUuid)
+                                .filter(id -> id != null)
+                                .collect(Collectors.toSet())
+                        : Set.of();
 
         Function<Integer, GameEntity> gameResolver =
                 (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
 
         updateDto.applyToEntity(gameServer, gameResolver);
 
-        return saveGameServerConfiguration(gameServer, false);
+        GameServerEntity saved = saveGameServerConfiguration(gameServer, false);
+
+        Set<String> newVolumeUuids =
+                saved.getVolumeMounts() != null
+                        ? saved.getVolumeMounts().stream()
+                                .map(VolumeMountConfiguration::getUuid)
+                                .filter(id -> id != null)
+                                .collect(Collectors.toSet())
+                        : Set.of();
+
+        List<String> removedUuids =
+                oldVolumeUuids.stream().filter(id -> !newVolumeUuids.contains(id)).toList();
+
+        if (!removedUuids.isEmpty()) {
+            entry.deleteVolumeDirectoriesByUuids(removedUuids);
+        }
+
+        return saved;
     }
 
     public void startServer(String gameServerUuid, UserEntity user) {
@@ -344,9 +375,13 @@ public class GameServerService {
     }
 
     public void updateStatus(GameServerEntity serverConfig, GameServerDto.GameServerStatus status) {
+        GameServerDto.GameServerStatus previousStatus = serverConfig.getStatus();
         serverConfig.setStatus(status);
-        gameServerRepository.save(serverConfig);
-        statusPublisher.publishStatus(serverConfig.getUuid(), status);
+        GameServerEntity savedServer = gameServerRepository.save(serverConfig);
+        gameServerUpdatePublisher.publishGameServerUpdate(
+                savedServer.getUuid(), savedServer.toDto());
+        webhookService.handleStatusTransition(
+                serverConfig.getUuid(), serverConfig.getServerName(), previousStatus, status);
     }
 
     public GameServerDto.GameServerStatus getStatus(String serviceName) {

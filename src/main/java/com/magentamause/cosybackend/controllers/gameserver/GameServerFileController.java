@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 @Slf4j
 @RestController
@@ -101,6 +103,39 @@ public class GameServerFileController {
 
         gameServerMountService.uploadFileToBindMountVolume(uuid, path, fileContent);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/download-as-zip", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @NeedsValidation(Operation.GAME_SERVER_FILES_READ)
+    @io.swagger.v3.oas.annotations.Operation(
+            summary = "Download a directory as a zip archive",
+            responses = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Zip archive of the directory",
+                        content =
+                                @Content(
+                                        mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+                                        schema =
+                                                @Schema(
+                                                        type = "string",
+                                                        format = "binary",
+                                                        description = "Zip archive bytes")))
+            })
+    public ResponseEntity<StreamingResponseBody> downloadDirectoryAsZip(
+            @PathVariable @ResourceId String uuid, @RequestParam("path") @NotBlank String path) {
+
+        String zipName = gameServerMountService.buildZipArchiveName(path);
+        StreamingResponseBody body =
+                outputStream ->
+                        gameServerMountService.streamDirectoryAsZip(uuid, path, outputStream);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + zipName + ".zip\"")
+                .body(body);
     }
 
     @PostMapping("/mkdir")

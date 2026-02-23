@@ -48,11 +48,11 @@ The API will be available at <http://localhost:8080/api>.
 
 Cosy supports **custom, game-specific metrics** published directly by your game server (for example via a Minecraft mod/plugin). This is useful for values that Cosy cannot collect automatically, such as:
 
-- `playerCount`
-- `tps`
-- `mspt`
-- current game state / map name
-- modpack-specific stats
+* `playerCount`
+* `tps`
+* `mspt`
+* current game state / map name
+* modpack-specific stats
 
 The server publishes a JSON object (a simple key/value map). Cosy stores this as the server’s *current custom metrics* and will use it for display/streaming.
 
@@ -60,13 +60,13 @@ The server publishes a JSON object (a simple key/value map). Cosy stores this as
 
 Your game server process/container must have these environment variables set (your mod/plugin reads them at runtime):
 
-- `COSY_BACKEND_URL`  
+* `COSY_BACKEND_URL`  
   Base URL of the Cosy backend (e.g. `https://<your-domain>`)
 
-- `COSY_GAMESERVER_UUID`  
+* `COSY_GAMESERVER_UUID`  
   The UUID of this game server in Cosy
 
-- `COSY_CONTAINER_SECRET`  
+* `COSY_CONTAINER_SECRET`  
   Secret used to authenticate custom metric updates
 
 > Tip: Read these once at server startup and fail fast (log a clear error) if any are missing.
@@ -75,8 +75,8 @@ Your game server process/container must have these environment variables set (yo
 
 Before publishing metrics, verify that your credentials are correct by calling the validation endpoint:
 
-- **Method:** `GET`
-- **Goal:** Ensure the backend is reachable and that the `(uuid, secret)` pair is accepted.
+* **Method:** `GET`
+* **Goal:** Ensure the backend is reachable and that the `(uuid, secret)` pair is accepted.
 
 If validation fails (non-2xx), do not spam updates. Log the error and retry with backoff.
 
@@ -91,6 +91,7 @@ Use the following endpoints:
 PUT `/api/internal/game-server/custom-metric/{game-server-uuid}`
 
 Body: JSON object (flat key/value map)
+
 ```json
 {
   "playerCount": 12,
@@ -100,7 +101,9 @@ Body: JSON object (flat key/value map)
   "pvpEnabled": true
 }
 ```
+
 Headers:
+
 ```
 Authorization: `{secret}`
 ```
@@ -110,10 +113,13 @@ Response: 2xx
 GET `api/internal/game-server/test-connection/{game-server-uuid}`
 
 Headers:
+
 ```
 Authorization: `{secret}`
 ```
-Response 2xx with body: 
+
+Response 2xx with body:
+
 ```json
 {
   "data": false, // <-- true if connection successful
@@ -128,6 +134,7 @@ Response 2xx with body:
 Cosy treats this payload as the server’s **current custom metric holder**. Publish on an interval (e.g. every 5–10 seconds) and/or when values change.
 
 ### Suggested workflow (pseudo-code)
+
 ```text
 onServerStart: 
   url = env("COSY_BACKEND_URL")
@@ -143,8 +150,8 @@ every 5s:
 
 ### Recommendations
 
-- Keep metric keys stable (e.g. always `playerCount`, not sometimes `players`).
-- Use primitive values: **number**, **string**, **boolean**.
+* Keep metric keys stable (e.g. always `playerCount`, not sometimes `players`).
+* Use primitive values: **number**, **string**, **boolean**.
 
 ## 🛜 Dependencies
 
@@ -215,17 +222,6 @@ Run unit and integration tests:
 Once the application is running, you can explore the REST API via Swagger UI:
 
 * <http://localhost:8080/api/swagger-ui/index.html>
-
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-
-import static com.magentamause.cosybackend.configs.websockets.WebSocketDestinations.APP_PREFIX;
-import static com.magentamause.cosybackend.configs.websockets.WebSocketDestinations.BROKER_PREFIX;
-import static com.magentamause.cosybackend.configs.websockets.WebSocketDestinations.ENDPOINT;
-
-@Configuration
-@EnableWebSocketMessageBroker
-@RequiredArgsConstructor
 
 ## **🗄️ Database Management**
 

@@ -21,7 +21,7 @@ public class PrivateDashboardLayout extends Layout {
 
     private String title;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "private_dashboard_content",
             joinColumns = @JoinColumn(name = "private_dashboard_layout_id"))

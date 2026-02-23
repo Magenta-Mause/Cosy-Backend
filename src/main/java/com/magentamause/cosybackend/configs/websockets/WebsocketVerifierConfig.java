@@ -29,7 +29,7 @@ public class WebsocketVerifierConfig {
                                 resourceResolverProvider::getObject))
                 .addVerifier(
                         new AccessManagementVerifier(
-                                WebSocketDestinations.Topics.GAME_SERVER_STATUS,
+                                WebSocketDestinations.Topics.GAME_SERVER_UPDATES,
                                 Operation.GAME_SERVER_GET,
                                 validatorRegistryProvider::getObject,
                                 resourceResolverProvider::getObject))
