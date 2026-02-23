@@ -250,9 +250,8 @@ public class GameServerService {
         }
         GameServerEntity serverConfig = getOrThrow(gameServerUuid);
         try {
-            List<GameServerEntity> gameServerStartedByUser =
-                    getGameServersStartedByUser(user.getUuid());
-            hardwareQuotaChecker.assertSufficientQuota(user, serverConfig, gameServerStartedByUser);
+            List<GameServerEntity> gameServersByOwner = getGameServersByOwner(user.getUuid());
+            hardwareQuotaChecker.assertSufficientQuota(user, serverConfig, gameServersByOwner);
 
             startServerAsync(gameServerUuid, serverConfig);
         } catch (HardwareLimitException e) {
@@ -282,7 +281,6 @@ public class GameServerService {
                     "Starting Game Server",
                     false);
             serverConfig.setContainerSecret(gameServerContainerSecret);
-            serverConfig.setLastStartedBy(serverConfig.getOwner());
             serverConfig.setTimestampLastStarted(LocalDateTime.now());
             gameServerRepository.save(serverConfig);
 
@@ -397,8 +395,8 @@ public class GameServerService {
         return server.getStatus();
     }
 
-    private List<GameServerEntity> getGameServersStartedByUser(String userUuid) {
-        return gameServerRepository.findByLastStartedBy_Uuid(userUuid);
+    private List<GameServerEntity> getGameServersByOwner(String userUuid) {
+        return gameServerRepository.findByOwner_Uuid(userUuid);
     }
 
     public void sendCommand(String uuid, String command) {
