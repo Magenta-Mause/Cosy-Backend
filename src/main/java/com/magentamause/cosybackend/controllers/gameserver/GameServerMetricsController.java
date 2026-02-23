@@ -31,27 +31,12 @@ public class GameServerMetricsController {
             @ResourceId @PathVariable String gameServerUuid,
             @RequestParam(required = false) Instant end,
             @RequestParam(required = false) Instant start,
-            @RequestParam(required = false, defaultValue = "100") int pointCount) {
-        Instant now = Instant.now();
-        Instant defaultEnd = (end != null) ? end : now;
-        Instant defaultStart = (start != null) ? start : now.minus(Duration.ofHours(1));
+            @RequestParam(defaultValue = "100") int pointCount) {
 
-        if (defaultEnd.isAfter(now)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "end must not be in the future");
-        }
-
-        if (defaultStart.isAfter(defaultEnd)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "start must be before end");
-        }
-
-        if (defaultEnd.equals(defaultStart)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "start and end must not be equal");
-        }
+        TimeRange range = resolveAndValidateTimeRange(start, end);
 
         return ResponseEntity.ok(
-                queryService.queryMetrics(gameServerUuid, defaultStart, defaultEnd, pointCount));
+                queryService.queryMetrics(gameServerUuid, range.start(), range.end(), pointCount));
     }
 
     @GetMapping("/public")
@@ -60,31 +45,41 @@ public class GameServerMetricsController {
             @ResourceId @PathVariable String gameServerUuid,
             @RequestParam(required = false) Instant end,
             @RequestParam(required = false) Instant start,
-            @RequestParam(required = false, defaultValue = "100") int pointCount) {
-        Instant now = Instant.now();
-        Instant defaultEnd = (end != null) ? end : now;
-        Instant defaultStart = (start != null) ? start : now.minus(Duration.ofHours(1));
+            @RequestParam(defaultValue = "100") int pointCount) {
 
-        if (defaultEnd.isAfter(now)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "end must not be in the future");
-        }
+        TimeRange range = resolveAndValidateTimeRange(start, end);
 
-        if (defaultStart.isAfter(defaultEnd)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "start must be before end");
-        }
-
-        if (defaultEnd.equals(defaultStart)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "start and end must not be equal");
-        }
-
-        if (gameServerService.getPubliclyEvaluableGameServer().stream()
-                .anyMatch(gameServer -> !Objects.equals(gameServer.getUuid(), gameServerUuid))) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        if (!isPubliclyEvaluable(gameServerUuid)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Game server is not publicly evaluable");
         }
 
         return ResponseEntity.ok(
-                queryService.queryMetrics(gameServerUuid, defaultStart, defaultEnd, pointCount));
+                queryService.queryMetrics(gameServerUuid, range.start(), range.end(), pointCount));
     }
+
+    private TimeRange resolveAndValidateTimeRange(Instant start, Instant end) {
+        Instant now = Instant.now();
+        Instant resolvedEnd = end != null ? end : now;
+        Instant resolvedStart = start != null ? start : now.minus(Duration.ofHours(1));
+
+        if (resolvedEnd.isAfter(now)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "end must not be in the future");
+        }
+
+        if (!resolvedStart.isBefore(resolvedEnd)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "start must be before end");
+        }
+
+        return new TimeRange(resolvedStart, resolvedEnd);
+    }
+
+    private boolean isPubliclyEvaluable(String uuid) {
+        return gameServerService.getPubliclyEvaluableGameServer().stream()
+                .anyMatch(gs -> Objects.equals(gs.getUuid(), uuid));
+    }
+
+    private record TimeRange(Instant start, Instant end) {}
 }
