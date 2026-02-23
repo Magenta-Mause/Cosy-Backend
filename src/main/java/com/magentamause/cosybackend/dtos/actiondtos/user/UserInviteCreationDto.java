@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.annotations.ValidUsername;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
+import jakarta.validation.Valid;
 import lombok.Data;
 
 @Data
@@ -13,5 +14,5 @@ public class UserInviteCreationDto {
     @ValidUsername private String username;
     private UserEntity.Role role;
 
-    private DockerHardwareLimits dockerHardwareLimits;
+    @Valid private DockerHardwareLimits dockerHardwareLimits;
 }

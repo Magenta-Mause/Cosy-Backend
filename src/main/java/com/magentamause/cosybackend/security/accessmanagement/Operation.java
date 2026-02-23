@@ -39,11 +39,20 @@ public enum Operation {
     // Game Server Log operations
     GAME_SERVER_LOG_READ,
 
+    // Game Server Webhook operations
+    GAME_SERVER_WEBHOOK_CREATE,
+    GAME_SERVER_WEBHOOK_READ,
+    GAME_SERVER_WEBHOOK_UPDATE,
+    GAME_SERVER_WEBHOOK_DELETE,
+
     // Game Server Metric operations
     GAME_SERVER_METRIC_READ,
 
     // User Invite operations
     USER_INVITE_READ,
     USER_INVITE_CREATE,
-    USER_INVITE_DELETE
+    USER_INVITE_DELETE,
+
+    // Footer operations
+    FOOTER_UPDATE
 }

@@ -1,20 +1,13 @@
-package com.magentamause.cosybackend.controllers.gameserver;
+package com.magentamause.cosybackend.controllers.gameserver.configurations;
 
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.AccessGroupUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerAccessGroupDto;
-import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
-import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
-import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
-import com.magentamause.cosybackend.entities.layout.MetricLayout;
-import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
-import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerAccessGroupService;
-import com.magentamause.cosybackend.services.core.gameserver.GameServerConfigurationService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,38 +17,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/game-server")
-public class GameServerConfigurationController {
-    private final GameServerConfigurationService gameServerConfigurationService;
-    private final GameServerAccessGroupService gameServerAccessGroupService;
-    private final SecurityContextService securityContextService;
-
-    @PatchMapping("/{uuid}/layout/metric")
-    @NeedsValidation(Operation.GAME_SERVER_METRIC_CONFIG_CHANGE)
-    public ResponseEntity<Void> updateMetricLayout(
-            @PathVariable @ResourceId String uuid,
-            @Valid @RequestBody List<MetricLayout> metricLayout) {
-        gameServerConfigurationService.updateMetricLayout(uuid, metricLayout);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/{uuid}/layout/private-dashboard")
-    @NeedsValidation(Operation.GAME_SERVER_PRIVATE_DASHBOARD_CONFIG_CHANGE)
-    public ResponseEntity<Void> updatePrivateDashboard(
-            @PathVariable @ResourceId String uuid,
-            @Valid @RequestBody List<PrivateDashboardLayout> privateDashboardLayout) {
-        gameServerConfigurationService.updatePrivateDashboardLayout(uuid, privateDashboardLayout);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/{uuid}/rcon-configuration")
-    @NeedsValidation(Operation.GAME_SERVER_RCON_CONFIG_CHANGE)
-    public ResponseEntity<GameServerDto> updateRconConfiguration(
-            @PathVariable @ResourceId String uuid,
-            @RequestBody @Valid RCONConfiguration updateDto) {
-        GameServerEntity gameServer =
-                gameServerConfigurationService.updateRconConfig(uuid, updateDto);
-        return ResponseEntity.ok(gameServer.toDto(securityContextService.getUser()));
-    }
+public class GameServerAccessGroupsController {
+    GameServerAccessGroupService gameServerAccessGroupService;
 
     @PostMapping("/{uuid}/access-groups")
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)

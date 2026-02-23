@@ -4,9 +4,7 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.Validates;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class UserPolicy {
@@ -45,9 +43,7 @@ public class UserPolicy {
     public static boolean canChangePasswordByAdmin(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
 
-        UserEntity userToChangePassword =
-                resolver.getUserEntity((String) referenceId)
-                        .orElse(null);
+        UserEntity userToChangePassword = resolver.getUserEntity((String) referenceId).orElse(null);
         if (userToChangePassword == null) {
             return false;
         }
@@ -67,9 +63,7 @@ public class UserPolicy {
     public static boolean canDeleteUser(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
 
-        UserEntity userToDelete =
-                resolver.getUserEntity((String) referenceId)
-                        .orElse(null);
+        UserEntity userToDelete = resolver.getUserEntity((String) referenceId).orElse(null);
         if (userToDelete == null) {
             return false;
         }
