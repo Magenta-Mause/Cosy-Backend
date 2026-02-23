@@ -10,8 +10,11 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Setter
 @Getter
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class PublicDashboard {
+    public class PublicDashboard {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String uuid;

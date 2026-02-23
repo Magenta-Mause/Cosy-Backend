@@ -110,7 +110,7 @@ public class GameServerEntity {
     private List<GameServerAccessGroupEntity> accessGroups;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    @JoinColumn(name = "public_dashboard_id", nullable = false)
+    @JoinColumn(name = "public_dashboard_id")
     private PublicDashboard publicDashboard;
 
     public GameServerDto toDto() {

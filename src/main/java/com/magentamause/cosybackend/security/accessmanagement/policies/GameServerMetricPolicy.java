@@ -9,9 +9,8 @@ import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.Validates;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
-import org.springframework.stereotype.Component;
-
 import java.util.Optional;
+import org.springframework.stereotype.Component;
 
 @Component
 public class GameServerMetricPolicy {
@@ -25,15 +24,15 @@ public class GameServerMetricPolicy {
             return false;
         }
         PublicDashboard publicDashboard = gameServerEntity.get().getPublicDashboard();
-        if (publicDashboard.isPublicDashboardEnabled()
+        if (publicDashboard != null && publicDashboard.isPublicDashboardEnabled()
                 && publicDashboard.getPublicDashboardLayouts().stream()
-                .anyMatch(
-                        layout ->
-                                layout.getPublicDashboardTypes() == DashboardTypes.METRIC)) {
+                        .anyMatch(
+                                layout ->
+                                        layout.getPublicDashboardTypes()
+                                                == DashboardTypes.METRIC)) {
             return true;
         }
         return GameServerPermissionsUtility.isOwnerOrHasPermission(
                 gameServerEntity.get(), user, GameServerAccessPermission.READ_SERVER_METRICS);
     }
-
 }

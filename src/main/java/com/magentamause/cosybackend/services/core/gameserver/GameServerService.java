@@ -479,6 +479,8 @@ public class GameServerService {
     public List<GameServerEntity> getPubliclyEvaluableGameServer() {
         List<GameServerEntity> allGameServers = getAllGameServers();
 
-        return allGameServers.stream().filter(GameServerEntity::isPublicDashboardEnabled).toList();
+        return allGameServers.stream()
+                .filter(gameServer -> gameServer.getPublicDashboard().isPublicDashboardEnabled())
+                .toList();
     }
 }

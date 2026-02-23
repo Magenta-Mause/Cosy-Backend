@@ -40,7 +40,7 @@ public class SecurityConfiguration {
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/game-server/*/logs")
                                         .permitAll()
-                                        .requestMatchers(HttpMethod.GET, "/metrics/*")
+                                        .requestMatchers(HttpMethod.GET, "/game-server/*/metrics")
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/user-invites/*")
                                         .permitAll()

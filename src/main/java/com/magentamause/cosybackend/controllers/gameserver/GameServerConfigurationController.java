@@ -49,7 +49,7 @@ public class GameServerConfigurationController {
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{uuid}/layout/public-dashboard}")
+    @PatchMapping("/{uuid}/layout/public-dashboard")
     @NeedsValidation(Operation.GAME_SERVER_PUBLIC_DASHBOARD_CONFIG_CHANGE)
     public ResponseEntity<Void> updatePublicDashboardLayout(
             @PathVariable @ResourceId String uuid,
