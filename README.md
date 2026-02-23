@@ -137,7 +137,7 @@ Cosy treats this payload as the server’s **current custom metric holder**. Pub
 
 ```text
 onServerStart: 
-  url = env("COSY_BACKEND_URL")
+  url = env("COSY_BASE_URL")
   uuid = env("COSY_GAMESERVER_UUID")
   secret = env("COSY_CONTAINER_SECRET")
   GET url + <validate-endpoint> using uuid + secret 
