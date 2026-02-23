@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.services;
 
 import com.magentamause.cosybackend.configs.properties.DefaultProperties;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreationDto;
-import com.magentamause.cosybackend.dtos.actiondtos.gameserver.VolumeMountConfigurationCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.VolumeMountConfigurationDto;
 import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
@@ -127,7 +127,7 @@ public class DummyDataService {
                                 .environmentVariables(List.of())
                                 .volumeMounts(
                                         List.of(
-                                                VolumeMountConfigurationCreationDto.builder()
+                                                VolumeMountConfigurationDto.builder()
                                                         .containerPath("/app/data")
                                                         .build()))
                                 .build());

@@ -2,7 +2,7 @@ package com.magentamause.cosybackend.entities.gameserver.utility;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.magentamause.cosybackend.dtos.actiondtos.gameserver.VolumeMountConfigurationCreationDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.VolumeMountConfigurationDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,7 +21,7 @@ public class VolumeMountConfiguration {
     @Column(nullable = false)
     private String containerPath;
 
-    public static VolumeMountConfiguration fromDto(VolumeMountConfigurationCreationDto dto) {
+    public static VolumeMountConfiguration fromDto(VolumeMountConfigurationDto dto) {
         return VolumeMountConfiguration.builder()
                 .uuid(dto.getUuid())
                 .containerPath(dto.getContainerPath())

@@ -50,7 +50,7 @@ public class GameServerCreationDto {
             fieldNames = {"containerPath"},
             message = "duplicate volume mounts")
     @Valid
-    private List<VolumeMountConfigurationCreationDto> volumeMounts;
+    private List<VolumeMountConfigurationDto> volumeMounts;
 
     public GameServerEntity toEntity(UserEntity user, Function<Integer, GameEntity> gameProvider) {
 

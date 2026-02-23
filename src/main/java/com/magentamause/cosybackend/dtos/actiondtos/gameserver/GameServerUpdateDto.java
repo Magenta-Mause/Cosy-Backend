@@ -43,7 +43,7 @@ public class GameServerUpdateDto {
             fieldNames = {"containerPath"},
             message = "duplicate volume mounts")
     @Valid
-    private List<VolumeMountConfigurationCreationDto> volumeMounts;
+    private List<VolumeMountConfigurationDto> volumeMounts;
 
     public void applyToEntity(GameServerEntity target, Function<Integer, GameEntity> gameProvider) {
         target.setGame(gameProvider.apply(this.externalGameId));
@@ -81,7 +81,7 @@ public class GameServerUpdateDto {
                         .collect(Collectors.toMap(VolumeMountConfiguration::getUuid, vm -> vm));
 
         List<VolumeMountConfiguration> updated = new ArrayList<>();
-        for (VolumeMountConfigurationCreationDto dto : this.getVolumeMounts()) {
+        for (VolumeMountConfigurationDto dto : this.getVolumeMounts()) {
             if (dto.getUuid() != null && existingByUuid.containsKey(dto.getUuid())) {
                 VolumeMountConfiguration reused = existingByUuid.get(dto.getUuid());
                 reused.setContainerPath(dto.getContainerPath());

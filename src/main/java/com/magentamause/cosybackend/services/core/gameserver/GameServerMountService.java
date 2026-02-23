@@ -1594,4 +1594,10 @@ public class GameServerMountService {
             }
         }
     }
+
+    public String buildZipArchiveName(String path) {
+        String name = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
+        if (name.isBlank()) return "archive";
+        return name;
+    }
 }

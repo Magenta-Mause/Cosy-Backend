@@ -124,9 +124,8 @@ public class GameServerFileController {
             })
     public ResponseEntity<StreamingResponseBody> downloadDirectoryAsZip(
             @PathVariable @ResourceId String uuid, @RequestParam("path") @NotBlank String path) {
-        String name = path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
-        if (name.isBlank()) name = "archive";
 
+        String zipName = gameServerMountService.buildZipArchiveName(path);
         StreamingResponseBody body =
                 outputStream ->
                         gameServerMountService.streamDirectoryAsZip(uuid, path, outputStream);
@@ -135,7 +134,7 @@ public class GameServerFileController {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + name + ".zip\"")
+                        "attachment; filename=\"" + zipName + ".zip\"")
                 .body(body);
     }
 
