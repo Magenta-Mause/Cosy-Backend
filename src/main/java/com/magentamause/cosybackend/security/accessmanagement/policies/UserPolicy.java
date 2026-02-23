@@ -4,9 +4,7 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.Validates;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class UserPolicy {
@@ -45,12 +43,10 @@ public class UserPolicy {
     public static boolean canChangePasswordByAdmin(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
 
-        UserEntity userToChangePassword =
-                resolver.getUserEntity((String) referenceId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND, "User not found"));
+        UserEntity userToChangePassword = resolver.getUserEntity((String) referenceId).orElse(null);
+        if (userToChangePassword == null) {
+            return false;
+        }
 
         if (user.getRole().equals(UserEntity.Role.OWNER)) {
             return true;
@@ -67,15 +63,12 @@ public class UserPolicy {
     public static boolean canDeleteUser(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
 
-        UserEntity userToDelete =
-                resolver.getUserEntity((String) referenceId)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND, "User not found"));
-
+        UserEntity userToDelete = resolver.getUserEntity((String) referenceId).orElse(null);
+        if (userToDelete == null) {
+            return false;
+        }
         if (user.getRole().equals(UserEntity.Role.OWNER)) {
-            return true;
+            return !user.getUuid().equals(userToDelete.getUuid());
         } else if (user.getUuid().equals(userToDelete.getUuid())) {
             return true;
         } else if (userToDelete.getRole().isAdmin()) {
