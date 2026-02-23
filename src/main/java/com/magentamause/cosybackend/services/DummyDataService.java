@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.services;
 
+import com.magentamause.cosybackend.configs.properties.DefaultProperties;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.VolumeMountConfigurationCreationDto;
 import com.magentamause.cosybackend.entities.DummyInstantiatedEntity;
@@ -27,6 +28,7 @@ public class DummyDataService {
     private final GameServerService gameServerService;
     private final DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository;
     private final UserEntityService userEntityService;
+    private final DefaultProperties defaultProperties;
     private List<GameServerCreationDto> dummyGameServers;
     private UserEntity adminUser;
 
@@ -35,16 +37,18 @@ public class DummyDataService {
             PasswordEncoder passwordEncoder,
             GameServerService gameServerService,
             UserEntityService userEntityService,
-            DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository) {
+            DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository,
+            DefaultProperties defaultProperties) {
         this.passwordEncoder = passwordEncoder;
         this.gameServerService = gameServerService;
         this.dummyInstantiatedPropertiesRepository = dummyInstantiatedPropertiesRepository;
         this.userEntityService = userEntityService;
+        this.defaultProperties = defaultProperties;
 
         this.adminUser =
                 UserEntity.builder()
-                        .username("admin")
-                        .password(this.passwordEncoder.encode("admin"))
+                        .username(defaultProperties.admin().username())
+                        .password(this.passwordEncoder.encode(defaultProperties.admin().password()))
                         .defaultPasswordReset(false)
                         .role(UserEntity.Role.OWNER)
                         .build();
