@@ -22,6 +22,9 @@ public class VolumeMountConfiguration {
     private String containerPath;
 
     public static VolumeMountConfiguration fromDto(VolumeMountConfigurationCreationDto dto) {
-        return VolumeMountConfiguration.builder().containerPath(dto.getContainerPath()).build();
+        return VolumeMountConfiguration.builder()
+                .uuid(dto.getUuid())
+                .containerPath(dto.getContainerPath())
+                .build();
     }
 }

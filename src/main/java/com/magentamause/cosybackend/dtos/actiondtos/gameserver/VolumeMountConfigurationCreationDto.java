@@ -14,5 +14,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class VolumeMountConfigurationCreationDto {
+    private String uuid;
     @NotBlank private String containerPath;
 }
