@@ -67,4 +67,7 @@ cosy:
     phone: ${COSY_FOOTER_PHONE:+49 123 4567890}
     street: ${COSY_FOOTER_STREET:Street 5}
     city: ${COSY_FOOTER_CITY:12345 City}
-
+  defaults:
+    admin:
+      username: admin
+      password: admin

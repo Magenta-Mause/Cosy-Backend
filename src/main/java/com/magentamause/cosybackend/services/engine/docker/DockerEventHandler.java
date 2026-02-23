@@ -88,7 +88,7 @@ public class DockerEventHandler implements Closeable {
         String uuid = containerNameResolver.extractUuidFromContainerName(containerName);
         String eventName = event.getAction();
 
-        log.info("Handling Docker event: {} for server {}", eventName, uuid);
+        log.debug("Handling Docker event: {} for server {}", eventName, uuid);
 
         if (eventName == null) {
             log.warn("Received Docker event with null action: {}", event);
