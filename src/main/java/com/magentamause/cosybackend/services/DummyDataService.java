@@ -37,7 +37,8 @@ public class DummyDataService {
             PasswordEncoder passwordEncoder,
             GameServerService gameServerService,
             UserEntityService userEntityService,
-            DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository, DefaultProperties defaultProperties) {
+            DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository,
+            DefaultProperties defaultProperties) {
         this.passwordEncoder = passwordEncoder;
         this.gameServerService = gameServerService;
         this.dummyInstantiatedPropertiesRepository = dummyInstantiatedPropertiesRepository;
