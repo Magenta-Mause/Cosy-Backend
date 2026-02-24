@@ -2,13 +2,38 @@ package com.magentamause.cosybackend.services.core.metrics;
 
 import com.influxdb.query.FluxRecord;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
+import com.magentamause.cosybackend.entities.metric.MetricType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MetricsUtilService {
+
+    private static final String TYPE_SUFFIX_STRING = "__s";
+    private static final String TYPE_SUFFIX_INT = "__i";
+    private static final String TYPE_SUFFIX_FLOAT = "__f";
+    private static final String TYPE_SUFFIX_BOOL = "__b";
+
+    private static final Set<String> NON_CUSTOM_COLUMNS =
+            Set.of(
+                    "result",
+                    "table",
+                    "_start",
+                    "_stop",
+                    "_time",
+                    "_measurement",
+                    "game_server_uuid",
+                    MetricType.CPU_PERCENT.getValue(),
+                    MetricType.MEMORY_PERCENT.getValue(),
+                    MetricType.MEMORY_USAGE.getValue(),
+                    MetricType.MEMORY_LIMIT.getValue(),
+                    MetricType.NETWORK_INPUT.getValue(),
+                    MetricType.NETWORK_OUTPUT.getValue(),
+                    MetricType.BLOCK_READ.getValue(),
+                    MetricType.BLOCK_WRITE.getValue());
 
     public List<MetricPointDto> filterMetrics(
             List<MetricPointDto> metrics, String[] visibleAttributes) {
@@ -42,7 +67,7 @@ public class MetricsUtilService {
                 .build();
     }
 
-    private Map<String, Object> extractCustomMetrics(FluxRecord record) {
+    public Map<String, Object> extractCustomMetrics(FluxRecord record) {
         Map<String, Object> custom = new HashMap<>();
         Map<String, Object> values = record.getValues();
         if (values == null || values.isEmpty()) {
@@ -64,5 +89,15 @@ public class MetricsUtilService {
             custom.put(baseKey, value);
         }
         return custom;
+    }
+
+    private String stripTypeSuffix(String key) {
+        if (key.endsWith(TYPE_SUFFIX_STRING)
+                || key.endsWith(TYPE_SUFFIX_INT)
+                || key.endsWith(TYPE_SUFFIX_FLOAT)
+                || key.endsWith(TYPE_SUFFIX_BOOL)) {
+            return key.substring(0, key.length() - 3);
+        }
+        return key;
     }
 }
