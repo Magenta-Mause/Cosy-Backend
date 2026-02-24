@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.actiondtos.user.PasswordUpdateByAdminDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.PasswordUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.user.UserDockerLimitsUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
@@ -65,6 +66,16 @@ public class UserEntityController {
         UserEntity userWithChangedPassword =
                 userEntityService.changePasswordByAdmin(uuid, request.getNewPassword());
         return ResponseEntity.ok(userWithChangedPassword.toDto());
+    }
+
+    @PatchMapping("/{uuid}/docker-limits")
+    @NeedsValidation(Operation.USER_UPDATE_DOCKER_LIMITS)
+    public ResponseEntity<UserEntityDto> updateDockerLimits(
+            @PathVariable @ResourceId String uuid,
+            @Valid @RequestBody UserDockerLimitsUpdateDto request) {
+        UserEntity updatedUser =
+                userEntityService.updateDockerLimits(uuid, request.getDockerHardwareLimits());
+        return ResponseEntity.ok(updatedUser.toDto());
     }
 
     @GetMapping("/uuid-by-username/{username}")

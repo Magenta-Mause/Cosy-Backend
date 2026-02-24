@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.services.user;
 
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.repositories.UserEntityRepository;
 import java.util.List;
 import java.util.Optional;
@@ -80,6 +81,14 @@ public class UserEntityService {
         UserEntity user = getUserByUuid(uuid);
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        return saveUserEntity(user);
+    }
+
+    public UserEntity updateDockerLimits(String uuid, DockerHardwareLimits dockerHardwareLimits) {
+        log.info("Updating docker limits for user with UUID: {}", uuid);
+        UserEntity user = getUserByUuid(uuid);
+
+        user.setDockerHardwareLimits(dockerHardwareLimits);
         return saveUserEntity(user);
     }
 

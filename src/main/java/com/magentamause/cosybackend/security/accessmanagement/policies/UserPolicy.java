@@ -78,6 +78,23 @@ public class UserPolicy {
         }
     }
 
+    @Validates(Operation.USER_UPDATE_DOCKER_LIMITS)
+    public static boolean canUpdateDockerLimits(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+
+        UserEntity targetUser = resolver.getUserEntity((String) referenceId).orElse(null);
+        if (targetUser == null) {
+            return false;
+        }
+        if (user.getRole().equals(UserEntity.Role.OWNER)) {
+            return true;
+        } else if (targetUser.getRole().isAdmin()) {
+            return false;
+        } else {
+            return user.getRole().isAdmin();
+        }
+    }
+
     @Validates(Operation.USER_READ_PERMISSIONS)
     public static boolean canReadPermissions(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
