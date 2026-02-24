@@ -249,14 +249,21 @@ public class GameServerService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Server is already starting");
         }
         GameServerEntity serverConfig = getOrThrow(gameServerUuid);
+        if (!serverConfig.getStatus().isStopped()) {
+            startingServers.remove(gameServerUuid);
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Server is not in a stopped state");
+        }
         UserEntity gameServerOwner = serverConfig.getOwner();
         try {
-            List<GameServerEntity> gameServersByOwner =
-                    getGameServersByOwner(gameServerOwner.getUuid());
-            hardwareQuotaChecker.assertSufficientQuota(
-                    gameServerOwner, serverConfig, gameServersByOwner);
+            synchronized (gameServerOwner.getUuid().intern()) {
+                List<GameServerEntity> gameServersByOwner =
+                        getGameServersByOwner(gameServerOwner.getUuid());
+                hardwareQuotaChecker.assertSufficientQuota(
+                        gameServerOwner, serverConfig, gameServersByOwner);
 
-            startServerAsync(gameServerUuid, serverConfig);
+                startServerAsync(gameServerUuid, serverConfig);
+            }
         } catch (HardwareLimitException e) {
             startingServers.remove(gameServerUuid);
             log.warn("Could not start Server '{}' - Hardware quota limit reached.", gameServerUuid);
@@ -274,7 +281,7 @@ public class GameServerService {
     }
 
     @Async
-    void startServerAsync(String gameServerUuid, GameServerEntity serverConfig) {
+    protected void startServerAsync(String gameServerUuid, GameServerEntity serverConfig) {
         log.info("Starting server {}", gameServerUuid);
         try {
             String gameServerContainerSecret = SecretGenerator.generateSecret();
