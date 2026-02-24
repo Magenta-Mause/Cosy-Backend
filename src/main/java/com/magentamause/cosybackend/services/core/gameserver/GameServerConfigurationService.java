@@ -92,9 +92,9 @@ public class GameServerConfigurationService {
                 });
 
         PublicDashboard layout = gameServer.getPublicDashboard();
-        layout.getPublicDashboardLayouts().clear();
-        layout.getPublicDashboardLayouts().addAll(publicDashboardLayouts);
-        layout.setPublicDashboardEnabled(isPublic);
+        layout.getLayouts().clear();
+        layout.getLayouts().addAll(publicDashboardLayouts);
+        layout.setEnabled(isPublic);
         gameServerRepository.save(gameServer);
     }
 }

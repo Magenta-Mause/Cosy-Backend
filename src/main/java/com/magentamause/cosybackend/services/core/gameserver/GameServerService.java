@@ -523,7 +523,7 @@ public class GameServerService {
         List<GameServerEntity> allGameServers = getAllGameServers();
 
         return allGameServers.stream()
-                .filter(gameServer -> gameServer.getPublicDashboard().isPublicDashboardEnabled())
+                .filter(gameServer -> gameServer.getPublicDashboard().isEnabled())
                 .toList();
     }
 
@@ -534,7 +534,7 @@ public class GameServerService {
                                 gameServer.getPublicDashboard() != null
                                         && gameServer
                                                 .getPublicDashboard()
-                                                .isPublicDashboardEnabled())
+                                                .isEnabled())
                 .orElse(false);
     }
 }

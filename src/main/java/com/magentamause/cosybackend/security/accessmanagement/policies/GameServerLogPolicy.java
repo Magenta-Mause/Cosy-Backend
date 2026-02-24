@@ -25,8 +25,8 @@ public class GameServerLogPolicy {
         }
         PublicDashboard publicDashboard = gameServerEntity.get().getPublicDashboard();
         if (publicDashboard != null
-                && publicDashboard.isPublicDashboardEnabled()
-                && publicDashboard.getPublicDashboardLayouts().stream()
+                && publicDashboard.isEnabled()
+                && publicDashboard.getLayouts().stream()
                         .anyMatch(
                                 layout -> layout.getPublicDashboardType() == DashboardTypes.LOGS)) {
             return true;

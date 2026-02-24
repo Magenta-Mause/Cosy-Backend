@@ -44,8 +44,8 @@ public class GameServerLayoutsController {
             @Valid @RequestBody PublicDashboard publicDashboard) {
         gameServerConfigurationService.updatePublicDashboardLayout(
                 uuid,
-                publicDashboard.getPublicDashboardLayouts(),
-                publicDashboard.isPublicDashboardEnabled());
+                publicDashboard.getLayouts(),
+                publicDashboard.isEnabled());
         return ResponseEntity.ok().build();
     }
 }

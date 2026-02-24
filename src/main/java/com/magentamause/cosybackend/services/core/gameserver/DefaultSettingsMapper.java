@@ -21,8 +21,8 @@ public class DefaultSettingsMapper {
                         createPrivateDashboardLayout(DashboardTypes.LOGS, null)));
         gameServer.setPublicDashboard(
                 PublicDashboard.builder()
-                        .publicDashboardEnabled(false)
-                        .publicDashboardLayouts(new ArrayList<>())
+                        .enabled(false)
+                        .layouts(new ArrayList<>())
                         .build());
     }
 

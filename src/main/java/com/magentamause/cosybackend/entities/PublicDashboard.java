@@ -22,11 +22,11 @@ public class PublicDashboard {
 
     @Column(nullable = false)
     @JsonProperty("public_dashboard_enabled")
-    private boolean publicDashboardEnabled = false;
+    private boolean enabled = false;
 
     @JsonProperty("public_dashboard_layouts")
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "public_dashboard_uuid")
     @OrderColumn(name = "public_dashboard_layout_index")
-    private List<PublicDashboardLayout> publicDashboardLayouts;
+    private List<PublicDashboardLayout> layouts;
 }

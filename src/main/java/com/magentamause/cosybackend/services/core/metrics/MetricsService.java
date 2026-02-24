@@ -100,9 +100,9 @@ public class MetricsService {
     }
 
     public List<String> extractPublicMetrics(PublicDashboard dashboard) {
-        return !dashboard.isPublicDashboardEnabled()
+        return !dashboard.isEnabled()
                 ? List.of()
-                : dashboard.getPublicDashboardLayouts().stream()
+                : dashboard.getLayouts().stream()
                         .filter(
                                 layout ->
                                         layout.getPublicDashboardType()
