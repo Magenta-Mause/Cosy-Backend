@@ -133,7 +133,7 @@ public class GameServerAccessGroupService {
     public List<GameServerAccessPermission> getUserPermissions(
             String gameServerUuid, String userUuid) {
         Optional<GameServerEntity> gameServerOptional =
-                gameServerService.getOptionalGameServerOptionalById(gameServerUuid);
+                gameServerService.getOptionalGameServerById(gameServerUuid);
         if (gameServerOptional.isEmpty()) {
             return List.of();
         }

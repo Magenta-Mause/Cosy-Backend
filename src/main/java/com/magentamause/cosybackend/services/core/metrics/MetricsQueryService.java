@@ -4,12 +4,14 @@ import com.influxdb.client.InfluxDBClient;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -83,6 +85,34 @@ public class MetricsQueryService {
         }
 
         return results;
+    }
+
+    public List<MetricPointDto> filterMetrics(List<MetricPointDto> metrics, String[] visibleAttributes) {
+        return metrics.stream()
+                .map(metricPointDto -> filterMetricsValues(metricPointDto, visibleAttributes))
+                .toList();
+    }
+
+    private MetricPointDto filterMetricsValues(MetricPointDto metricPointDto, String[] visibleAttributes) {
+        Map<String, Number> coreMetricsMap = metricPointDto.getMetricValues().coreMetricsToMap();
+        Map<String, Number> filteredCoreMetrics = new HashMap<>();
+        Map<String, Object> customMetrics = metricPointDto.getMetricValues().getCustomMetricHolder();
+        Map<String, Object> filteredCustomMetrics = new HashMap<>();
+        for (String attribute : visibleAttributes) {
+            if (coreMetricsMap.containsKey(attribute)) {
+                filteredCoreMetrics.put(attribute, coreMetricsMap.get(attribute));
+            }
+            if (customMetrics.containsKey(attribute)) {
+                filteredCustomMetrics.put(attribute, customMetrics.get(attribute));
+            }
+        }
+
+        return MetricPointDto.builder()
+                .time(metricPointDto.getTime())
+                .gameServerUuid(metricPointDto.getGameServerUuid())
+                .metricValues(MetricPointDto.MetricValues.fromCoreMetrics(filteredCoreMetrics)
+                        .setCustomMetricHolder(filteredCustomMetrics))
+                .build();
     }
 
     private Map<String, Object> extractCustomMetrics(FluxRecord record) {

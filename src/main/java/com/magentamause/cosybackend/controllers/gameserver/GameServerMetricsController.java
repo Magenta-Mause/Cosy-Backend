@@ -32,7 +32,6 @@ public class GameServerMetricsController {
             @RequestParam(required = false) Instant end,
             @RequestParam(required = false) Instant start,
             @RequestParam(defaultValue = "100") int pointCount) {
-
         TimeRange range = resolveAndValidateTimeRange(start, end);
 
         return ResponseEntity.ok(
@@ -46,12 +45,11 @@ public class GameServerMetricsController {
             @RequestParam(required = false) Instant end,
             @RequestParam(required = false) Instant start,
             @RequestParam(defaultValue = "100") int pointCount) {
-
         TimeRange range = resolveAndValidateTimeRange(start, end);
 
-        if (!isPubliclyEvaluable(gameServerUuid)) {
+        if (!gameServerService.isGameServerPubliclyEvaluable(gameServerUuid)) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Game server is not publicly evaluable");
+                    HttpStatus.NOT_FOUND, "Game server is not publicly evaluable");
         }
 
         return ResponseEntity.ok(
@@ -73,11 +71,6 @@ public class GameServerMetricsController {
         }
 
         return new TimeRange(resolvedStart, resolvedEnd);
-    }
-
-    private boolean isPubliclyEvaluable(String uuid) {
-        return gameServerService.getPubliclyEvaluableGameServer().stream()
-                .anyMatch(gs -> Objects.equals(gs.getUuid(), uuid));
     }
 
     private record TimeRange(Instant start, Instant end) {}
