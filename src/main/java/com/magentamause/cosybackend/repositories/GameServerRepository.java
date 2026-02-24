@@ -5,5 +5,5 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GameServerRepository extends JpaRepository<GameServerEntity, String> {
-    List<GameServerEntity> findByLastStartedBy_Uuid(String userUuid);
+    List<GameServerEntity> findByOwner_Uuid(String ownerUuid);
 }

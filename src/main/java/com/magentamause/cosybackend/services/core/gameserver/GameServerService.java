@@ -244,17 +244,26 @@ public class GameServerService {
         return saved;
     }
 
-    public void startServer(String gameServerUuid, UserEntity user) {
+    public void startServer(String gameServerUuid) {
         if (!startingServers.add(gameServerUuid)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Server is already starting");
         }
         GameServerEntity serverConfig = getOrThrow(gameServerUuid);
+        if (!serverConfig.getStatus().isStopped()) {
+            startingServers.remove(gameServerUuid);
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Server is not in a stopped state");
+        }
+        UserEntity gameServerOwner = serverConfig.getOwner();
         try {
-            List<GameServerEntity> gameServerStartedByUser =
-                    getGameServersStartedByUser(user.getUuid());
-            hardwareQuotaChecker.assertSufficientQuota(user, serverConfig, gameServerStartedByUser);
+            synchronized (gameServerOwner.getUuid().intern()) {
+                List<GameServerEntity> gameServersByOwner =
+                        getGameServersByOwner(gameServerOwner.getUuid());
+                hardwareQuotaChecker.assertSufficientQuota(
+                        gameServerOwner, serverConfig, gameServersByOwner);
 
-            startServerAsync(gameServerUuid, serverConfig);
+                startServerAsync(gameServerUuid, serverConfig);
+            }
         } catch (HardwareLimitException e) {
             startingServers.remove(gameServerUuid);
             log.warn("Could not start Server '{}' - Hardware quota limit reached.", gameServerUuid);
@@ -272,7 +281,7 @@ public class GameServerService {
     }
 
     @Async
-    void startServerAsync(String gameServerUuid, GameServerEntity serverConfig) {
+    protected void startServerAsync(String gameServerUuid, GameServerEntity serverConfig) {
         log.info("Starting server {}", gameServerUuid);
         try {
             String gameServerContainerSecret = SecretGenerator.generateSecret();
@@ -282,7 +291,6 @@ public class GameServerService {
                     "Starting Game Server",
                     false);
             serverConfig.setContainerSecret(gameServerContainerSecret);
-            serverConfig.setLastStartedBy(serverConfig.getOwner());
             serverConfig.setTimestampLastStarted(LocalDateTime.now());
             gameServerRepository.save(serverConfig);
 
@@ -397,8 +405,8 @@ public class GameServerService {
         return server.getStatus();
     }
 
-    private List<GameServerEntity> getGameServersStartedByUser(String userUuid) {
-        return gameServerRepository.findByLastStartedBy_Uuid(userUuid);
+    private List<GameServerEntity> getGameServersByOwner(String ownerUuid) {
+        return gameServerRepository.findByOwner_Uuid(ownerUuid);
     }
 
     public void sendCommand(String uuid, String command) {

@@ -84,7 +84,7 @@ public class GameServerRootController {
     @PostMapping(value = "/{uuid}/start")
     @NeedsValidation(Operation.GAME_SERVER_START_STOP)
     public ResponseEntity<Void> startService(@PathVariable @ResourceId String uuid) {
-        gameServerService.startServer(uuid, securityContextService.getUser());
+        gameServerService.startServer(uuid);
         return ResponseEntity.accepted().build();
     }
 
