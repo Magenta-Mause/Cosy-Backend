@@ -5,14 +5,10 @@ import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
-import com.magentamause.cosybackend.services.core.metrics.MetricsQueryService;
-
+import com.magentamause.cosybackend.services.core.metrics.MetricsService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
-
-import com.magentamause.cosybackend.services.core.metrics.MetricsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -38,7 +34,8 @@ public class GameServerMetricsController {
         TimeRange range = resolveAndValidateTimeRange(start, end);
 
         return ResponseEntity.ok(
-                metricsService.queryMetrics(gameServerUuid, range.start(), range.end(), pointCount));
+                metricsService.queryMetrics(
+                        gameServerUuid, range.start(), range.end(), pointCount));
     }
 
     @GetMapping("/public")
@@ -56,7 +53,8 @@ public class GameServerMetricsController {
         }
 
         return ResponseEntity.ok(
-                metricsService.queryPublicMetrics(gameServerUuid, range.start(), range.end(), pointCount));
+                metricsService.queryPublicMetrics(
+                        gameServerUuid, range.start(), range.end(), pointCount));
     }
 
     private TimeRange resolveAndValidateTimeRange(Instant start, Instant end) {
@@ -76,6 +74,5 @@ public class GameServerMetricsController {
         return new TimeRange(resolvedStart, resolvedEnd);
     }
 
-    private record TimeRange(Instant start, Instant end) {
-    }
+    private record TimeRange(Instant start, Instant end) {}
 }

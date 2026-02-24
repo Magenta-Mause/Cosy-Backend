@@ -15,16 +15,15 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.websockets.GameServerMetricsPublisher;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -86,13 +85,17 @@ public class MetricsService {
         }
     }
 
-    public List<MetricPointDto> queryMetrics(String gameServerUuid, Instant start, Instant end, int pointCount) {
+    public List<MetricPointDto> queryMetrics(
+            String gameServerUuid, Instant start, Instant end, int pointCount) {
         return metricsQueryService.queryMetrics(gameServerUuid, start, end, pointCount);
     }
 
-    public List<MetricPointDto> queryPublicMetrics(String gameServerUuid, Instant start, Instant end, int pointCount) {
+    public List<MetricPointDto> queryPublicMetrics(
+            String gameServerUuid, Instant start, Instant end, int pointCount) {
         List<MetricPointDto> metrics = queryMetrics(gameServerUuid, start, end, pointCount);
-        List<String> publiclyAccessible = extractPublicMetrics(gameServerService.getOrThrow(gameServerUuid).getPublicDashboard());
+        List<String> publiclyAccessible =
+                extractPublicMetrics(
+                        gameServerService.getOrThrow(gameServerUuid).getPublicDashboard());
         return metricsUtilService.filterMetrics(metrics, publiclyAccessible.toArray(String[]::new));
     }
 
@@ -100,9 +103,12 @@ public class MetricsService {
         return !dashboard.isPublicDashboardEnabled()
                 ? List.of()
                 : dashboard.getPublicDashboardLayouts().stream()
-                .filter(layout -> layout.getPublicDashboardType().equals(DashboardTypes.METRIC))
-                .map(PublicDashboardLayout::getMetricType)
-                .toList();
+                        .filter(
+                                layout ->
+                                        layout.getPublicDashboardType()
+                                                .equals(DashboardTypes.METRIC))
+                        .map(PublicDashboardLayout::getMetricType)
+                        .toList();
     }
 
     public void writeToInfluxDB(Point point) {
@@ -150,8 +156,7 @@ public class MetricsService {
             Object normalizedValue = normalizeFieldValue(value);
 
             switch (normalizedValue) {
-                case null -> {
-                }
+                case null -> {}
                 case String s -> point.addField(fieldKey, s);
                 case Boolean b -> point.addField(fieldKey, b);
                 case Double d -> point.addField(fieldKey, d);
