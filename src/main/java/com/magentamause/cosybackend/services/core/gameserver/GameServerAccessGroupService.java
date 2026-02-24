@@ -39,11 +39,11 @@ public class GameServerAccessGroupService {
         return gameServerAccessGroupRepository.save(accessGroup);
     }
 
-    public void ensureUniqueName(GameServerEntity gameServer, String name) {
+    private void ensureUniqueName(GameServerEntity gameServer, String name) {
         if (gameServer.getAccessGroups().stream()
                 .anyMatch(accessGroup -> accessGroup.getGroupName().equals(name))) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Access group already exists");
+                    HttpStatus.BAD_REQUEST, "Access group with that name already exists");
         }
     }
 
