@@ -24,16 +24,15 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class MetricsService {
+    private static final String TYPE_SUFFIX_STRING = "__s";
+    private static final String TYPE_SUFFIX_INT = "__i";
+    private static final String TYPE_SUFFIX_FLOAT = "__f";
+    private static final String TYPE_SUFFIX_BOOL = "__b";
     private final InfluxDBClient influxDBClient;
     private final InfluxProperties influxProperties;
     private final EngineManager engineManager;
     private final GameServerRepository gameServerRepository;
     private final GameServerMetricsPublisher gameServerMetricsPublisher;
-
-    private static final String TYPE_SUFFIX_STRING = "__s";
-    private static final String TYPE_SUFFIX_INT = "__i";
-    private static final String TYPE_SUFFIX_FLOAT = "__f";
-    private static final String TYPE_SUFFIX_BOOL = "__b";
 
     public Point convertMetricToPoint(Metric metrics) {
         Point point =
