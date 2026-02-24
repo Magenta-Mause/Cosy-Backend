@@ -244,14 +244,17 @@ public class GameServerService {
         return saved;
     }
 
-    public void startServer(String gameServerUuid, UserEntity user) {
+    public void startServer(String gameServerUuid) {
         if (!startingServers.add(gameServerUuid)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Server is already starting");
         }
         GameServerEntity serverConfig = getOrThrow(gameServerUuid);
+        UserEntity gameServerOwner = serverConfig.getOwner();
         try {
-            List<GameServerEntity> gameServersByOwner = getGameServersByOwner(user.getUuid());
-            hardwareQuotaChecker.assertSufficientQuota(user, serverConfig, gameServersByOwner);
+            List<GameServerEntity> gameServersByOwner =
+                    getGameServersByOwner(gameServerOwner.getUuid());
+            hardwareQuotaChecker.assertSufficientQuota(
+                    gameServerOwner, serverConfig, gameServersByOwner);
 
             startServerAsync(gameServerUuid, serverConfig);
         } catch (HardwareLimitException e) {
