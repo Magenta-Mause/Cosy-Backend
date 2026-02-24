@@ -398,8 +398,8 @@ public class GameServerService {
         return server.getStatus();
     }
 
-    private List<GameServerEntity> getGameServersByOwner(String userUuid) {
-        return gameServerRepository.findByOwner_Uuid(userUuid);
+    private List<GameServerEntity> getGameServersByOwner(String ownerUuid) {
+        return gameServerRepository.findByOwner_Uuid(ownerUuid);
     }
 
     public void sendCommand(String uuid, String command) {
