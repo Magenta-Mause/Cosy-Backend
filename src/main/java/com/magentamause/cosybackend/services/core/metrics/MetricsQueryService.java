@@ -46,8 +46,8 @@ public class MetricsQueryService {
                     "block_write");
 
     public List<MetricPointDto> queryMetrics(
-            String gameServerUuid, Instant start, Instant end, int point) {
-        String flux = buildInfluxQuery(gameServerUuid, start, end, point);
+            String gameServerUuid, Instant start, Instant end, int pointCount) {
+        String flux = buildInfluxQuery(gameServerUuid, start, end, pointCount);
 
         List<FluxTable> tables = influxDBClient.getQueryApi().query(flux);
 
@@ -81,63 +81,12 @@ public class MetricsQueryService {
 
         if (results.isEmpty()) {
             log.debug("No metrics found for query {}, generating zero-value data points", flux);
-            return generateZeroValueMetrics(gameServerUuid, start, end, point);
+            return generateZeroValueMetrics(gameServerUuid, start, end, pointCount);
         }
 
         return results;
     }
 
-    public List<MetricPointDto> filterMetrics(List<MetricPointDto> metrics, String[] visibleAttributes) {
-        return metrics.stream()
-                .map(metricPointDto -> filterMetricsValues(metricPointDto, visibleAttributes))
-                .toList();
-    }
-
-    private MetricPointDto filterMetricsValues(MetricPointDto metricPointDto, String[] visibleAttributes) {
-        Map<String, Number> coreMetricsMap = metricPointDto.getMetricValues().coreMetricsToMap();
-        Map<String, Number> filteredCoreMetrics = new HashMap<>();
-        Map<String, Object> customMetrics = metricPointDto.getMetricValues().getCustomMetricHolder();
-        Map<String, Object> filteredCustomMetrics = new HashMap<>();
-        for (String attribute : visibleAttributes) {
-            if (coreMetricsMap.containsKey(attribute)) {
-                filteredCoreMetrics.put(attribute, coreMetricsMap.get(attribute));
-            }
-            if (customMetrics.containsKey(attribute)) {
-                filteredCustomMetrics.put(attribute, customMetrics.get(attribute));
-            }
-        }
-
-        return MetricPointDto.builder()
-                .time(metricPointDto.getTime())
-                .gameServerUuid(metricPointDto.getGameServerUuid())
-                .metricValues(MetricPointDto.MetricValues.fromCoreMetrics(filteredCoreMetrics)
-                        .setCustomMetricHolder(filteredCustomMetrics))
-                .build();
-    }
-
-    private Map<String, Object> extractCustomMetrics(FluxRecord record) {
-        Map<String, Object> custom = new HashMap<>();
-        Map<String, Object> values = record.getValues();
-        if (values == null || values.isEmpty()) {
-            return custom;
-        }
-
-        for (Map.Entry<String, Object> entry : values.entrySet()) {
-            String key = entry.getKey();
-            if (key == null || NON_CUSTOM_COLUMNS.contains(key)) {
-                continue;
-            }
-
-            Object value = entry.getValue();
-            if (value == null) {
-                continue;
-            }
-
-            String baseKey = stripTypeSuffix(key);
-            custom.put(baseKey, value);
-        }
-        return custom;
-    }
 
     private String stripTypeSuffix(String key) {
         if (key.endsWith(TYPE_SUFFIX_STRING)

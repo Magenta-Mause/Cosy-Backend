@@ -29,7 +29,7 @@ public class GameServerLogPolicy {
                 && publicDashboard.getPublicDashboardLayouts().stream()
                         .anyMatch(
                                 layout ->
-                                        layout.getPublicDashboardTypes() == DashboardTypes.LOGS)) {
+                                        layout.getPublicDashboardType() == DashboardTypes.LOGS)) {
             return true;
         }
         return GameServerPermissionsUtility.isOwnerOrHasPermission(

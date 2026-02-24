@@ -14,7 +14,7 @@ import tools.jackson.databind.annotation.JsonNaming;
 public class PublicDashboardLayout extends Layout {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private DashboardTypes publicDashboardTypes;
+    private DashboardTypes publicDashboardType;
 
     @Column private String metricType;
 
@@ -27,9 +27,9 @@ public class PublicDashboardLayout extends Layout {
     private List<KeyValueEntry> content;
 
     public boolean isValid() {
-        if (publicDashboardTypes == null) return false;
+        if (publicDashboardType == null) return false;
 
-        return switch (publicDashboardTypes) {
+        return switch (publicDashboardType) {
             case METRIC -> metricType != null;
             case FREETEXT -> content != null && !content.isEmpty();
             case LOGS -> true;

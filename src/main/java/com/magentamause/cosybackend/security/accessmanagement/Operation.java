@@ -48,6 +48,7 @@ public enum Operation {
 
     // Game Server Metric operations
     GAME_SERVER_METRIC_READ,
+    GAME_SERVER_METRIC_READ_PUBLIC,
 
     // User Invite operations
     USER_INVITE_READ,

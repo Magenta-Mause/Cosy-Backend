@@ -6,10 +6,13 @@ import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import com.magentamause.cosybackend.services.core.metrics.MetricsQueryService;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+
+import com.magentamause.cosybackend.services.core.metrics.MetricsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,7 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/game-server/{gameServerUuid}/metrics")
 @RequiredArgsConstructor
 public class GameServerMetricsController {
-    private final MetricsQueryService queryService;
+    private final MetricsService metricsService;
     private final GameServerService gameServerService;
 
     @GetMapping
@@ -35,11 +38,11 @@ public class GameServerMetricsController {
         TimeRange range = resolveAndValidateTimeRange(start, end);
 
         return ResponseEntity.ok(
-                queryService.queryMetrics(gameServerUuid, range.start(), range.end(), pointCount));
+                metricsService.queryMetrics(gameServerUuid, range.start(), range.end(), pointCount));
     }
 
     @GetMapping("/public")
-    @NeedsValidation(value = Operation.GAME_SERVER_METRIC_READ, allowUnauthorized = true)
+    @NeedsValidation(value = Operation.GAME_SERVER_METRIC_READ_PUBLIC, allowUnauthorized = true)
     public ResponseEntity<List<MetricPointDto>> getPublicEvaluableMetrics(
             @ResourceId @PathVariable String gameServerUuid,
             @RequestParam(required = false) Instant end,
@@ -53,7 +56,7 @@ public class GameServerMetricsController {
         }
 
         return ResponseEntity.ok(
-                queryService.queryMetrics(gameServerUuid, range.start(), range.end(), pointCount));
+                metricsService.queryPublicMetrics(gameServerUuid, range.start(), range.end(), pointCount));
     }
 
     private TimeRange resolveAndValidateTimeRange(Instant start, Instant end) {
@@ -73,5 +76,6 @@ public class GameServerMetricsController {
         return new TimeRange(resolvedStart, resolvedEnd);
     }
 
-    private record TimeRange(Instant start, Instant end) {}
+    private record TimeRange(Instant start, Instant end) {
+    }
 }
