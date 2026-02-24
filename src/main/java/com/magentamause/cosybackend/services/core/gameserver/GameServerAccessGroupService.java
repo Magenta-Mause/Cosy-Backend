@@ -30,6 +30,7 @@ public class GameServerAccessGroupService {
     public GameServerAccessGroupEntity createAccessGroup(
             String gameServerUuid, AccessGroupCreationDto accessGroupCreationDto) {
         GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
+        ensureUniqueName(gameServer, accessGroupCreationDto.getName());
         GameServerAccessGroupEntity accessGroup = new GameServerAccessGroupEntity();
         accessGroup.setGroupName(accessGroupCreationDto.getName());
         accessGroup.setGameServer(gameServer);
@@ -38,12 +39,23 @@ public class GameServerAccessGroupService {
         return gameServerAccessGroupRepository.save(accessGroup);
     }
 
+    private void ensureUniqueName(GameServerEntity gameServer, String name) {
+        if (gameServer.getAccessGroups().stream()
+                .anyMatch(accessGroup -> accessGroup.getGroupName().equals(name))) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Access group with that name already exists");
+        }
+    }
+
     public List<GameServerAccessGroupEntity> updateAccessGroup(
             String gameServerUuid, String accessGroupUuid, AccessGroupUpdateDto updateDto) {
         GameServerEntity gameServer = gameServerService.getOrThrow(gameServerUuid);
         List<GameServerAccessGroupEntity> accessGroups =
                 gameServer.getAccessGroups() != null ? gameServer.getAccessGroups() : List.of();
         GameServerAccessGroupEntity accessGroupToUpdate = getAccessGroup(accessGroupUuid);
+        if (!accessGroupToUpdate.getGroupName().equals(updateDto.getAccessGroupName())) {
+            ensureUniqueName(gameServer, updateDto.getAccessGroupName());
+        }
         if (accessGroupToUpdate.getGameServer() == null
                 || !accessGroupToUpdate.getGameServer().getUuid().equals(gameServerUuid)
                 || accessGroups.stream().noneMatch(g -> g.getUuid().equals(accessGroupUuid))) {

@@ -15,6 +15,10 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
 import com.magentamause.cosybackend.websockets.GameServerMetricsPublisher;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,25 +26,21 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MetricsService {
+    private static final String TYPE_SUFFIX_STRING = "__s";
+    private static final String TYPE_SUFFIX_INT = "__i";
+    private static final String TYPE_SUFFIX_FLOAT = "__f";
+    private static final String TYPE_SUFFIX_BOOL = "__b";
+
     private final InfluxDBClient influxDBClient;
     private final InfluxProperties influxProperties;
     private final EngineManager engineManager;
     private final GameServerRepository gameServerRepository;
     private final GameServerMetricsPublisher gameServerMetricsPublisher;
 
-    private static final String TYPE_SUFFIX_STRING = "__s";
-    private static final String TYPE_SUFFIX_INT = "__i";
-    private static final String TYPE_SUFFIX_FLOAT = "__f";
-    private static final String TYPE_SUFFIX_BOOL = "__b";
     private final MetricsQueryService metricsQueryService;
     private final GameServerService gameServerService;
     private final MetricsUtilService metricsUtilService;
@@ -114,7 +114,6 @@ public class MetricsService {
             log.error("Failed to write point for container {}: {}", point, e.getMessage(), e);
         }
     }
-
 
     public Point convertMetricToPoint(Metric metrics) {
         Point point =

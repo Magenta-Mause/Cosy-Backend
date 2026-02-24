@@ -4,7 +4,6 @@ import com.influxdb.client.InfluxDBClient;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.magentamause.cosybackend.entities.metric.MetricType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,8 +20,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class MetricsQueryService {
-    private final InfluxDBClient influxDBClient;
-
     private static final String TYPE_SUFFIX_STRING = "__s";
     private static final String TYPE_SUFFIX_INT = "__i";
     private static final String TYPE_SUFFIX_FLOAT = "__f";
@@ -36,14 +34,16 @@ public class MetricsQueryService {
                     "_time",
                     "_measurement",
                     "game_server_uuid",
-                    "cpu_percent",
-                    "memory_percent",
-                    "memory_usage",
-                    "memory_limit",
-                    "network_input",
-                    "network_output",
-                    "block_read",
-                    "block_write");
+                    MetricType.CPU_PERCENT.getValue(),
+                    MetricType.MEMORY_PERCENT.getValue(),
+                    MetricType.MEMORY_USAGE.getValue(),
+                    MetricType.MEMORY_LIMIT.getValue(),
+                    MetricType.NETWORK_INPUT.getValue(),
+                    MetricType.NETWORK_OUTPUT.getValue(),
+                    MetricType.BLOCK_READ.getValue(),
+                    MetricType.BLOCK_WRITE.getValue());
+
+    private final InfluxDBClient influxDBClient;
 
     public List<MetricPointDto> queryMetrics(
             String gameServerUuid, Instant start, Instant end, int pointCount) {
@@ -58,17 +58,7 @@ public class MetricsQueryService {
                 Map<String, Object> customMetricHolder = extractCustomMetrics(record);
 
                 MetricPointDto.MetricValues metrics =
-                        MetricPointDto.MetricValues.builder()
-                                .cpuPercent(toDouble(record.getValueByKey("cpu_percent")))
-                                .memoryPercent(toDouble(record.getValueByKey("memory_percent")))
-                                .memoryUsage(toLong(record.getValueByKey("memory_usage")))
-                                .memoryLimit(toLong(record.getValueByKey("memory_limit")))
-                                .networkInput(toLong(record.getValueByKey("network_input")))
-                                .networkOutput(toLong(record.getValueByKey("network_output")))
-                                .blockRead(toLong(record.getValueByKey("block_read")))
-                                .blockWrite(toLong(record.getValueByKey("block_write")))
-                                .customMetricHolder(customMetricHolder)
-                                .build();
+                        MetricPointDto.MetricValues.ofFluxRecord(record, customMetricHolder);
 
                 results.add(
                         MetricPointDto.builder()
@@ -87,6 +77,29 @@ public class MetricsQueryService {
         return results;
     }
 
+    private Map<String, Object> extractCustomMetrics(FluxRecord record) {
+        Map<String, Object> custom = new HashMap<>();
+        Map<String, Object> values = record.getValues();
+        if (values == null || values.isEmpty()) {
+            return custom;
+        }
+
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            String key = entry.getKey();
+            if (key == null || NON_CUSTOM_COLUMNS.contains(key)) {
+                continue;
+            }
+
+            Object value = entry.getValue();
+            if (value == null) {
+                continue;
+            }
+
+            String baseKey = stripTypeSuffix(key);
+            custom.put(baseKey, value);
+        }
+        return custom;
+    }
 
     private String stripTypeSuffix(String key) {
         if (key.endsWith(TYPE_SUFFIX_STRING)
@@ -113,14 +126,6 @@ public class MetricsQueryService {
                         + "|> aggregateWindow(every: %s, fn: last, createEmpty: true) "
                         + "|> pivot( rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") ",
                 start.toString(), end.toString(), gameServerUuid, time);
-    }
-
-    private Double toDouble(Object value) {
-        return value == null ? null : ((Number) value).doubleValue();
-    }
-
-    private Long toLong(Object value) {
-        return value == null ? null : ((Number) value).longValue();
     }
 
     private List<MetricPointDto> generateZeroValueMetrics(

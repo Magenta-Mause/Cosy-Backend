@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/game-server")
 public class GameServerAccessGroupsController {
-    GameServerAccessGroupService gameServerAccessGroupService;
+    private final GameServerAccessGroupService gameServerAccessGroupService;
 
     @PostMapping("/{uuid}/access-groups")
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)

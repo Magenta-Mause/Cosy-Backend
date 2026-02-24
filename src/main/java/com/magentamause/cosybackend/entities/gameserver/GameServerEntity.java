@@ -41,8 +41,6 @@ public class GameServerEntity {
 
     @ManyToOne private UserEntity owner;
 
-    @ManyToOne private UserEntity lastStartedBy;
-
     @Enumerated(EnumType.STRING)
     private GameServerDto.GameServerStatus status;
 
