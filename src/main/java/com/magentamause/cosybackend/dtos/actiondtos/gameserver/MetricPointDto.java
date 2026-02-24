@@ -2,6 +2,8 @@ package com.magentamause.cosybackend.dtos.actiondtos.gameserver;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.influxdb.query.FluxRecord;
+import com.magentamause.cosybackend.entities.metric.MetricType;
 import java.time.Instant;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -36,5 +38,35 @@ public class MetricPointDto {
         private Long blockWrite;
 
         private Map<String, Object> customMetricHolder;
+
+        public static MetricValues ofFluxRecord(
+                FluxRecord fluxRecord, Map<String, Object> customMetricHolder) {
+            return MetricPointDto.MetricValues.builder()
+                    .cpuPercent(
+                            toDouble(fluxRecord.getValueByKey(MetricType.CPU_PERCENT.getValue())))
+                    .memoryPercent(
+                            toDouble(
+                                    fluxRecord.getValueByKey(MetricType.MEMORY_PERCENT.getValue())))
+                    .memoryUsage(
+                            toLong(fluxRecord.getValueByKey(MetricType.MEMORY_USAGE.getValue())))
+                    .memoryLimit(
+                            toLong(fluxRecord.getValueByKey(MetricType.MEMORY_LIMIT.getValue())))
+                    .networkInput(
+                            toLong(fluxRecord.getValueByKey(MetricType.NETWORK_INPUT.getValue())))
+                    .networkOutput(
+                            toLong(fluxRecord.getValueByKey(MetricType.NETWORK_OUTPUT.getValue())))
+                    .blockRead(toLong(fluxRecord.getValueByKey(MetricType.BLOCK_READ.getValue())))
+                    .blockWrite(toLong(fluxRecord.getValueByKey(MetricType.BLOCK_WRITE.getValue())))
+                    .customMetricHolder(customMetricHolder)
+                    .build();
+        }
+
+        private static Double toDouble(Object value) {
+            return value == null ? null : ((Number) value).doubleValue();
+        }
+
+        private static Long toLong(Object value) {
+            return value == null ? null : ((Number) value).longValue();
+        }
     }
 }
