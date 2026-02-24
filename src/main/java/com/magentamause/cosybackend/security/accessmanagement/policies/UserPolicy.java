@@ -95,6 +95,29 @@ public class UserPolicy {
         }
     }
 
+    @Validates(Operation.USER_CHANGE_ROLE)
+    public static boolean canChangeRole(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+
+        UserEntity targetUser = resolver.getUserEntity((String) referenceId).orElse(null);
+        if (targetUser == null) {
+            return false;
+        }
+        // No one can change their own role
+        if (user.getUuid().equals(targetUser.getUuid())) {
+            return false;
+        }
+        if (user.getRole().equals(UserEntity.Role.OWNER)) {
+            // Owner can change any role except their own (already covered above)
+            return true;
+        } else if (user.getRole().equals(UserEntity.Role.ADMIN)) {
+            // Admin can only change QUOTA_USER roles, not other admins or owners
+            return targetUser.getRole().equals(UserEntity.Role.QUOTA_USER);
+        } else {
+            return false;
+        }
+    }
+
     @Validates(Operation.USER_READ_PERMISSIONS)
     public static boolean canReadPermissions(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
