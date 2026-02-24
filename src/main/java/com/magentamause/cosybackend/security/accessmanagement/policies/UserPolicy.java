@@ -68,6 +68,7 @@ public class UserPolicy {
             return false;
         }
         if (user.getRole().equals(UserEntity.Role.OWNER)) {
+            // owner cannot delete themselves since there would be no owner left
             return !user.getUuid().equals(userToDelete.getUuid());
         } else if (user.getUuid().equals(userToDelete.getUuid())) {
             return true;
@@ -103,19 +104,8 @@ public class UserPolicy {
         if (targetUser == null) {
             return false;
         }
-        // No one can change their own role
-        if (user.getUuid().equals(targetUser.getUuid())) {
-            return false;
-        }
-        if (user.getRole().equals(UserEntity.Role.OWNER)) {
-            // Owner can change any role except their own (already covered above)
-            return true;
-        } else if (user.getRole().equals(UserEntity.Role.ADMIN)) {
-            // Admin can only change QUOTA_USER roles, not other admins or owners
-            return targetUser.getRole().equals(UserEntity.Role.QUOTA_USER);
-        } else {
-            return false;
-        }
+        return user.getRole().equals(UserEntity.Role.OWNER)
+                && !user.getUuid().equals(targetUser.getUuid());
     }
 
     @Validates(Operation.USER_READ_PERMISSIONS)
