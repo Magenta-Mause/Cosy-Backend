@@ -72,6 +72,6 @@ cosy:
     street: ${COSY_FOOTER_STREET:Street 5}
     city: ${COSY_FOOTER_CITY:12345 City}
   defaults:
-    admin:
+    owner:
       username: admin
       password: admin
