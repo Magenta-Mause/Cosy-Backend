@@ -1,7 +1,6 @@
 package com.magentamause.cosybackend.controllers.gameserver.configurations;
 
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.PublicDashboardUpdateDto;
-import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
@@ -9,9 +8,7 @@ import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerConfigurationService;
 import jakarta.validation.Valid;
-
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,9 +42,7 @@ public class GameServerLayoutsController {
     public ResponseEntity<Void> updatePublicDashboardLayout(
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody PublicDashboardUpdateDto updateDto) {
-        gameServerConfigurationService.updatePublicDashboardLayout(
-                uuid,
-                updateDto);
+        gameServerConfigurationService.updatePublicDashboardLayout(uuid, updateDto);
         return ResponseEntity.ok().build();
     }
 }

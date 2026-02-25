@@ -7,11 +7,8 @@ import com.magentamause.cosybackend.entities.gameserver.utility.GameServerDesign
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
-import com.magentamause.cosybackend.entities.layout.PublicDashboardLayout;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
-
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -75,8 +72,7 @@ public class GameServerConfigurationService {
     }
 
     public void updatePublicDashboardLayout(
-            String gameServerUuid,
-            PublicDashboardUpdateDto updateDto) {
+            String gameServerUuid, PublicDashboardUpdateDto updateDto) {
         GameServerEntity gameServer =
                 gameServerRepository
                         .findById(gameServerUuid)
@@ -86,13 +82,15 @@ public class GameServerConfigurationService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Server '" + gameServerUuid + "' not found"));
 
-
-        updateDto.getLayouts().forEach(
-                layout -> {
-                    if (!layout.isValid()) {
-                        throw new IllegalStateException("Invalid dashboard layout: " + layout);
-                    }
-                });
+        updateDto
+                .getLayouts()
+                .forEach(
+                        layout -> {
+                            if (!layout.isValid()) {
+                                throw new IllegalStateException(
+                                        "Invalid dashboard layout: " + layout);
+                            }
+                        });
 
         PublicDashboard layout = gameServer.getPublicDashboard();
         layout.getLayouts().clear();

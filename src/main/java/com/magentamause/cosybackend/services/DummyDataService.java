@@ -12,9 +12,7 @@ import com.magentamause.cosybackend.repositories.DummyInstantiatedPropertiesRepo
 import com.magentamause.cosybackend.services.core.gameserver.DefaultSettingsMapper;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import com.magentamause.cosybackend.services.user.UserEntityService;
-
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +41,8 @@ public class DummyDataService {
             GameServerService gameServerService,
             UserEntityService userEntityService,
             DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository,
-            DefaultProperties defaultProperties, DefaultSettingsMapper defaultSettingsMapper) {
+            DefaultProperties defaultProperties,
+            DefaultSettingsMapper defaultSettingsMapper) {
         this.passwordEncoder = passwordEncoder;
         this.gameServerService = gameServerService;
         this.dummyInstantiatedPropertiesRepository = dummyInstantiatedPropertiesRepository;

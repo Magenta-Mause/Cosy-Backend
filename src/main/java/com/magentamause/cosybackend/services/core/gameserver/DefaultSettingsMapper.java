@@ -20,10 +20,7 @@ public class DefaultSettingsMapper {
                         createPrivateDashboardLayout(DashboardTypes.METRIC, MetricType.CPU_PERCENT),
                         createPrivateDashboardLayout(DashboardTypes.LOGS, null)));
         gameServer.setPublicDashboard(
-                PublicDashboard.builder()
-                        .enabled(false)
-                        .layouts(new ArrayList<>())
-                        .build());
+                PublicDashboard.builder().enabled(false).layouts(new ArrayList<>()).build());
     }
 
     private MetricLayout createMetricLayout(String metricType) {

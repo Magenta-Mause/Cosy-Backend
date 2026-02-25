@@ -4,7 +4,6 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
-
 import java.util.List;
 
 public class GameServerFieldVisibilityPolicy {
@@ -23,17 +22,17 @@ public class GameServerFieldVisibilityPolicy {
 
     public static boolean canSeeMetricLayout(List<GameServerAccessPermission> permissions) {
         return GameServerPermissionsUtility.can(
-                GameServerAccessPermission.CHANGE_METRICS_SETTINGS, permissions)
+                        GameServerAccessPermission.CHANGE_METRICS_SETTINGS, permissions)
                 || GameServerPermissionsUtility.can(
-                GameServerAccessPermission.READ_SERVER_METRICS, permissions);
+                        GameServerAccessPermission.READ_SERVER_METRICS, permissions);
     }
 
     public static boolean canSeePrivateDashboardLayout(
             List<GameServerAccessPermission> permissions) {
         return GameServerPermissionsUtility.can(
-                GameServerAccessPermission.CHANGE_PRIVATE_DASHBOARD_SETTINGS, permissions)
+                        GameServerAccessPermission.CHANGE_PRIVATE_DASHBOARD_SETTINGS, permissions)
                 || GameServerPermissionsUtility.can(
-                GameServerAccessPermission.READ_SERVER_PRIVATE_DASHBOARD, permissions);
+                        GameServerAccessPermission.READ_SERVER_PRIVATE_DASHBOARD, permissions);
     }
 
     public static boolean canSeeAccessGroups(List<GameServerAccessPermission> permissions) {
@@ -46,7 +45,8 @@ public class GameServerFieldVisibilityPolicy {
                 GameServerAccessPermission.CHANGE_WEBHOOK_SETTINGS, permissions);
     }
 
-    public static boolean canSeePublicDashboardConfigs(List<GameServerAccessPermission> permissions) {
+    public static boolean canSeePublicDashboardConfigs(
+            List<GameServerAccessPermission> permissions) {
         return GameServerPermissionsUtility.can(
                 GameServerAccessPermission.CHANGE_PUBLIC_DASHBOARD_SETTINGS, permissions);
     }
@@ -61,5 +61,4 @@ public class GameServerFieldVisibilityPolicy {
         return GameServerPermissionsUtility.extractUserPermissions(
                 user.getUuid(), server.getAccessGroups());
     }
-
 }

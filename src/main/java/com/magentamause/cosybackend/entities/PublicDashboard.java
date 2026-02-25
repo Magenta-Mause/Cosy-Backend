@@ -2,9 +2,7 @@ package com.magentamause.cosybackend.entities;
 
 import com.magentamause.cosybackend.entities.layout.PublicDashboardLayout;
 import jakarta.persistence.*;
-
 import java.util.List;
-
 import lombok.*;
 
 @Setter

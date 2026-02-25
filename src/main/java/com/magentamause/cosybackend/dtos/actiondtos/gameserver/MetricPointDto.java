@@ -4,11 +4,9 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.influxdb.query.FluxRecord;
 import com.magentamause.cosybackend.entities.metric.MetricType;
-
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -111,6 +109,5 @@ public class MetricPointDto {
                 map.put(key, value);
             }
         }
-
     }
 }

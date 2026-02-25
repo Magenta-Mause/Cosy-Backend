@@ -103,10 +103,7 @@ public class MetricsService {
         return !dashboard.isEnabled()
                 ? List.of()
                 : dashboard.getLayouts().stream()
-                        .filter(
-                                layout ->
-                                        layout.getLayoutType()
-                                                .equals(DashboardTypes.METRIC))
+                        .filter(layout -> layout.getLayoutType().equals(DashboardTypes.METRIC))
                         .map(PublicDashboardLayout::getMetricType)
                         .toList();
     }
