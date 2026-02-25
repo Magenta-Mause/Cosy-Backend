@@ -196,6 +196,9 @@ public class GameServerEntity {
                     .environmentVariables(this.getEnvironmentVariables())
                     .volumeMounts(this.getVolumeMounts());
         }
+        if (GameServerFieldVisibilityPolicy.canSeeFiles(permissions)) {
+            builder.volumeMounts(this.getVolumeMounts());
+        }
         if (GameServerFieldVisibilityPolicy.canSeeRconConfig(permissions)) {
             builder.rconConfiguration(this.getRconConfiguration());
         }
