@@ -15,7 +15,7 @@ public class PrivateDashboardLayout extends Layout {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private DashboardTypes privateDashboardTypes;
+    private DashboardTypes layoutType;
 
     @Column private String metricType;
 
@@ -28,9 +28,9 @@ public class PrivateDashboardLayout extends Layout {
     private List<KeyValueEntry> content;
 
     public boolean isValid() {
-        if (privateDashboardTypes == null) return false;
+        if (layoutType == null) return false;
 
-        return switch (privateDashboardTypes) {
+        return switch (layoutType) {
             case METRIC -> metricType != null;
             case FREETEXT -> content != null && !content.isEmpty();
             case LOGS -> true;

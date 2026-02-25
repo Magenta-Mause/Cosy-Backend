@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.PublicDashboardUpdateDto;
 import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.GameServerDesign;
@@ -8,7 +9,9 @@ import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
 import com.magentamause.cosybackend.entities.layout.PublicDashboardLayout;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
+
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -73,8 +76,7 @@ public class GameServerConfigurationService {
 
     public void updatePublicDashboardLayout(
             String gameServerUuid,
-            List<PublicDashboardLayout> publicDashboardLayouts,
-            boolean isPublic) {
+            PublicDashboardUpdateDto updateDto) {
         GameServerEntity gameServer =
                 gameServerRepository
                         .findById(gameServerUuid)
@@ -84,7 +86,8 @@ public class GameServerConfigurationService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Server '" + gameServerUuid + "' not found"));
 
-        publicDashboardLayouts.forEach(
+
+        updateDto.getLayouts().forEach(
                 layout -> {
                     if (!layout.isValid()) {
                         throw new IllegalStateException("Invalid dashboard layout: " + layout);
@@ -93,8 +96,8 @@ public class GameServerConfigurationService {
 
         PublicDashboard layout = gameServer.getPublicDashboard();
         layout.getLayouts().clear();
-        layout.getLayouts().addAll(publicDashboardLayouts);
-        layout.setEnabled(isPublic);
+        layout.getLayouts().addAll(updateDto.getLayouts());
+        layout.setEnabled(updateDto.isEnabled());
         gameServerRepository.save(gameServer);
     }
 }

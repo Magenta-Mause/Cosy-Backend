@@ -28,7 +28,7 @@ public class GameServerLogPolicy {
                 && publicDashboard.isEnabled()
                 && publicDashboard.getLayouts().stream()
                         .anyMatch(
-                                layout -> layout.getPublicDashboardType() == DashboardTypes.LOGS)) {
+                                layout -> layout.getLayoutType() == DashboardTypes.LOGS)) {
             return true;
         }
         return GameServerPermissionsUtility.isOwnerOrHasPermission(

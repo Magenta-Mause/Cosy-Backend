@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class DefaultSettingsMapper {
-    public void createDefaultLayout(GameServerEntity gameServer) {
+    public void createDefaultLayouts(GameServerEntity gameServer) {
         gameServer.setMetricLayout(
                 List.of(
                         createMetricLayout(MetricType.CPU_PERCENT.getValue()),
@@ -36,7 +36,7 @@ public class DefaultSettingsMapper {
     private PrivateDashboardLayout createPrivateDashboardLayout(
             DashboardTypes type, MetricType metricType) {
         PrivateDashboardLayout layout = new PrivateDashboardLayout();
-        layout.setPrivateDashboardTypes(type);
+        layout.setLayoutType(type);
         layout.setSize(Size.MEDIUM);
         if (metricType != null) {
             layout.setMetricType(metricType.getValue());

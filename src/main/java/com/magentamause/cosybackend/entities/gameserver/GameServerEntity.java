@@ -14,11 +14,13 @@ import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerFieldVisibilityPolicy;
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -39,7 +41,8 @@ public class GameServerEntity {
 
     private String serverName;
 
-    @ManyToOne private UserEntity owner;
+    @ManyToOne
+    private UserEntity owner;
 
     @Enumerated(EnumType.STRING)
     private GameServerDto.GameServerStatus status;
@@ -47,11 +50,13 @@ public class GameServerEntity {
     @Enumerated(EnumType.STRING)
     private GameServerDesign design;
 
-    @CreationTimestamp private LocalDateTime createdOn;
+    @CreationTimestamp
+    private LocalDateTime createdOn;
 
     private LocalDateTime timestampLastStarted;
 
-    @ManyToOne private GameEntity game;
+    @ManyToOne
+    private GameEntity game;
 
     @Column(nullable = false)
     private String dockerImageName;
@@ -64,9 +69,11 @@ public class GameServerEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> customMetricHolder = new HashMap<>();
 
-    @Embedded private DockerHardwareLimits dockerHardwareLimits;
+    @Embedded
+    private DockerHardwareLimits dockerHardwareLimits;
 
-    @Embedded private RCONConfiguration rconConfiguration;
+    @Embedded
+    private RCONConfiguration rconConfiguration;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
@@ -163,7 +170,10 @@ public class GameServerEntity {
                 .serverName(this.getServerName())
                 .status(this.getStatus())
                 .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
+                .design(this.getDesign())
                 .publicDashboard(this.publicDashboard)
+                .timestampLastStarted(this.getTimestampLastStarted())
+                .createdOn(this.getCreatedOn())
                 .build();
     }
 
@@ -174,22 +184,13 @@ public class GameServerEntity {
     }
 
     public GameServerDto toDto(List<GameServerAccessPermission> permissions) {
-        GameServerDto.GameServerDtoBuilder builder =
-                GameServerDto.builder()
-                        .uuid(this.getUuid())
-                        .serverName(this.getServerName())
-                        .owner(
-                                Optional.ofNullable(this.getOwner())
-                                        .map(UserEntity::toDto)
-                                        .orElse(null))
-                        .status(this.getStatus())
-                        .design(this.getDesign())
-                        .createdOn(this.getCreatedOn())
-                        .timestampLastStarted(this.getTimestampLastStarted())
-                        .gameUuid(
-                                Optional.ofNullable(this.getGame())
-                                        .map(GameEntity::getUuid)
-                                        .orElse(null));
+        GameServerDto.GameServerDtoBuilder builder = this.toPublicDto().toBuilder();
+
+        if (this.publicDashboard != null && (this.publicDashboard.isEnabled() || GameServerFieldVisibilityPolicy.canSeePublicDashboardConfigs(permissions))) {
+            builder.publicDashboard(this.publicDashboard);
+        } else {
+            builder.publicDashboard(PublicDashboard.builder().build());
+        }
         if (GameServerFieldVisibilityPolicy.canSeeServerConfigs(permissions)) {
             builder.dockerImageName(this.getDockerImageName())
                     .dockerImageTag(this.getDockerImageTag())

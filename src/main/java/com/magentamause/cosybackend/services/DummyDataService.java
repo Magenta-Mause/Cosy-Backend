@@ -9,9 +9,12 @@ import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLi
 import com.magentamause.cosybackend.entities.gameserver.utility.GameServerDesign;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.repositories.DummyInstantiatedPropertiesRepository;
+import com.magentamause.cosybackend.services.core.gameserver.DefaultSettingsMapper;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import com.magentamause.cosybackend.services.user.UserEntityService;
+
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +35,7 @@ public class DummyDataService {
     private final DefaultProperties defaultProperties;
     private List<GameServerCreationDto> dummyGameServers;
     private UserEntity adminUser;
+    private DefaultSettingsMapper defaultSettingsMapper;
 
     @Autowired
     public DummyDataService(
@@ -39,7 +43,7 @@ public class DummyDataService {
             GameServerService gameServerService,
             UserEntityService userEntityService,
             DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository,
-            DefaultProperties defaultProperties) {
+            DefaultProperties defaultProperties, DefaultSettingsMapper defaultSettingsMapper) {
         this.passwordEncoder = passwordEncoder;
         this.gameServerService = gameServerService;
         this.dummyInstantiatedPropertiesRepository = dummyInstantiatedPropertiesRepository;
@@ -131,6 +135,7 @@ public class DummyDataService {
                                                         .containerPath("/app/data")
                                                         .build()))
                                 .build());
+        this.defaultSettingsMapper = defaultSettingsMapper;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -151,7 +156,9 @@ public class DummyDataService {
 
         log.info("Populating dummy game servers");
         this.dummyGameServers.forEach(
-                (gameServer) -> gameServerService.createGameServer(adminUser, gameServer));
+                (gameServer) -> {
+                    gameServerService.createGameServer(adminUser, gameServer);
+                });
 
         dummyInstantiatedPropertiesRepository.save(
                 DummyInstantiatedEntity.builder().key("dummy-game-servers").build());

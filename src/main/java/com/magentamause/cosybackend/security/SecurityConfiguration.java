@@ -36,7 +36,7 @@ public class SecurityConfiguration {
                                                 "/actuator/**",
                                                 "/swagger-ui/**")
                                         .permitAll()
-                                        .requestMatchers(HttpMethod.GET, "/game-server/all")
+                                        .requestMatchers(HttpMethod.GET, "/game-server")
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/game-server/*/logs")
                                         .permitAll()

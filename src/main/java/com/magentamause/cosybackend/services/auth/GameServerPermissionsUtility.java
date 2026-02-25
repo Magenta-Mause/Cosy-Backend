@@ -4,6 +4,7 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
+
 import java.util.List;
 
 public class GameServerPermissionsUtility {
@@ -33,6 +34,9 @@ public class GameServerPermissionsUtility {
 
     public static boolean isOwnerOrHasPermission(
             GameServerEntity gameServer, UserEntity user, GameServerAccessPermission permission) {
+        if (user == null) {
+            return false;
+        }
         if (user.getRole().isAdmin() || isOwner(gameServer, user)) {
             return true;
         }
@@ -46,6 +50,6 @@ public class GameServerPermissionsUtility {
             List<GameServerAccessPermission> userPermissions) {
         return userPermissions.contains(GameServerAccessPermission.ADMIN)
                 || (userPermissions.contains(GameServerAccessPermission.SEE_SERVER)
-                        && userPermissions.contains(permission));
+                && userPermissions.contains(permission));
     }
 }

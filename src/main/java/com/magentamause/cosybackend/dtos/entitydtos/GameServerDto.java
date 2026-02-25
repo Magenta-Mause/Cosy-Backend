@@ -19,7 +19,7 @@ import lombok.Data;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Builder
+@Builder(toBuilder = true)
 public class GameServerDto {
     @NotBlank private String uuid;
     @NotBlank private String serverName;

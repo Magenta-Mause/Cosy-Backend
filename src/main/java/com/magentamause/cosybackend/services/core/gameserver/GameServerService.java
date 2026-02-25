@@ -32,6 +32,7 @@ import com.magentamause.cosybackend.services.user.UserEntityService;
 import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher;
 import com.magentamause.cosybackend.websockets.GameServerUpdatePublisher;
 import jakarta.annotation.PostConstruct;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,6 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -166,7 +168,7 @@ public class GameServerService {
 
         GameServerEntity created = gameServerDto.toEntity(user, gameResolver);
 
-        defaultSettingsMapper.createDefaultLayout(created);
+        defaultSettingsMapper.createDefaultLayouts(created);
 
         return saveGameServerConfiguration(created, true);
     }
@@ -214,9 +216,9 @@ public class GameServerService {
         Set<String> oldVolumeUuids =
                 gameServer.getVolumeMounts() != null
                         ? gameServer.getVolumeMounts().stream()
-                                .map(VolumeMountConfiguration::getUuid)
-                                .filter(id -> id != null)
-                                .collect(Collectors.toSet())
+                        .map(VolumeMountConfiguration::getUuid)
+                        .filter(id -> id != null)
+                        .collect(Collectors.toSet())
                         : Set.of();
 
         Function<Integer, GameEntity> gameResolver =
@@ -229,9 +231,9 @@ public class GameServerService {
         Set<String> newVolumeUuids =
                 saved.getVolumeMounts() != null
                         ? saved.getVolumeMounts().stream()
-                                .map(VolumeMountConfiguration::getUuid)
-                                .filter(id -> id != null)
-                                .collect(Collectors.toSet())
+                        .map(VolumeMountConfiguration::getUuid)
+                        .filter(id -> id != null)
+                        .collect(Collectors.toSet())
                         : Set.of();
 
         List<String> removedUuids =
@@ -455,12 +457,14 @@ public class GameServerService {
 
     public List<GameServerEntity> getGameServersVisibleToUser(UserEntity user) {
         List<GameServerEntity> allGameServers = getAllGameServers();
+
         if (user.getRole().isAdmin()) {
             return allGameServers;
         }
+
         return allGameServers.stream()
                 .filter(
-                        gameServer ->
+                        gameServer -> gameServer.getPublicDashboard().isEnabled() ||
                                 GameServerPolicy.canGetGameServer(
                                         ResourceResolver.of(gameServer),
                                         gameServer.getUuid(),
@@ -533,8 +537,8 @@ public class GameServerService {
                         gameServer ->
                                 gameServer.getPublicDashboard() != null
                                         && gameServer
-                                                .getPublicDashboard()
-                                                .isEnabled())
+                                        .getPublicDashboard()
+                                        .isEnabled())
                 .orElse(false);
     }
 }

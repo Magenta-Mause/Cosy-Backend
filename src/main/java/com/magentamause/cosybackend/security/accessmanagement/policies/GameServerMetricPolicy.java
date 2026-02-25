@@ -29,7 +29,7 @@ public class GameServerMetricPolicy {
                 && publicDashboard.getLayouts().stream()
                         .anyMatch(
                                 layout ->
-                                        layout.getPublicDashboardType() == DashboardTypes.METRIC)) {
+                                        layout.getLayoutType() == DashboardTypes.METRIC)) {
             return true;
         }
         return GameServerPermissionsUtility.isOwnerOrHasPermission(
