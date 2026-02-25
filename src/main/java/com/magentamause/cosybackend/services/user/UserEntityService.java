@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.services.user;
 
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.entities.UserEntity.Role;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.repositories.UserEntityRepository;
 import java.util.List;
@@ -81,6 +82,16 @@ public class UserEntityService {
         UserEntity user = getUserByUuid(uuid);
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        return saveUserEntity(user);
+    }
+
+    public UserEntity changeRole(String uuid, Role newRole) {
+        log.info("Changing role for user with UUID: {} to {}", uuid, newRole);
+        if (newRole.equals(Role.OWNER)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot assign OWNER role");
+        }
+        UserEntity user = getUserByUuid(uuid);
+        user.setRole(newRole);
         return saveUserEntity(user);
     }
 
