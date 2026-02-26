@@ -33,6 +33,9 @@ public class GameServerPermissionsUtility {
 
     public static boolean isOwnerOrHasPermission(
             GameServerEntity gameServer, UserEntity user, GameServerAccessPermission permission) {
+        if (user == null) {
+            return false;
+        }
         if (user.getRole().isAdmin() || isOwner(gameServer, user)) {
             return true;
         }

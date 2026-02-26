@@ -1,7 +1,6 @@
 package com.magentamause.cosybackend.services.auth;
 
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.exceptions.NoAuthenticationFoundException;
 import com.magentamause.cosybackend.security.jwtfilter.AuthenticationToken;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,7 +13,7 @@ public class SecurityContextService {
     public AuthenticationToken getAuthenticationToken() {
         Object auth = SecurityContextHolder.getContext().getAuthentication();
         if (!(auth instanceof AuthenticationToken)) {
-            throw new NoAuthenticationFoundException();
+            return null;
         }
         return (AuthenticationToken) auth;
     }
@@ -28,6 +27,10 @@ public class SecurityContextService {
     }
 
     public UserEntity getUser() {
-        return getAuthenticationToken().getUser();
+        AuthenticationToken token = getAuthenticationToken();
+        if (token == null) {
+            return null;
+        }
+        return token.getUser();
     }
 }

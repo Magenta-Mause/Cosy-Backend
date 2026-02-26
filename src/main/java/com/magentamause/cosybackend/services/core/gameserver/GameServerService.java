@@ -148,7 +148,7 @@ public class GameServerService {
     }
 
     public GameServerEntity getOrThrow(String uuid) {
-        return getOptionalGameServerOptionalById(uuid)
+        return getOptionalGameServerById(uuid)
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(
@@ -156,7 +156,7 @@ public class GameServerService {
                                         "Game server with uuid " + uuid + " not found"));
     }
 
-    public Optional<GameServerEntity> getOptionalGameServerOptionalById(String uuid) {
+    public Optional<GameServerEntity> getOptionalGameServerById(String uuid) {
         return gameServerRepository.findById(uuid);
     }
 
@@ -166,7 +166,7 @@ public class GameServerService {
 
         GameServerEntity created = gameServerDto.toEntity(user, gameResolver);
 
-        defaultSettingsMapper.createDefaultLayout(created);
+        defaultSettingsMapper.createDefaultLayouts(created);
 
         return saveGameServerConfiguration(created, true);
     }
@@ -455,16 +455,19 @@ public class GameServerService {
 
     public List<GameServerEntity> getGameServersVisibleToUser(UserEntity user) {
         List<GameServerEntity> allGameServers = getAllGameServers();
+
         if (user.getRole().isAdmin()) {
             return allGameServers;
         }
+
         return allGameServers.stream()
                 .filter(
                         gameServer ->
-                                GameServerPolicy.canGetGameServer(
-                                        ResourceResolver.of(gameServer),
-                                        gameServer.getUuid(),
-                                        user))
+                                gameServer.getPublicDashboard().isEnabled()
+                                        || GameServerPolicy.canGetGameServer(
+                                                ResourceResolver.of(gameServer),
+                                                gameServer.getUuid(),
+                                                user))
                 .toList();
     }
 
@@ -483,7 +486,7 @@ public class GameServerService {
     }
 
     public Boolean checkGameServerConnection(String uuid, String secret) {
-        Optional<GameServerEntity> gameServer = getOptionalGameServerOptionalById(uuid);
+        Optional<GameServerEntity> gameServer = getOptionalGameServerById(uuid);
         if (gameServer.isEmpty()) {
             return false;
         }
@@ -517,5 +520,22 @@ public class GameServerService {
                 || entry instanceof Double
                 || entry instanceof String
                 || entry instanceof Boolean;
+    }
+
+    public List<GameServerEntity> getPubliclyEvaluableGameServer() {
+        List<GameServerEntity> allGameServers = getAllGameServers();
+
+        return allGameServers.stream()
+                .filter(gameServer -> gameServer.getPublicDashboard().isEnabled())
+                .toList();
+    }
+
+    public boolean isGameServerPubliclyEvaluable(String gameServerUuid) {
+        return getOptionalGameServerById(gameServerUuid)
+                .map(
+                        gameServer ->
+                                gameServer.getPublicDashboard() != null
+                                        && gameServer.getPublicDashboard().isEnabled())
+                .orElse(false);
     }
 }

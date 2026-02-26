@@ -26,7 +26,7 @@ public class AuthorizationAspect {
     public void checkAccess(JoinPoint joinPoint, NeedsValidation needsValidation) {
         UserEntity user = securityContextService.getUser();
 
-        if (user == null) {
+        if (user == null && !needsValidation.allowUnauthorized()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
 

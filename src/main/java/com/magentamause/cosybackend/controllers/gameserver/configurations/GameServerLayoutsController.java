@@ -1,7 +1,8 @@
 package com.magentamause.cosybackend.controllers.gameserver.configurations;
 
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.configuration.PublicDashboardUpdateDto;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
-import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
+import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
@@ -33,6 +34,15 @@ public class GameServerLayoutsController {
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody List<PrivateDashboardLayout> privateDashboardLayout) {
         gameServerConfigurationService.updatePrivateDashboardLayout(uuid, privateDashboardLayout);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{uuid}/layout/public-dashboard")
+    @NeedsValidation(Operation.GAME_SERVER_PUBLIC_DASHBOARD_CONFIG_CHANGE)
+    public ResponseEntity<Void> updatePublicDashboardLayout(
+            @PathVariable @ResourceId String uuid,
+            @Valid @RequestBody PublicDashboardUpdateDto updateDto) {
+        gameServerConfigurationService.updatePublicDashboardLayout(uuid, updateDto);
         return ResponseEntity.ok().build();
     }
 }

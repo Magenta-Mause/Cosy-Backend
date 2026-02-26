@@ -1,6 +1,5 @@
-package com.magentamause.cosybackend.entities.layout.privatedashboard;
+package com.magentamause.cosybackend.entities.layout;
 
-import com.magentamause.cosybackend.entities.layout.Layout;
 import jakarta.persistence.*;
 import java.util.List;
 import lombok.Getter;
@@ -12,11 +11,10 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Setter
 @Entity
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class PrivateDashboardLayout extends Layout {
-
+public class PublicDashboardLayout extends Layout {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PrivateDashboardTypes privateDashboardTypes;
+    private DashboardTypes layoutType;
 
     @Column private String metricType;
 
@@ -24,22 +22,14 @@ public class PrivateDashboardLayout extends Layout {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
-            name = "private_dashboard_content",
-            joinColumns = @JoinColumn(name = "private_dashboard_layout_id"))
-    private List<KeyValue> content;
-
-    @Embeddable
-    @Getter
-    @Setter
-    public static class KeyValue {
-        private String Key;
-        private String Value;
-    }
+            name = "public_dashboard_content",
+            joinColumns = @JoinColumn(name = "public_dashboard_layout_id"))
+    private List<KeyValueEntry> content;
 
     public boolean isValid() {
-        if (privateDashboardTypes == null) return false;
+        if (layoutType == null) return false;
 
-        return switch (privateDashboardTypes) {
+        return switch (layoutType) {
             case METRIC -> metricType != null;
             case FREETEXT -> content != null && !content.isEmpty();
             case LOGS -> true;

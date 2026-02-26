@@ -48,8 +48,10 @@ public class DummyDataService {
 
         this.adminUser =
                 UserEntity.builder()
-                        .username(defaultProperties.owner().username())
-                        .password(this.passwordEncoder.encode(defaultProperties.owner().password()))
+                        .username(this.defaultProperties.owner().username())
+                        .password(
+                                this.passwordEncoder.encode(
+                                        this.defaultProperties.owner().password()))
                         .defaultPasswordReset(false)
                         .role(UserEntity.Role.OWNER)
                         .build();
@@ -151,7 +153,9 @@ public class DummyDataService {
 
         log.info("Populating dummy game servers");
         this.dummyGameServers.forEach(
-                (gameServer) -> gameServerService.createGameServer(adminUser, gameServer));
+                (gameServer) -> {
+                    gameServerService.createGameServer(adminUser, gameServer);
+                });
 
         dummyInstantiatedPropertiesRepository.save(
                 DummyInstantiatedEntity.builder().key("dummy-game-servers").build());

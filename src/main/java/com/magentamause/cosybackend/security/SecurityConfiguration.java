@@ -36,6 +36,13 @@ public class SecurityConfiguration {
                                                 "/actuator/**",
                                                 "/swagger-ui/**")
                                         .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/game-server")
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.GET, "/game-server/*/logs")
+                                        .permitAll()
+                                        .requestMatchers(
+                                                HttpMethod.GET, "/game-server/*/metrics/public")
+                                        .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/user-invites/*")
                                         .permitAll()
                                         .requestMatchers(HttpMethod.GET, "/footer")

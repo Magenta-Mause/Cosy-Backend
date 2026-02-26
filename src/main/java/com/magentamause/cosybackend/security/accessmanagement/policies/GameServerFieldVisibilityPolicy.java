@@ -45,6 +45,17 @@ public class GameServerFieldVisibilityPolicy {
                 GameServerAccessPermission.CHANGE_WEBHOOK_SETTINGS, permissions);
     }
 
+    public static boolean canSeePublicDashboardConfigs(
+            List<GameServerAccessPermission> permissions) {
+        return GameServerPermissionsUtility.can(
+                GameServerAccessPermission.CHANGE_PUBLIC_DASHBOARD_SETTINGS, permissions);
+    }
+
+    public static boolean canSeeFiles(List<GameServerAccessPermission> permissions) {
+        return GameServerPermissionsUtility.can(
+                GameServerAccessPermission.READ_SERVER_SERVER_FILES, permissions);
+    }
+
     // Resolves permissions from entity+user (used by toDto(user))
 
     public static List<GameServerAccessPermission> resolvePermissions(

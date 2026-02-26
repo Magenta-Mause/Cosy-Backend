@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
-import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
+import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,7 +19,7 @@ import lombok.Data;
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Builder
+@Builder(toBuilder = true)
 public class GameServerDto {
     @NotBlank private String uuid;
     @NotBlank private String serverName;
@@ -58,6 +59,8 @@ public class GameServerDto {
     @NotNull private List<GameServerAccessGroupDto> accessGroups;
 
     private List<WebhookDto> webhooks;
+
+    @NotNull private PublicDashboard publicDashboard;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     public enum GameServerStatus {

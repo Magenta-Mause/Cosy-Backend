@@ -4,13 +4,14 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.GameEntity;
+import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.*;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
-import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
+import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerFieldVisibilityPolicy;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -111,6 +112,10 @@ public class GameServerEntity {
     @JoinColumn(name = "game_server_uuid")
     private List<WebhookEntity> webhooks;
 
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "public_dashboard_uuid")
+    private PublicDashboard publicDashboard;
+
     public GameServerDto toDto() {
         return GameServerDto.builder()
                 .uuid(this.getUuid())
@@ -131,6 +136,7 @@ public class GameServerEntity {
                 .environmentVariables(this.getEnvironmentVariables())
                 .volumeMounts(this.getVolumeMounts())
                 .metricLayout(this.getMetricLayout())
+                .publicDashboard(this.getPublicDashboard())
                 .accessGroups(
                         Optional.ofNullable(this.getAccessGroups())
                                 .map(
@@ -150,6 +156,20 @@ public class GameServerEntity {
                 .build();
     }
 
+    public GameServerDto toPublicDto() {
+        return GameServerDto.builder()
+                .uuid(this.getUuid())
+                .gameUuid(Optional.ofNullable(this.getGame()).map(GameEntity::getUuid).orElse(null))
+                .serverName(this.getServerName())
+                .status(this.getStatus())
+                .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
+                .design(this.getDesign())
+                .publicDashboard(this.publicDashboard)
+                .timestampLastStarted(this.getTimestampLastStarted())
+                .createdOn(this.getCreatedOn())
+                .build();
+    }
+
     public GameServerDto toDto(UserEntity user) {
         List<GameServerAccessPermission> permissions =
                 GameServerFieldVisibilityPolicy.resolvePermissions(this, user);
@@ -157,22 +177,16 @@ public class GameServerEntity {
     }
 
     public GameServerDto toDto(List<GameServerAccessPermission> permissions) {
-        GameServerDto.GameServerDtoBuilder builder =
-                GameServerDto.builder()
-                        .uuid(this.getUuid())
-                        .serverName(this.getServerName())
-                        .owner(
-                                Optional.ofNullable(this.getOwner())
-                                        .map(UserEntity::toDto)
-                                        .orElse(null))
-                        .status(this.getStatus())
-                        .design(this.getDesign())
-                        .createdOn(this.getCreatedOn())
-                        .timestampLastStarted(this.getTimestampLastStarted())
-                        .gameUuid(
-                                Optional.ofNullable(this.getGame())
-                                        .map(GameEntity::getUuid)
-                                        .orElse(null));
+        GameServerDto.GameServerDtoBuilder builder = this.toPublicDto().toBuilder();
+
+        if (this.publicDashboard != null
+                && (this.publicDashboard.isEnabled()
+                        || GameServerFieldVisibilityPolicy.canSeePublicDashboardConfigs(
+                                permissions))) {
+            builder.publicDashboard(this.publicDashboard);
+        } else {
+            builder.publicDashboard(PublicDashboard.builder().build());
+        }
         if (GameServerFieldVisibilityPolicy.canSeeServerConfigs(permissions)) {
             builder.dockerImageName(this.getDockerImageName())
                     .dockerImageTag(this.getDockerImageTag())
@@ -181,6 +195,9 @@ public class GameServerEntity {
                     .portMappings(this.getPortMappings())
                     .environmentVariables(this.getEnvironmentVariables())
                     .volumeMounts(this.getVolumeMounts());
+        }
+        if (GameServerFieldVisibilityPolicy.canSeeFiles(permissions)) {
+            builder.volumeMounts(this.getVolumeMounts());
         }
         if (GameServerFieldVisibilityPolicy.canSeeRconConfig(permissions)) {
             builder.rconConfiguration(this.getRconConfiguration());

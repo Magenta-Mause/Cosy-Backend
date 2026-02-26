@@ -1,26 +1,26 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
+import com.magentamause.cosybackend.entities.PublicDashboard;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
-import com.magentamause.cosybackend.entities.layout.MetricLayout;
-import com.magentamause.cosybackend.entities.layout.Size;
-import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardLayout;
-import com.magentamause.cosybackend.entities.layout.privatedashboard.PrivateDashboardTypes;
+import com.magentamause.cosybackend.entities.layout.*;
 import com.magentamause.cosybackend.entities.metric.MetricType;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DefaultSettingsMapper {
-    public void createDefaultLayout(GameServerEntity gameServer) {
+    public void createDefaultLayouts(GameServerEntity gameServer) {
         gameServer.setMetricLayout(
                 List.of(
                         createMetricLayout(MetricType.CPU_PERCENT.getValue()),
                         createMetricLayout(MetricType.MEMORY_USAGE.getValue())));
         gameServer.setPrivateDashboardLayouts(
                 List.of(
-                        createPrivateDashboardLayout(
-                                PrivateDashboardTypes.METRIC, MetricType.CPU_PERCENT),
-                        createPrivateDashboardLayout(PrivateDashboardTypes.LOGS, null)));
+                        createPrivateDashboardLayout(DashboardTypes.METRIC, MetricType.CPU_PERCENT),
+                        createPrivateDashboardLayout(DashboardTypes.LOGS, null)));
+        gameServer.setPublicDashboard(
+                PublicDashboard.builder().enabled(false).layouts(new ArrayList<>()).build());
     }
 
     private MetricLayout createMetricLayout(String metricType) {
@@ -31,9 +31,9 @@ public class DefaultSettingsMapper {
     }
 
     private PrivateDashboardLayout createPrivateDashboardLayout(
-            PrivateDashboardTypes type, MetricType metricType) {
+            DashboardTypes type, MetricType metricType) {
         PrivateDashboardLayout layout = new PrivateDashboardLayout();
-        layout.setPrivateDashboardTypes(type);
+        layout.setLayoutType(type);
         layout.setSize(Size.MEDIUM);
         if (metricType != null) {
             layout.setMetricType(metricType.getValue());

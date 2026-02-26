@@ -21,7 +21,7 @@ public class GameServerLogController {
     private final GameServerLogService gameServerLogService;
 
     @GetMapping
-    @NeedsValidation(Operation.GAME_SERVER_LOG_READ)
+    @NeedsValidation(value = Operation.GAME_SERVER_LOG_READ, allowUnauthorized = true)
     public ResponseEntity<List<GameServerLogMessageEntity>> getLogs(
             @ResourceId @PathVariable String gameServerUuid,
             @RequestParam(defaultValue = "500", required = false) @Min(1) @Max(2000) int limit,

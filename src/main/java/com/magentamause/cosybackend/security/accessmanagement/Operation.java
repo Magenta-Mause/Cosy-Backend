@@ -31,6 +31,7 @@ public enum Operation {
     // Game Server Configuration operations
     GAME_SERVER_METRIC_CONFIG_CHANGE,
     GAME_SERVER_PRIVATE_DASHBOARD_CONFIG_CHANGE,
+    GAME_SERVER_PUBLIC_DASHBOARD_CONFIG_CHANGE,
     GAME_SERVER_PERMISSIONS_CONFIG_CHANGE,
     GAME_SERVER_RCON_CONFIG_CHANGE,
 
@@ -49,6 +50,7 @@ public enum Operation {
 
     // Game Server Metric operations
     GAME_SERVER_METRIC_READ,
+    GAME_SERVER_METRIC_READ_PUBLIC,
 
     // User Invite operations
     USER_INVITE_READ,

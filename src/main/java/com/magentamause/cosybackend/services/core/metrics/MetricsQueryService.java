@@ -4,9 +4,11 @@ import com.influxdb.client.InfluxDBClient;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
-import com.magentamause.cosybackend.entities.metric.MetricType;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,32 +17,12 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class MetricsQueryService {
-    private static final String TYPE_SUFFIX_STRING = "__s";
-    private static final String TYPE_SUFFIX_INT = "__i";
-    private static final String TYPE_SUFFIX_FLOAT = "__f";
-    private static final String TYPE_SUFFIX_BOOL = "__b";
-    private static final Set<String> NON_CUSTOM_COLUMNS =
-            Set.of(
-                    "result",
-                    "table",
-                    "_start",
-                    "_stop",
-                    "_time",
-                    "_measurement",
-                    "game_server_uuid",
-                    MetricType.CPU_PERCENT.getValue(),
-                    MetricType.MEMORY_PERCENT.getValue(),
-                    MetricType.MEMORY_USAGE.getValue(),
-                    MetricType.MEMORY_LIMIT.getValue(),
-                    MetricType.NETWORK_INPUT.getValue(),
-                    MetricType.NETWORK_OUTPUT.getValue(),
-                    MetricType.BLOCK_READ.getValue(),
-                    MetricType.BLOCK_WRITE.getValue());
     private final InfluxDBClient influxDBClient;
+    private final MetricsUtilService metricsUtilService;
 
     public List<MetricPointDto> queryMetrics(
-            String gameServerUuid, Instant start, Instant end, int point) {
-        String flux = buildInfluxQuery(gameServerUuid, start, end, point);
+            String gameServerUuid, Instant start, Instant end, int pointCount) {
+        String flux = buildInfluxQuery(gameServerUuid, start, end, pointCount);
 
         List<FluxTable> tables = influxDBClient.getQueryApi().query(flux);
 
@@ -48,7 +30,8 @@ public class MetricsQueryService {
 
         for (FluxTable table : tables) {
             for (FluxRecord record : table.getRecords()) {
-                Map<String, Object> customMetricHolder = extractCustomMetrics(record);
+                Map<String, Object> customMetricHolder =
+                        metricsUtilService.extractCustomMetrics(record);
 
                 MetricPointDto.MetricValues metrics =
                         MetricPointDto.MetricValues.ofFluxRecord(record, customMetricHolder);
@@ -64,44 +47,10 @@ public class MetricsQueryService {
 
         if (results.isEmpty()) {
             log.debug("No metrics found for query {}, generating zero-value data points", flux);
-            return generateZeroValueMetrics(gameServerUuid, start, end, point);
+            return generateZeroValueMetrics(gameServerUuid, start, end, pointCount);
         }
 
         return results;
-    }
-
-    private Map<String, Object> extractCustomMetrics(FluxRecord record) {
-        Map<String, Object> custom = new HashMap<>();
-        Map<String, Object> values = record.getValues();
-        if (values == null || values.isEmpty()) {
-            return custom;
-        }
-
-        for (Map.Entry<String, Object> entry : values.entrySet()) {
-            String key = entry.getKey();
-            if (key == null || NON_CUSTOM_COLUMNS.contains(key)) {
-                continue;
-            }
-
-            Object value = entry.getValue();
-            if (value == null) {
-                continue;
-            }
-
-            String baseKey = stripTypeSuffix(key);
-            custom.put(baseKey, value);
-        }
-        return custom;
-    }
-
-    private String stripTypeSuffix(String key) {
-        if (key.endsWith(TYPE_SUFFIX_STRING)
-                || key.endsWith(TYPE_SUFFIX_INT)
-                || key.endsWith(TYPE_SUFFIX_FLOAT)
-                || key.endsWith(TYPE_SUFFIX_BOOL)) {
-            return key.substring(0, key.length() - 3);
-        }
-        return key;
     }
 
     private String buildInfluxQuery(
