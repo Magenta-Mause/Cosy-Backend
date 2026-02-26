@@ -51,8 +51,8 @@ public class DummyDataService {
 
         this.adminUser =
                 UserEntity.builder()
-                        .username(defaultProperties.admin().username())
-                        .password(this.passwordEncoder.encode(defaultProperties.admin().password()))
+                        .username(defaultProperties.owner().username())
+                        .password(this.passwordEncoder.encode(defaultProperties.owner().password()))
                         .defaultPasswordReset(false)
                         .role(UserEntity.Role.OWNER)
                         .build();

@@ -68,6 +68,7 @@ public class UserPolicy {
             return false;
         }
         if (user.getRole().equals(UserEntity.Role.OWNER)) {
+            // owner cannot delete themselves since there would be no owner left
             return !user.getUuid().equals(userToDelete.getUuid());
         } else if (user.getUuid().equals(userToDelete.getUuid())) {
             return true;
@@ -93,6 +94,18 @@ public class UserPolicy {
         } else {
             return user.getRole().isAdmin();
         }
+    }
+
+    @Validates(Operation.USER_CHANGE_ROLE)
+    public static boolean canChangeRole(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+
+        UserEntity targetUser = resolver.getUserEntity((String) referenceId).orElse(null);
+        if (targetUser == null) {
+            return false;
+        }
+        return user.getRole().equals(UserEntity.Role.OWNER)
+                && !user.getUuid().equals(targetUser.getUuid());
     }
 
     @Validates(Operation.USER_READ_PERMISSIONS)
