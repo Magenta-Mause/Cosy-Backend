@@ -9,7 +9,6 @@ import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLi
 import com.magentamause.cosybackend.entities.gameserver.utility.GameServerDesign;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.repositories.DummyInstantiatedPropertiesRepository;
-import com.magentamause.cosybackend.services.core.gameserver.DefaultSettingsMapper;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import com.magentamause.cosybackend.services.user.UserEntityService;
 import java.util.List;
@@ -33,7 +32,6 @@ public class DummyDataService {
     private final DefaultProperties defaultProperties;
     private List<GameServerCreationDto> dummyGameServers;
     private UserEntity adminUser;
-    private DefaultSettingsMapper defaultSettingsMapper;
 
     @Autowired
     public DummyDataService(
@@ -41,8 +39,7 @@ public class DummyDataService {
             GameServerService gameServerService,
             UserEntityService userEntityService,
             DummyInstantiatedPropertiesRepository dummyInstantiatedPropertiesRepository,
-            DefaultProperties defaultProperties,
-            DefaultSettingsMapper defaultSettingsMapper) {
+            DefaultProperties defaultProperties) {
         this.passwordEncoder = passwordEncoder;
         this.gameServerService = gameServerService;
         this.dummyInstantiatedPropertiesRepository = dummyInstantiatedPropertiesRepository;
@@ -51,8 +48,10 @@ public class DummyDataService {
 
         this.adminUser =
                 UserEntity.builder()
-                        .username(defaultProperties.owner().username())
-                        .password(this.passwordEncoder.encode(defaultProperties.owner().password()))
+                        .username(this.defaultProperties.owner().username())
+                        .password(
+                                this.passwordEncoder.encode(
+                                        this.defaultProperties.owner().password()))
                         .defaultPasswordReset(false)
                         .role(UserEntity.Role.OWNER)
                         .build();
@@ -134,7 +133,6 @@ public class DummyDataService {
                                                         .containerPath("/app/data")
                                                         .build()))
                                 .build());
-        this.defaultSettingsMapper = defaultSettingsMapper;
     }
 
     @EventListener(ApplicationReadyEvent.class)
