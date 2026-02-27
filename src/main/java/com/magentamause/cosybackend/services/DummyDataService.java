@@ -140,6 +140,12 @@ public class DummyDataService {
         log.info("Initializing dummy data...");
 
         initializeAdminUserEntity();
+
+        if (!defaultProperties.initializeDummyData()) {
+            log.info("Initialization of dummy data is disabled in properties.");
+            return;
+        }
+
         populateGameServerDummies();
 
         log.info("Dummy data initialized.");

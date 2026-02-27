@@ -75,3 +75,4 @@ cosy:
     owner:
       username: admin
       password: admin
+    initialize-dummy-data: true
