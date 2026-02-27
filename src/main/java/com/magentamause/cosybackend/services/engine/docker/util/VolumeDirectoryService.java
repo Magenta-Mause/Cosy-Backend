@@ -184,11 +184,11 @@ public class VolumeDirectoryService {
     }
 
     private Path volumeBaseDir() {
-        String baseDir = engineProperties.docker().inBackendVolumeMountPath();
+        String baseDir = engineProperties.docker().volumeDirectory();
         if (baseDir == null || baseDir.isBlank()) {
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "cosy.engine.docker.in-backend-volume-mount-path is not configured");
+                    "cosy.engine.docker.volume-directory is not configured");
         }
         return Paths.get(baseDir).toAbsolutePath().normalize();
     }
