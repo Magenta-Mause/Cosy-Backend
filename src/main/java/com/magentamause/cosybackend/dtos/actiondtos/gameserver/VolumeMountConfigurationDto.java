@@ -3,6 +3,7 @@ package com.magentamause.cosybackend.dtos.actiondtos.gameserver;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,5 +16,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class VolumeMountConfigurationDto {
     private String uuid;
-    @NotBlank private String containerPath;
+
+    @NotBlank
+    @Pattern(regexp = "^/.+", message = "Container path must be an absolute path starting with '/'")
+    private String containerPath;
 }
