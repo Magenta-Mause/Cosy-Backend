@@ -7,6 +7,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.FORBIDDEN)
 public class HardwareLimitException extends RuntimeException {
+    public HardwareLimitException(String message) {
+        super(message);
+    }
+
     public HardwareLimitException(
             HardwareQuotaChecker.ResourceUsage totalUsage,
             HardwareQuotaChecker.ResourceUsage userLimit) {
