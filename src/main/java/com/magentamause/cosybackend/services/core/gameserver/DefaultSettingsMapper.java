@@ -13,31 +13,31 @@ public class DefaultSettingsMapper {
     public void createDefaultLayouts(GameServerEntity gameServer) {
         gameServer.setMetricLayout(
                 List.of(
-                        createMetricLayout(MetricType.CPU_PERCENT.getValue()),
-                        createMetricLayout(MetricType.MEMORY_USAGE.getValue())));
+                        createMetricLayout(MetricType.CPU_PERCENT),
+                        createMetricLayout(MetricType.MEMORY_USAGE),
+                        createMetricLayout(MetricType.NETWORK_INPUT),
+                        createMetricLayout(MetricType.NETWORK_OUTPUT)));
         gameServer.setPrivateDashboardLayouts(
                 List.of(
-                        createPrivateDashboardLayout(DashboardTypes.METRIC, MetricType.CPU_PERCENT),
-                        createPrivateDashboardLayout(DashboardTypes.LOGS, null)));
+                        createPrivateDashboardLayout(
+                                DashboardTypes.METRIC, Size.MEDIUM, MetricType.CPU_PERCENT),
+                        createPrivateDashboardLayout(
+                                DashboardTypes.METRIC, Size.MEDIUM, MetricType.MEMORY_USAGE),
+                        createPrivateDashboardLayout(DashboardTypes.LOGS, Size.LARGE, null)));
         gameServer.setPublicDashboard(
                 PublicDashboard.builder().enabled(false).layouts(new ArrayList<>()).build());
     }
 
-    private MetricLayout createMetricLayout(String metricType) {
-        MetricLayout layout = new MetricLayout();
-        layout.setMetricType(metricType);
-        layout.setSize(Size.MEDIUM);
-        return layout;
+    private MetricLayout createMetricLayout(MetricType metricType) {
+        return MetricLayout.builder().metricType(metricType.getValue()).size(Size.MEDIUM).build();
     }
 
     private PrivateDashboardLayout createPrivateDashboardLayout(
-            DashboardTypes type, MetricType metricType) {
-        PrivateDashboardLayout layout = new PrivateDashboardLayout();
-        layout.setLayoutType(type);
-        layout.setSize(Size.MEDIUM);
-        if (metricType != null) {
-            layout.setMetricType(metricType.getValue());
-        }
-        return layout;
+            DashboardTypes type, Size size, MetricType metricType) {
+        return PrivateDashboardLayout.builder()
+                .layoutType(type)
+                .size(size)
+                .metricType(metricType != null ? metricType.getValue() : null)
+                .build();
     }
 }
