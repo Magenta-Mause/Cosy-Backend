@@ -39,7 +39,7 @@ public class UserInviteService {
             String ownerCreationId, UserInviteCreationDto userInviteCreationDto) {
         String usernameLower =
                 userInviteCreationDto.getUsername() != null
-                        ? userInviteCreationDto.getUsername().toLowerCase()
+                        ? userInviteCreationDto.getUsername()
                         : null;
 
         if (usernameLower != null) {
@@ -113,9 +113,9 @@ public class UserInviteService {
                         .defaultPasswordReset(true);
 
         if (Objects.isNull(invite.getUsername())) {
-            userBuilder.username(username.toLowerCase());
+            userBuilder.username(username);
         } else {
-            userBuilder.username(invite.getUsername().toLowerCase());
+            userBuilder.username(invite.getUsername());
         }
 
         UserEntity builtUser = userBuilder.build();
