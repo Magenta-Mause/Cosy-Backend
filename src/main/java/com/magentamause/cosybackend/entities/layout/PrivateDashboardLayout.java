@@ -2,15 +2,18 @@ package com.magentamause.cosybackend.entities.layout;
 
 import jakarta.persistence.*;
 import java.util.List;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
 @Getter
 @Setter
 @Entity
+@SuperBuilder
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@AllArgsConstructor
+@RequiredArgsConstructor
 public class PrivateDashboardLayout extends Layout {
 
     @Enumerated(EnumType.STRING)
