@@ -41,7 +41,7 @@ public class UserEntityService {
 
     public UserEntity getUserByUsername(String username) {
         return userEntityRepository
-                .findByUsername(username)
+                .findByUsernameIgnoreCase(username)
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(

@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface UserEntityRepository extends JpaRepository<UserEntity, String> {
-    Optional<UserEntity> findByUsername(String username);
+    Optional<UserEntity> findByUsernameIgnoreCase(String username);
 
     @Query(
             "SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM UserEntity u WHERE LOWER(u.username) = LOWER(:username)")

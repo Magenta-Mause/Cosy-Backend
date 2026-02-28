@@ -37,8 +37,12 @@ public class UserInviteService {
 
     public UserInviteEntity createInvite(
             String ownerCreationId, UserInviteCreationDto userInviteCreationDto) {
-        if (!Objects.isNull(userInviteCreationDto.getUsername())) {
-            String usernameLower = userInviteCreationDto.getUsername().toLowerCase();
+        String usernameLower =
+                userInviteCreationDto.getUsername() != null
+                        ? userInviteCreationDto.getUsername().toLowerCase()
+                        : null;
+
+        if (usernameLower != null) {
             if (userInviteRepository.existsByUsernameIgnoreCase(usernameLower)) {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "Invite with the given username already exists");
@@ -55,7 +59,7 @@ public class UserInviteService {
                 UserInviteEntity.builder()
                         .invitedBy(userEntityService.getUserByUuid(ownerCreationId))
                         .secretKey(generateRandomKey())
-                        .username(userInviteCreationDto.getUsername())
+                        .username(usernameLower)
                         .role(userInviteCreationDto.getRole())
                         .dockerHardwareLimits(userInviteCreationDto.getDockerHardwareLimits())
                         .build();
@@ -109,9 +113,9 @@ public class UserInviteService {
                         .defaultPasswordReset(true);
 
         if (Objects.isNull(invite.getUsername())) {
-            userBuilder.username(username);
+            userBuilder.username(username.toLowerCase());
         } else {
-            userBuilder.username(invite.getUsername());
+            userBuilder.username(invite.getUsername().toLowerCase());
         }
 
         UserEntity builtUser = userBuilder.build();
