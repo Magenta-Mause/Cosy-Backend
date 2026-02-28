@@ -37,17 +37,14 @@ public class UserInviteService {
 
     public UserInviteEntity createInvite(
             String ownerCreationId, UserInviteCreationDto userInviteCreationDto) {
-        String usernameLower =
-                userInviteCreationDto.getUsername() != null
-                        ? userInviteCreationDto.getUsername()
-                        : null;
+        String presetUsername = userInviteCreationDto.getUsername();
 
-        if (usernameLower != null) {
-            if (userInviteRepository.existsByUsernameIgnoreCase(usernameLower)) {
+        if (presetUsername != null) {
+            if (userInviteRepository.existsByUsernameIgnoreCase(presetUsername)) {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "Invite with the given username already exists");
             }
-            if (userEntityService.existsByUsernameIgnoreCase(usernameLower)) {
+            if (userEntityService.existsByUsernameIgnoreCase(presetUsername)) {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT, "A user with the given username already exists");
             }
@@ -59,7 +56,7 @@ public class UserInviteService {
                 UserInviteEntity.builder()
                         .invitedBy(userEntityService.getUserByUuid(ownerCreationId))
                         .secretKey(generateRandomKey())
-                        .username(usernameLower)
+                        .username(presetUsername)
                         .role(userInviteCreationDto.getRole())
                         .dockerHardwareLimits(userInviteCreationDto.getDockerHardwareLimits())
                         .build();
