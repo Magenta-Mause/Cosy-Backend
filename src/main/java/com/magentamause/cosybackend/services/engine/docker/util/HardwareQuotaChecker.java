@@ -23,6 +23,22 @@ public class HardwareQuotaChecker {
             // No quota check needed because no limits set for user
             return;
         }
+        if (serverToStart.getDockerHardwareLimits() == null
+                || (user.getDockerHardwareLimits().getDockerMemoryLimit() != null
+                        && serverToStart.getDockerHardwareLimits().getDockerMemoryLimit() == null)
+                || (user.getDockerHardwareLimits().getDockerMaxCpuCores() != null
+                        && serverToStart.getDockerHardwareLimits().getDockerMaxCpuCores()
+                                == null)) {
+            String configuredLimit =
+                    user.getDockerHardwareLimits().getDockerMemoryLimit() != null
+                            ? "memory"
+                            : "cpu";
+            throw new HardwareLimitException(
+                    "user has "
+                            + configuredLimit
+                            + " limit; so they can not start a game"
+                            + " server which doesnt have a resource limit configured");
+        }
 
         ResourceUsage currentUsage = calculateRunningServersUsage(servers);
         ResourceUsage requiredUsage = calculateServerUsage(serverToStart);
