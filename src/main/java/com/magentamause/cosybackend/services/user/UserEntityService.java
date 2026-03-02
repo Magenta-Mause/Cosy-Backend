@@ -3,9 +3,14 @@ package com.magentamause.cosybackend.services.user;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.UserEntity.Role;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
+import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository;
 import com.magentamause.cosybackend.repositories.UserEntityRepository;
+
 import java.util.List;
 import java.util.Optional;
+
+import com.magentamause.cosybackend.services.core.gameserver.GameServerAccessGroupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,6 +25,7 @@ public class UserEntityService {
 
     private final UserEntityRepository userEntityRepository;
     private final PasswordEncoder passwordEncoder;
+    private final GameServerAccessGroupRepository gameServerAccessGroupRepository;
 
     public List<UserEntity> getAllUsers() {
         return userEntityRepository.findAll();
@@ -62,6 +68,7 @@ public class UserEntityService {
                                         new ResponseStatusException(
                                                 HttpStatus.NOT_FOUND,
                                                 "User with uuid " + uuid + " not found"));
+        removeUserFromAccessGroups(user);
         userEntityRepository.delete(user);
     }
 
@@ -109,5 +116,13 @@ public class UserEntityService {
 
     public boolean existsByUsernameIgnoreCase(String username) {
         return userEntityRepository.existsByUsernameIgnoreCase(username);
+    }
+
+    private void removeUserFromAccessGroups(UserEntity user) {
+        List<GameServerAccessGroupEntity> accessGroups = gameServerAccessGroupRepository.findAll();
+        for (GameServerAccessGroupEntity accessGroup : accessGroups) {
+            accessGroup.getUsers().remove(user);
+            gameServerAccessGroupRepository.save(accessGroup);
+        }
     }
 }
