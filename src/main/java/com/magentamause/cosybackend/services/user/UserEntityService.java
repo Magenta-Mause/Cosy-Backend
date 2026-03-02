@@ -6,11 +6,8 @@ import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLi
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository;
 import com.magentamause.cosybackend.repositories.UserEntityRepository;
-
 import java.util.List;
 import java.util.Optional;
-
-import com.magentamause.cosybackend.services.core.gameserver.GameServerAccessGroupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
