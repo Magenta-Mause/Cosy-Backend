@@ -6,8 +6,10 @@ import com.magentamause.cosybackend.entities.TemplateEntity;
 import com.magentamause.cosybackend.repositories.TemplateRepository;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.external.templates.CosyTemplateApiService;
+
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -47,6 +49,9 @@ public class TemplateService {
     }
 
     public List<TemplateEntity> getAllTemplates() {
+        if (templateRepository.count() == 0) {
+            refreshTemplates();
+        }
         return templateRepository.findAll();
     }
 }
