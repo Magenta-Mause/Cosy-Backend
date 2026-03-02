@@ -22,6 +22,7 @@ public class TemplateService {
     private final CosyTemplateApiService cosyTemplateApiService;
     private final TemplateRepository templateRepository;
     private final GamesService gamesService;
+    private boolean isInitialized = false;
 
     @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.MINUTES)
     public List<TemplateEntity> refreshTemplates() {
@@ -40,6 +41,7 @@ public class TemplateService {
                 GameEntity game = gamesService.getGameEntityByExternalId(template.gameId(), true);
                 log.info("Fetched Game: {}", game.getName());
             }
+            isInitialized = true;
             return templateRepository.saveAll(
                     templates.stream().map(TemplateEntity::ofDto).toList());
         } catch (Exception e) {
@@ -49,7 +51,7 @@ public class TemplateService {
     }
 
     public List<TemplateEntity> getAllTemplates() {
-        if (templateRepository.count() == 0) {
+        if (!isInitialized) {
             refreshTemplates();
         }
         return templateRepository.findAll();
