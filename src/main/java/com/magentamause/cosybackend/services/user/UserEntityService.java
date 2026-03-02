@@ -118,7 +118,7 @@ public class UserEntityService {
     private void removeUserFromAccessGroups(UserEntity user) {
         List<GameServerAccessGroupEntity> accessGroups = gameServerAccessGroupRepository.findAll();
         for (GameServerAccessGroupEntity accessGroup : accessGroups) {
-            accessGroup.getUsers().remove(user);
+            accessGroup.getUsers().removeIf(u -> user.getUuid().equals(u.getUuid()));
             gameServerAccessGroupRepository.save(accessGroup);
         }
     }
