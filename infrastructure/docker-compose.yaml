@@ -1,7 +1,7 @@
 services:
-  postgres:
+  cosy-dev-postgres:
     image: postgres:16-alpine
-    container_name: cosy-postgres
+    container_name: cosy-dev-postgres
     ports:
       - "5432:5432"
     environment:
@@ -9,40 +9,40 @@ services:
       - POSTGRES_USER=cosy
       - POSTGRES_PASSWORD=cosy
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - cosy-dev-postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U cosy"]
       interval: 10s
       timeout: 5s
       retries: 5
-  loki:
+  cosy-dev-loki:
     image: grafana/loki:2.9.4
-    container_name: cosy-loki
+    container_name: cosy-dev-loki
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
-      - loki-data:/loki
+      - cosy-dev-loki-data:/loki
       - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
     expose:
       - "3100"
-  nginx:
+  cosy-dev-nginx:
     image: nginx:1.25
-    container_name: cosy-loki-nginx
+    container_name: cosy-dev-loki-nginx
     ports:
       - "3100:80"
     volumes:
       - ./loki-nginx.conf:/etc/nginx/nginx.conf:ro
       - ./htpasswd:/etc/nginx/htpasswd:ro
     depends_on:
-      - loki
-  influx:
+      - cosy-dev-loki
+  cosy-dev-influx:
     image: influxdb:2.7-alpine
-    container_name: cosy-influx
+    container_name: cosy-dev-influx
     ports:
     - "8086:8086"
     volumes:
-      - influx_data:/var/lib/influxdb2
-      - influx_config:/etc/influxdb2
+      - cosy-dev-influx-data:/var/lib/influxdb2
+      - cosy-dev-influx-config:/etc/influxdb2
     environment:
       DOCKER_INFLUXDB_INIT_MODE: setup
       DOCKER_INFLUXDB_INIT_USERNAME: cosy
@@ -51,7 +51,7 @@ services:
       DOCKER_INFLUXDB_INIT_BUCKET: cosy-bucket
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: cosy-admin-token
 volumes:
-  influx_data:
-  influx_config:
-  postgres_data:
-  loki-data:
+  cosy-dev-influx-data:
+  cosy-dev-influx-config:
+  cosy-dev-postgres-data:
+  cosy-dev-loki-data:
