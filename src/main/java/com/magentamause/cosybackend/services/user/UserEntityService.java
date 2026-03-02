@@ -6,6 +6,7 @@ import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLi
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository;
 import com.magentamause.cosybackend.repositories.UserEntityRepository;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +57,7 @@ public class UserEntityService {
         return userEntityRepository.save(userEntity);
     }
 
+    @Transactional
     public void deleteUserByUuid(String uuid) {
         UserEntity user =
                 userEntityRepository
@@ -118,8 +120,9 @@ public class UserEntityService {
     private void removeUserFromAccessGroups(UserEntity user) {
         List<GameServerAccessGroupEntity> accessGroups = gameServerAccessGroupRepository.findAll();
         for (GameServerAccessGroupEntity accessGroup : accessGroups) {
-            accessGroup.getUsers().removeIf(u -> user.getUuid().equals(u.getUuid()));
-            gameServerAccessGroupRepository.save(accessGroup);
+            if (accessGroup.getUsers().removeIf(u -> user.getUuid().equals(u.getUuid()))) {
+                gameServerAccessGroupRepository.save(accessGroup);
+            }
         }
     }
 }
