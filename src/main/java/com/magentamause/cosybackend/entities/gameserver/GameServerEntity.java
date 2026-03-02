@@ -126,7 +126,10 @@ public class GameServerEntity {
                 .createdOn(this.getCreatedOn())
                 .timestampLastStarted(this.getTimestampLastStarted())
                 .gameUuid(Optional.ofNullable(this.getGame()).map(GameEntity::getUuid).orElse(null))
-                .externalGameId(Optional.ofNullable(this.getGame()).map(GameEntity::getExternalGameId).orElse(null))
+                .externalGameId(
+                        Optional.ofNullable(this.getGame())
+                                .map(GameEntity::getExternalGameId)
+                                .orElse(null))
                 .rconConfiguration(this.getRconConfiguration())
                 .dockerImageName(this.getDockerImageName())
                 .dockerImageTag(this.getDockerImageTag())
@@ -161,7 +164,10 @@ public class GameServerEntity {
         return GameServerDto.builder()
                 .uuid(this.getUuid())
                 .gameUuid(Optional.ofNullable(this.getGame()).map(GameEntity::getUuid).orElse(null))
-                .externalGameId(Optional.ofNullable(this.getGame()).map(GameEntity::getExternalGameId).orElse(null))
+                .externalGameId(
+                        Optional.ofNullable(this.getGame())
+                                .map(GameEntity::getExternalGameId)
+                                .orElse(null))
                 .serverName(this.getServerName())
                 .status(this.getStatus())
                 .owner(Optional.ofNullable(this.getOwner()).map(UserEntity::toDto).orElse(null))
