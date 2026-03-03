@@ -16,8 +16,7 @@ public class GameServerLogWebsocketPublisher {
 
     public void publishLog(String serverUuid, GameServerLogMessageEntity logMessage) {
         String topic =
-                WebSocketDestinations.Topics.GAME_SERVER_LOGS.replace(
-                        "{serverId}", serverUuid);
+                WebSocketDestinations.Topics.GAME_SERVER_LOGS.replace("{serverId}", serverUuid);
         messagingTemplate.convertAndSend(topic, logMessage);
     }
 }
