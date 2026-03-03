@@ -23,7 +23,7 @@ public class WebsocketVerifierConfig {
         return new WebsocketVerifier(securityContextService, userEntityService)
                 .addVerifier(
                         new AccessManagementVerifier(
-                                WebSocketDestinations.Topics.GAME_SERVER_LOGS_CREATION,
+                                WebSocketDestinations.Topics.GAME_SERVER_LOGS,
                                 Operation.GAME_SERVER_LOG_READ,
                                 validatorRegistryProvider::getObject,
                                 resourceResolverProvider::getObject))

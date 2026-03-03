@@ -12,7 +12,7 @@ public final class WebSocketDestinations {
 
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static final class Topics {
-        public static final String GAME_SERVER_LOGS_CREATION =
+        public static final String GAME_SERVER_LOGS =
                 BROKER_PREFIX + "/game-servers/{serverId}/logs";
         public static final String GAME_SERVER_METRICS =
                 BROKER_PREFIX + "/game-servers/{serverId}/metrics";
