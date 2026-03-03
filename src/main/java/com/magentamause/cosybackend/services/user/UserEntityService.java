@@ -56,6 +56,7 @@ public class UserEntityService {
         return userEntityRepository.save(userEntity);
     }
 
+    @CacheEvict(value = "adminUsers", allEntries = true)
     public void deleteUserByUuid(String uuid) {
         UserEntity user =
                 userEntityRepository

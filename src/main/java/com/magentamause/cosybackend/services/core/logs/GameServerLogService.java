@@ -47,7 +47,7 @@ public class GameServerLogService {
             copy.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);
         }
         lokiQueryService.saveGameServerLog(copy);
-        gameServerLogWebsocketPublisher.publishLog(copy.getGameServerUuid(), logEntity);
+        gameServerLogWebsocketPublisher.publishLog(copy.getGameServerUuid(), copy);
         return copy;
     }
 
@@ -70,7 +70,7 @@ public class GameServerLogService {
             copy.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);
         }
         lokiQueryService.saveGameServerLog(copy);
-        gameServerLogWebsocketPublisher.publishLog(gameServer, logEntity);
+        gameServerLogWebsocketPublisher.publishLog(gameServer, copy);
         return copy;
     }
 }
