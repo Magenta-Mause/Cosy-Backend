@@ -40,8 +40,9 @@ public class TemplateService {
                 GameEntity game = gamesService.getGameEntityByExternalId(template.gameId(), true);
                 log.info("Fetched Game: {}", game.getName());
             }
-            List<TemplateEntity> saved = templateRepository.saveAll(
-                    templates.stream().map(TemplateEntity::ofDto).toList());
+            List<TemplateEntity> saved =
+                    templateRepository.saveAll(
+                            templates.stream().map(TemplateEntity::ofDto).toList());
             isInitialized.set(true);
             return saved;
         } catch (Exception e) {
