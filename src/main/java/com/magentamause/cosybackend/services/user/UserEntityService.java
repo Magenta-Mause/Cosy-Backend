@@ -52,6 +52,7 @@ public class UserEntityService {
                                         "User with username " + username + " not found"));
     }
 
+    @CacheEvict(value = "adminUsers", allEntries = true)
     public UserEntity saveUserEntity(UserEntity userEntity) {
         return userEntityRepository.save(userEntity);
     }
