@@ -6,7 +6,7 @@ import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLi
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository;
 import com.magentamause.cosybackend.repositories.UserEntityRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

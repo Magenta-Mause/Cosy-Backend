@@ -8,6 +8,7 @@ import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.external.templates.CosyTemplateApiService;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,7 +21,7 @@ public class TemplateService {
     private final CosyTemplateApiService cosyTemplateApiService;
     private final TemplateRepository templateRepository;
     private final GamesService gamesService;
-    private boolean isInitialized = false;
+    private final AtomicBoolean isInitialized = new AtomicBoolean(false);
 
     @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.MINUTES)
     public List<TemplateEntity> refreshTemplates() {
@@ -39,9 +40,10 @@ public class TemplateService {
                 GameEntity game = gamesService.getGameEntityByExternalId(template.gameId(), true);
                 log.info("Fetched Game: {}", game.getName());
             }
-            isInitialized = true;
-            return templateRepository.saveAll(
+            List<TemplateEntity> saved = templateRepository.saveAll(
                     templates.stream().map(TemplateEntity::ofDto).toList());
+            isInitialized.set(true);
+            return saved;
         } catch (Exception e) {
             log.error("Failed to refresh templates: {}", e.getMessage(), e);
             return null;
@@ -49,7 +51,7 @@ public class TemplateService {
     }
 
     public List<TemplateEntity> getAllTemplates() {
-        if (!isInitialized) {
+        if (!isInitialized.get()) {
             refreshTemplates();
         }
         return templateRepository.findAll();
