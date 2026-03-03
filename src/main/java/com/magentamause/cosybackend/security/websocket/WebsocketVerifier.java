@@ -14,11 +14,17 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 @RequiredArgsConstructor
 public class WebsocketVerifier {
     private final Map<Pattern, WebsocketEndpointVerifier> websocketVerifier = new HashMap<>();
+    private final Map<Pattern, WebsocketEndpointVerifier> publicVerifier = new HashMap<>();
     private final SecurityContextService securityContextService;
     private final UserEntityService userEntityService;
 
     public WebsocketVerifier addVerifier(WebsocketEndpointVerifier verifier) {
         websocketVerifier.put(verifier.getPathPattern(), verifier);
+        return this;
+    }
+
+    public WebsocketVerifier addPublicVerifier(WebsocketEndpointVerifier verifier) {
+        publicVerifier.put(verifier.getPathPattern(), verifier);
         return this;
     }
 
@@ -43,6 +49,16 @@ public class WebsocketVerifier {
             UserEntity user = userEntityService.getUserByUuid(userId);
             return verifier.getValue().verify(channel, stompHeaders, securityContextService, user);
         }
+
+        for (final var verifier : publicVerifier.entrySet()) {
+            Pattern verifierPattern = verifier.getKey();
+            if (!verifierPattern.matcher(channel).matches()) {
+                continue;
+            }
+            log.debug("Checking public verifier for channel: {}", channel);
+            return verifier.getValue().verify(channel, stompHeaders, securityContextService, null);
+        }
+
         return false;
     }
 

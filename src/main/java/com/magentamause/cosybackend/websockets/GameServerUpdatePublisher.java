@@ -39,6 +39,14 @@ public class GameServerUpdatePublisher {
             messagingTemplate.convertAndSendToUser(
                     recipient.getUuid(), topic, gameServer.toDto(recipient));
         }
+
+        if (gameServer.getPublicDashboard() != null
+                && gameServer.getPublicDashboard().isEnabled()) {
+            String publicTopic =
+                    WebSocketDestinations.Topics.PUBLIC_GAME_SERVER_UPDATES.replace(
+                            "{serverId}", gameServer.getUuid());
+            messagingTemplate.convertAndSend(publicTopic, gameServer.toPublicDto());
+        }
     }
 
     private Map<String, UserEntity> collectRecipients(GameServerEntity gameServer) {

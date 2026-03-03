@@ -55,6 +55,8 @@ public class SecurityConfiguration {
                                                 HttpMethod.GET,
                                                 "/internal/game-server/test-connection/**")
                                         .permitAll()
+                                        .requestMatchers("/v1/ws/**")
+                                        .permitAll()
                                         .dispatcherTypeMatchers(DispatcherType.ASYNC)
                                         .permitAll() // Allow async dispatches to bypass
                                         // re-authentication (e.g. for streaming
