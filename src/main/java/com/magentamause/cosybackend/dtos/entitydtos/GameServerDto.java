@@ -38,6 +38,8 @@ public class GameServerDto {
 
     @NotBlank private String gameUuid;
 
+    private Integer externalGameId;
+
     @NotBlank private String dockerImageName;
 
     @NotBlank private String dockerImageTag;
