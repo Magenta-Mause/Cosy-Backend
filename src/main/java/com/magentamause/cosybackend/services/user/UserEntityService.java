@@ -110,4 +110,8 @@ public class UserEntityService {
     public boolean existsByUsernameIgnoreCase(String username) {
         return userEntityRepository.existsByUsernameIgnoreCase(username);
     }
+
+    public List<UserEntity> getAdminUsers() {
+        return userEntityRepository.findByRoleIn(List.of(Role.OWNER, Role.ADMIN));
+    }
 }

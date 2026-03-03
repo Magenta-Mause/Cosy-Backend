@@ -386,8 +386,7 @@ public class GameServerService {
         GameServerDto.GameServerStatus previousStatus = serverConfig.getStatus();
         serverConfig.setStatus(status);
         GameServerEntity savedServer = gameServerRepository.save(serverConfig);
-        gameServerUpdatePublisher.publishGameServerUpdate(
-                savedServer.getUuid(), savedServer.toDto());
+        gameServerUpdatePublisher.publishGameServerUpdate(savedServer);
         webhookService.handleStatusTransition(
                 serverConfig.getUuid(), serverConfig.getServerName(), previousStatus, status);
     }
