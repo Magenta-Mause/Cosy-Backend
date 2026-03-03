@@ -31,23 +31,32 @@ public class GameServerMetricsPublisher {
 
         Optional<GameServerEntity> gameServer =
                 gameServerServiceProvider.getObject().getOptionalGameServerById(serverUuid);
-        if (gameServer.isPresent()) {
-            PublicDashboard publicDashboard = gameServer.get().getPublicDashboard();
-            if (publicDashboard != null && publicDashboard.isEnabled()) {
-                List<String> allowedTypes =
-                        metricsServiceProvider.getObject().extractPublicMetrics(publicDashboard);
-                if (!allowedTypes.isEmpty()) {
-                    List<MetricPointDto> filtered =
-                            metricsUtilService.filterMetrics(
-                                    List.of(metric), allowedTypes.toArray(String[]::new));
-                    if (!filtered.isEmpty()) {
-                        String publicTopic =
-                                WebSocketDestinations.Topics.PUBLIC_GAME_SERVER_METRICS.replace(
-                                        "{serverId}", serverUuid);
-                        messagingTemplate.convertAndSend(publicTopic, filtered.getFirst());
-                    }
-                }
-            }
+        gameServer.ifPresent(entity -> publishPublicMetrics(entity, metric));
+    }
+
+    public void publishMetrics(GameServerEntity gameServer, MetricPointDto metric) {
+        String topic =
+                WebSocketDestinations.Topics.GAME_SERVER_METRICS.replace(
+                        "{serverId}", gameServer.getUuid());
+        messagingTemplate.convertAndSend(topic, metric);
+        publishPublicMetrics(gameServer, metric);
+    }
+
+    private void publishPublicMetrics(GameServerEntity gameServer, MetricPointDto metric) {
+        PublicDashboard publicDashboard = gameServer.getPublicDashboard();
+        if (publicDashboard == null || !publicDashboard.isEnabled()) {
+            return;
+        }
+        List<String> allowedTypes =
+                metricsServiceProvider.getObject().extractPublicMetrics(publicDashboard);
+        if (!allowedTypes.isEmpty()) {
+            List<MetricPointDto> filtered =
+                    metricsUtilService.filterMetrics(
+                            List.of(metric), allowedTypes.toArray(String[]::new));
+            String publicTopic =
+                    WebSocketDestinations.Topics.PUBLIC_GAME_SERVER_METRICS.replace(
+                            "{serverId}", gameServer.getUuid());
+            messagingTemplate.convertAndSend(publicTopic, filtered.getFirst());
         }
     }
 }

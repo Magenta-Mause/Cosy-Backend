@@ -28,13 +28,25 @@ public class GameServerLogWebsocketPublisher {
 
         Optional<GameServerEntity> gameServer =
                 gameServerServiceProvider.getObject().getOptionalGameServerById(serverUuid);
-        if (gameServer.isPresent()
-                && gameServer.get().getPublicDashboard() != null
-                && gameServer.get().getPublicDashboard().isEnabled()
-                && hasLogsLayout(gameServer.get().getPublicDashboard())) {
+        gameServer.ifPresent(entity -> publishPublicLog(entity, logMessage));
+    }
+
+    public void publishLog(GameServerEntity gameServer, GameServerLogMessageEntity logMessage) {
+        String topic =
+                WebSocketDestinations.Topics.GAME_SERVER_LOGS.replace(
+                        "{serverId}", gameServer.getUuid());
+        messagingTemplate.convertAndSend(topic, logMessage);
+        publishPublicLog(gameServer, logMessage);
+    }
+
+    private void publishPublicLog(
+            GameServerEntity gameServer, GameServerLogMessageEntity logMessage) {
+        if (gameServer.getPublicDashboard() != null
+                && gameServer.getPublicDashboard().isEnabled()
+                && hasLogsLayout(gameServer.getPublicDashboard())) {
             String publicTopic =
                     WebSocketDestinations.Topics.PUBLIC_GAME_SERVER_LOGS.replace(
-                            "{serverId}", serverUuid);
+                            "{serverId}", gameServer.getUuid());
             messagingTemplate.convertAndSend(publicTopic, logMessage);
         }
     }

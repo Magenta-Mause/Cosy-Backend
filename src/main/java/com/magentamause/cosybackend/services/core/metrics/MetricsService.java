@@ -54,11 +54,10 @@ public class MetricsService {
                     if (metric.isPresent()) {
                         Point point = convertMetricToPoint(metric.get());
                         writeToInfluxDB(point);
-                        gameServerMetricsPublisher.publishMetrics(
-                                gameServer.getUuid(), metric.get().toDto());
+                        gameServerMetricsPublisher.publishMetrics(gameServer, metric.get().toDto());
                     } else {
                         gameServerMetricsPublisher.publishMetrics(
-                                gameServer.getUuid(),
+                                gameServer,
                                 Metric.builder()
                                         .cpuPercent(0.0)
                                         .memoryLimit(0L)
