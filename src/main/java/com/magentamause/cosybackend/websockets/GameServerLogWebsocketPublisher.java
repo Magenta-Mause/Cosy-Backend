@@ -42,8 +42,6 @@ public class GameServerLogWebsocketPublisher {
     private boolean hasLogsLayout(PublicDashboard publicDashboard) {
         return publicDashboard.getLayouts() != null
                 && publicDashboard.getLayouts().stream()
-                        .anyMatch(
-                                layout ->
-                                        layout.getLayoutType().equals(DashboardTypes.LOGS));
+                        .anyMatch(layout -> layout.getLayoutType().equals(DashboardTypes.LOGS));
     }
 }

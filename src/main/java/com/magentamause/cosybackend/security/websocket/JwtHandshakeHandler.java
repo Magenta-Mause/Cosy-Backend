@@ -12,9 +12,7 @@ public class JwtHandshakeHandler extends DefaultHandshakeHandler {
 
     @Override
     protected Principal determineUser(
-            ServerHttpRequest request,
-            WebSocketHandler wsHandler,
-            Map<String, Object> attributes) {
+            ServerHttpRequest request, WebSocketHandler wsHandler, Map<String, Object> attributes) {
         String userId = (String) attributes.get("userId");
         if (userId != null) {
             return new StompPrincipal(userId);

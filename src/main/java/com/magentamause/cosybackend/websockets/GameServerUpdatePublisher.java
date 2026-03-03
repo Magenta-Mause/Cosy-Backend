@@ -66,9 +66,7 @@ public class GameServerUpdatePublisher {
             }
         }
 
-        userEntityService
-                .getAdminUsers()
-                .forEach(admin -> recipients.put(admin.getUuid(), admin));
+        userEntityService.getAdminUsers().forEach(admin -> recipients.put(admin.getUuid(), admin));
 
         return recipients;
     }

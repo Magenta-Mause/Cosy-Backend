@@ -3,12 +3,10 @@ package com.magentamause.cosybackend.services.core.metrics;
 import com.influxdb.query.FluxRecord;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
 import com.magentamause.cosybackend.entities.metric.MetricType;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
