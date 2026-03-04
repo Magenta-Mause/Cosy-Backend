@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -53,11 +56,13 @@ public class UserEntityService {
                                         "User with username " + username + " not found"));
     }
 
+    @CacheEvict(value = "adminUsers", allEntries = true)
     public UserEntity saveUserEntity(UserEntity userEntity) {
         return userEntityRepository.save(userEntity);
     }
 
     @Transactional
+    @CacheEvict(value = "adminUsers", allEntries = true)
     public void deleteUserByUuid(String uuid) {
         UserEntity user =
                 userEntityRepository
@@ -91,6 +96,7 @@ public class UserEntityService {
         return saveUserEntity(user);
     }
 
+    @Caching(evict = {@CacheEvict(value = "adminUsers", allEntries = true)})
     public UserEntity changeRole(String uuid, Role newRole) {
         log.info("Changing role for user with UUID: {} to {}", uuid, newRole);
         if (newRole.equals(Role.OWNER)) {
@@ -115,6 +121,11 @@ public class UserEntityService {
 
     public boolean existsByUsernameIgnoreCase(String username) {
         return userEntityRepository.existsByUsernameIgnoreCase(username);
+    }
+
+    @Cacheable("adminUsers")
+    public List<UserEntity> getAdminUsers() {
+        return userEntityRepository.findByRoleIn(List.of(Role.OWNER, Role.ADMIN));
     }
 
     private void removeUserFromAccessGroups(UserEntity user) {

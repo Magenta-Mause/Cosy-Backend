@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.configs.websockets;
 
 import com.magentamause.cosybackend.configs.properties.CorsProperties;
 import com.magentamause.cosybackend.security.websocket.JwtChannelInterceptor;
+import com.magentamause.cosybackend.security.websocket.JwtHandshakeHandler;
 import com.magentamause.cosybackend.security.websocket.JwtHandshakeInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -19,6 +20,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final CorsProperties corsProperties;
+    private final JwtHandshakeHandler jwtHandshakeHandler;
     private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
     private final JwtChannelInterceptor jwtChannelInterceptor;
 
@@ -32,6 +34,7 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint(WebSocketDestinations.ENDPOINT)
                 .setAllowedOrigins(corsProperties.allowedOrigins().toArray(new String[0]))
+                .setHandshakeHandler(jwtHandshakeHandler)
                 .addInterceptors(jwtHandshakeInterceptor)
                 .withSockJS();
     }

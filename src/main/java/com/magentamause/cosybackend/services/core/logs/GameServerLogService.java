@@ -47,7 +47,7 @@ public class GameServerLogService {
             copy.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);
         }
         lokiQueryService.saveGameServerLog(copy);
-        gameServerLogWebsocketPublisher.publishLog(copy.getGameServerUuid(), logEntity);
+        gameServerLogWebsocketPublisher.publishLog(copy.getGameServerUuid(), copy);
         return copy;
     }
 
@@ -59,6 +59,18 @@ public class GameServerLogService {
         GameServerLogMessageEntity logEntity =
                 GameServerLogMessageEntity.of(gameServer.getUuid(), message, logLevel);
 
-        return publishAndSaveLog(logEntity, parseErrorLogLevel);
+        GameServerLogMessageEntity copy = logEntity.copy();
+        if (logEntity.getMessage() == null) {
+            log.debug("Received empty message");
+            return null;
+        }
+        if (parseErrorLogLevel
+                && detectErrorLogLevel(logEntity.getMessage())
+                        == GameServerLogMessageEntity.LogLevel.ERROR) {
+            copy.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);
+        }
+        lokiQueryService.saveGameServerLog(copy);
+        gameServerLogWebsocketPublisher.publishLog(gameServer, copy);
+        return copy;
     }
 }
