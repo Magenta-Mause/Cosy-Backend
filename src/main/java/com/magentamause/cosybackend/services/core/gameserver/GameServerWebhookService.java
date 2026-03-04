@@ -74,7 +74,7 @@ public class GameServerWebhookService {
                         .orElseThrow()
                         .toDto();
 
-        gameServerUpdatePublisher.publishGameServerUpdate(gameServerUuid, savedGameServer.toDto());
+        gameServerUpdatePublisher.publishGameServerUpdate(savedGameServer);
         return savedWebhook;
     }
 
@@ -108,7 +108,7 @@ public class GameServerWebhookService {
         GameServerEntity savedGameServer = gameServerRepository.save(gameServer);
         WebhookDto updatedWebhook = webhookEntity.toDto();
 
-        gameServerUpdatePublisher.publishGameServerUpdate(gameserverUuid, savedGameServer.toDto());
+        gameServerUpdatePublisher.publishGameServerUpdate(savedGameServer);
         return updatedWebhook;
     }
 
@@ -141,7 +141,7 @@ public class GameServerWebhookService {
         }
 
         GameServerEntity savedGameServer = gameServerRepository.save(gameServer);
-        gameServerUpdatePublisher.publishGameServerUpdate(gameServerUuid, savedGameServer.toDto());
+        gameServerUpdatePublisher.publishGameServerUpdate(savedGameServer);
     }
 
     public void dispatch(GameServerDomainEvent event) {

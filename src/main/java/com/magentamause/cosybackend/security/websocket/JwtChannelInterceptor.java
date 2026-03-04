@@ -35,6 +35,24 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
             }
             return null;
         }
+        if (StompCommand.SEND.equals(accessor.getCommand())) {
+            String userId = extractUserId(accessor.getSessionAttributes());
+            if (userId == null) {
+                log.debug("Blocking anonymous SEND to {}", accessor.getDestination());
+                return null;
+            }
+        }
         return message;
+    }
+
+    private String extractUserId(java.util.Map<String, Object> sessionAttributes) {
+        if (sessionAttributes == null) {
+            return null;
+        }
+        try {
+            return (String) sessionAttributes.get("userId");
+        } catch (ClassCastException e) {
+            return null;
+        }
     }
 }

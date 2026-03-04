@@ -55,7 +55,7 @@ public class MetricsUtilService {
             if (coreMetricsMap.containsKey(attribute)) {
                 filteredCoreMetrics.put(attribute, coreMetricsMap.get(attribute));
             }
-            if (customMetrics.containsKey(attribute)) {
+            if (customMetrics != null && customMetrics.containsKey(attribute)) {
                 filteredCustomMetrics.put(attribute, customMetrics.get(attribute));
             }
         }
