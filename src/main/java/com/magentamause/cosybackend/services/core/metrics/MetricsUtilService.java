@@ -19,6 +19,8 @@ public class MetricsUtilService {
     private static final String TYPE_SUFFIX_FLOAT = "__f";
     private static final String TYPE_SUFFIX_BOOL = "__b";
 
+    private static final String CUSTOM_METRIC_PREFIX = "custom.";
+
     private static final Set<String> NON_CUSTOM_COLUMNS =
             Set.of(
                     "result",
@@ -55,8 +57,11 @@ public class MetricsUtilService {
             if (coreMetricsMap.containsKey(attribute)) {
                 filteredCoreMetrics.put(attribute, coreMetricsMap.get(attribute));
             }
-            if (customMetrics != null && customMetrics.containsKey(attribute)) {
-                filteredCustomMetrics.put(attribute, customMetrics.get(attribute));
+            if (attribute.startsWith(CUSTOM_METRIC_PREFIX)) {
+                String customAttribute = attribute.substring(CUSTOM_METRIC_PREFIX.length());
+                if (customMetrics != null && customMetrics.containsKey(customAttribute)) {
+                    filteredCustomMetrics.put(customAttribute, customMetrics.get(customAttribute));
+                }
             }
         }
 
