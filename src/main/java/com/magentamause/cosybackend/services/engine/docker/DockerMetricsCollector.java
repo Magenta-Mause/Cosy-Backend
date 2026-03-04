@@ -36,6 +36,7 @@ public class DockerMetricsCollector {
         InspectContainerResponse container = client.inspectContainerCmd(containerUuid).exec();
 
         if (Boolean.FALSE.equals(container.getState().getRunning())) {
+            statsMapper.clearState(containerUuid);
             return Optional.empty();
         }
 
@@ -46,7 +47,7 @@ public class DockerMetricsCollector {
                         new ResultCallback.Adapter<Statistics>() {
                             @Override
                             public void onNext(Statistics statistics) {
-                                Metric stats = statsMapper.mapStats(statistics);
+                                Metric stats = statsMapper.mapStats(containerUuid, statistics);
                                 stats.setGameServerUuid(
                                         container.getName().replace("/", "").substring(5));
                                 stats.setTime(Instant.now());
