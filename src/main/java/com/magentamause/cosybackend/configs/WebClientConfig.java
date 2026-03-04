@@ -21,6 +21,8 @@ import org.springframework.web.util.DefaultUriBuilderFactory;
 })
 public class WebClientConfig {
 
+    private static final int LOKI_MAX_IN_MEMORY_SIZE = 10 * 1024 * 1024;
+
     @Bean
     public WebClient lokiWebClient(LokiProperties lokiProperties) {
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(lokiProperties.url());
@@ -38,7 +40,7 @@ public class WebClientConfig {
                                 configurer ->
                                         configurer
                                                 .defaultCodecs()
-                                                .maxInMemorySize(10 * 1024 * 1024))
+                                                .maxInMemorySize(LOKI_MAX_IN_MEMORY_SIZE))
                         .build();
 
         return WebClient.builder()

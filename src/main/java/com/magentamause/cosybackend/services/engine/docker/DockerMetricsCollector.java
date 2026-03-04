@@ -26,8 +26,10 @@ public class DockerMetricsCollector {
     private final DockerContainerFinder containerFinder;
 
     public Optional<Metric> collectMetric(GameServerEntity gameServer) throws InterruptedException {
+        String gameServerUuid = gameServer.getUuid();
         Optional<Container> containerOpt = containerFinder.findContainer(gameServer);
         if (containerOpt.isEmpty()) {
+            statsMapper.clearState(gameServerUuid);
             return Optional.empty();
         }
 
@@ -36,7 +38,7 @@ public class DockerMetricsCollector {
         InspectContainerResponse container = client.inspectContainerCmd(containerUuid).exec();
 
         if (Boolean.FALSE.equals(container.getState().getRunning())) {
-            statsMapper.clearState(containerUuid);
+            statsMapper.clearState(gameServerUuid);
             return Optional.empty();
         }
 
@@ -47,7 +49,7 @@ public class DockerMetricsCollector {
                         new ResultCallback.Adapter<Statistics>() {
                             @Override
                             public void onNext(Statistics statistics) {
-                                Metric stats = statsMapper.mapStats(containerUuid, statistics);
+                                Metric stats = statsMapper.mapStats(gameServerUuid, statistics);
                                 stats.setGameServerUuid(
                                         container.getName().replace("/", "").substring(5));
                                 stats.setTime(Instant.now());

@@ -19,7 +19,7 @@ public class StatsMapper {
 
     private final Map<String, ContainerState> prevState = new ConcurrentHashMap<>();
 
-    public Metric mapStats(String containerId, Statistics stats) {
+    public Metric mapStats(String gameServerUuid, Statistics stats) {
         long usage =
                 stats.getMemoryStats().getUsage() != null ? stats.getMemoryStats().getUsage() : 0L;
         long memoryLimit =
@@ -61,16 +61,15 @@ public class StatsMapper {
                         ? stats.getCpuStats().getOnlineCpus()
                         : 1L;
 
-        ContainerState prev = prevState.get(containerId);
-        prevState.put(
-                containerId,
+        ContainerState newState =
                 new ContainerState(
                         totalCpuUsage,
                         systemCpuUsage,
                         totalNetworkInput,
                         totalNetworkOutput,
                         totalBlockRead,
-                        totalBlockWrite));
+                        totalBlockWrite);
+        ContainerState prev = prevState.put(gameServerUuid, newState);
 
         if (prev == null) {
             return Metric.builder()
@@ -109,8 +108,8 @@ public class StatsMapper {
                 .build();
     }
 
-    public void clearState(String containerId) {
-        prevState.remove(containerId);
+    public void clearState(String gameServerUuid) {
+        prevState.remove(gameServerUuid);
     }
 
     private long safeLong(Long value) {
