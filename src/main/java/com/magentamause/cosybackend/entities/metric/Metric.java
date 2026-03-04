@@ -33,7 +33,7 @@ public class Metric {
 
     private Instant time;
 
-    private Map<String, Object> customMetricHolder = new HashMap<>();
+    @Builder.Default private Map<String, Object> customMetricHolder = new HashMap<>();
 
     public MetricPointDto toDto() {
         MetricPointDto.MetricValues metricValues =
