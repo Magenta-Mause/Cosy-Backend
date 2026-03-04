@@ -58,9 +58,10 @@ public class MetricsUtilService {
                 filteredCoreMetrics.put(attribute, coreMetricsMap.get(attribute));
             }
             if (attribute.startsWith(CUSTOM_METRIC_PREFIX)) {
-                String customAttribute = attribute.substring(CUSTOM_METRIC_PREFIX.length());
-                if (customMetrics != null && customMetrics.containsKey(customAttribute)) {
-                    filteredCustomMetrics.put(customAttribute, customMetrics.get(customAttribute));
+                String strippedAttribute = attribute.substring(CUSTOM_METRIC_PREFIX.length());
+                if (customMetrics != null && customMetrics.containsKey(strippedAttribute)) {
+                    filteredCustomMetrics.put(
+                            strippedAttribute, customMetrics.get(strippedAttribute));
                 }
             }
         }
