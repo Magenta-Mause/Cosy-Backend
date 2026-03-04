@@ -3,6 +3,8 @@ package com.magentamause.cosybackend.services.user;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.UserEntity.Role;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
+import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository;
 import com.magentamause.cosybackend.repositories.UserEntityRepository;
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +16,7 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
@@ -23,6 +26,7 @@ public class UserEntityService {
 
     private final UserEntityRepository userEntityRepository;
     private final PasswordEncoder passwordEncoder;
+    private final GameServerAccessGroupRepository gameServerAccessGroupRepository;
 
     public List<UserEntity> getAllUsers() {
         return userEntityRepository.findAll();
@@ -57,6 +61,7 @@ public class UserEntityService {
         return userEntityRepository.save(userEntity);
     }
 
+    @Transactional
     @CacheEvict(value = "adminUsers", allEntries = true)
     public void deleteUserByUuid(String uuid) {
         UserEntity user =
@@ -67,6 +72,7 @@ public class UserEntityService {
                                         new ResponseStatusException(
                                                 HttpStatus.NOT_FOUND,
                                                 "User with uuid " + uuid + " not found"));
+        removeUserFromAccessGroups(user);
         userEntityRepository.delete(user);
     }
 
@@ -120,5 +126,14 @@ public class UserEntityService {
     @Cacheable("adminUsers")
     public List<UserEntity> getAdminUsers() {
         return userEntityRepository.findByRoleIn(List.of(Role.OWNER, Role.ADMIN));
+    }
+
+    private void removeUserFromAccessGroups(UserEntity user) {
+        List<GameServerAccessGroupEntity> accessGroups = gameServerAccessGroupRepository.findAll();
+        for (GameServerAccessGroupEntity accessGroup : accessGroups) {
+            if (accessGroup.getUsers().removeIf(u -> user.getUuid().equals(u.getUuid()))) {
+                gameServerAccessGroupRepository.save(accessGroup);
+            }
+        }
     }
 }
