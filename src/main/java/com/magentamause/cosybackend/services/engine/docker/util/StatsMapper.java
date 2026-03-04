@@ -10,8 +10,12 @@ import org.springframework.stereotype.Component;
 public class StatsMapper {
 
     private record ContainerState(
-            long totalUsage, long systemUsage, long networkInput, long networkOutput,
-            long blockRead, long blockWrite) {}
+            long totalUsage,
+            long systemUsage,
+            long networkInput,
+            long networkOutput,
+            long blockRead,
+            long blockWrite) {}
 
     private final Map<String, ContainerState> prevState = new ConcurrentHashMap<>();
 

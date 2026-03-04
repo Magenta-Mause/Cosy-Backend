@@ -32,9 +32,14 @@ public class WebClientConfig {
                                 (lokiProperties.username() + ":" + lokiProperties.password())
                                         .getBytes());
 
-        ExchangeStrategies strategies = ExchangeStrategies.builder()
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
-                .build();
+        ExchangeStrategies strategies =
+                ExchangeStrategies.builder()
+                        .codecs(
+                                configurer ->
+                                        configurer
+                                                .defaultCodecs()
+                                                .maxInMemorySize(10 * 1024 * 1024))
+                        .build();
 
         return WebClient.builder()
                 .uriBuilderFactory(factory)
