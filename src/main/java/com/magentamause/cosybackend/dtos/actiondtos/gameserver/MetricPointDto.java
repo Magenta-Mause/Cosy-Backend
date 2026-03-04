@@ -98,7 +98,7 @@ public class MetricPointDto {
                     .memoryUsage((Long) coreMetrics.get(MetricType.MEMORY_USAGE.getValue()))
                     .memoryLimit((Long) coreMetrics.get(MetricType.MEMORY_LIMIT.getValue()))
                     .networkInput((Long) coreMetrics.get(MetricType.NETWORK_INPUT.getValue()))
-                    .networkOutput((Long) coreMetrics.get(MetricType.NETWORK_INPUT.getValue()))
+                    .networkOutput((Long) coreMetrics.get(MetricType.NETWORK_OUTPUT.getValue()))
                     .blockRead((Long) coreMetrics.get(MetricType.BLOCK_READ.getValue()))
                     .blockWrite((Long) coreMetrics.get(MetricType.BLOCK_WRITE.getValue()))
                     .build();

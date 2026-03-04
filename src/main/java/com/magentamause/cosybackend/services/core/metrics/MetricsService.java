@@ -104,6 +104,7 @@ public class MetricsService {
                 : dashboard.getLayouts().stream()
                         .filter(layout -> layout.getLayoutType().equals(DashboardTypes.METRIC))
                         .map(PublicDashboardLayout::getMetricType)
+                        .filter(type -> type != null && !type.isBlank())
                         .toList();
     }
 

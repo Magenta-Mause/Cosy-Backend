@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Data;
 
 @Data
@@ -33,7 +34,7 @@ public class Metric {
 
     private Instant time;
 
-    private Map<String, Object> customMetricHolder = new HashMap<>();
+    @Builder.Default private Map<String, Object> customMetricHolder = new HashMap<>();
 
     public MetricPointDto toDto() {
         MetricPointDto.MetricValues metricValues =
