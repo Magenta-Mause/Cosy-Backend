@@ -64,6 +64,8 @@ public class GameServerDto {
 
     @NotNull private PublicDashboard publicDashboard;
 
+    private List<String> mcRouterDomains;
+
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     public enum GameServerStatus {
         RUNNING,

@@ -25,7 +25,9 @@ import jakarta.annotation.PreDestroy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -33,6 +35,7 @@ import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -53,6 +56,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     private final DockerCommandSender commandSender;
     private final DockerHostConfigFactory hostConfigFactory;
     private final DockerContainerNameResolver containerNameResolver;
+    @Lazy private final McRouterContainerService mcRouterContainerService;
 
     @Value("${cosy.custom-metrics.base-url}")
     private String COSY_METRICS_BASE_URL;
@@ -129,6 +133,9 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
         log.info("Starting container {} with env {}", containerName, env);
 
+        // Build container labels including mc-router.host if configured
+        Map<String, String> labels = buildContainerLabels(serverConfig);
+
         CreateContainerResponse response =
                 client.createContainerCmd(image)
                         .withName(containerName)
@@ -136,10 +143,16 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         .withEnv(env)
                         .withExposedPorts(exposedPorts)
                         .withHostConfig(hostConfigFactory.buildHostConfig(serverConfig))
+                        .withLabels(labels)
                         .withTty(true)
                         .withStdinOpen(true)
                         .withAttachStdin(true)
                         .exec();
+
+        // Connect to cosy-network if mc-router domains are configured
+        if (hasMcRouterDomains(serverConfig)) {
+            mcRouterContainerService.connectContainerToNetwork(response.getId());
+        }
 
         eventHandler.attachStatusSupplier(serverConfig.getUuid(), gameServerStatusSupplier);
 
@@ -149,6 +162,27 @@ public class DockerEngineManager implements EngineManager, Closeable {
             client.removeContainerCmd(response.getId()).withForce(true).exec();
             throw new InternalServiceStartException(e);
         }
+    }
+
+    private Map<String, String> buildContainerLabels(GameServerEntity serverConfig) {
+        Map<String, String> labels = new HashMap<>();
+        labels.put("cosy.managed", "true");
+        labels.put("cosy.server.uuid", serverConfig.getUuid());
+        labels.put("cosy.server.name", serverConfig.getServerName());
+
+        // Add mc-router.host label if mc-router domains are configured
+        if (hasMcRouterDomains(serverConfig)) {
+            String domains = String.join(",", serverConfig.getMcRouterDomains());
+            labels.put("mc-router.host", domains);
+            log.info("Added mc-router.host label with domains: {}", domains);
+        }
+
+        return labels;
+    }
+
+    private boolean hasMcRouterDomains(GameServerEntity serverConfig) {
+        return serverConfig.getMcRouterDomains() != null
+                && !serverConfig.getMcRouterDomains().isEmpty();
     }
 
     private void addUtilEnvVars(List<String> env, GameServerEntity serverConfig) {

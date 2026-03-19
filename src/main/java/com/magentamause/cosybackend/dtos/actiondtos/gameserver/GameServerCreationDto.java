@@ -14,6 +14,7 @@ import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import lombok.AllArgsConstructor;
@@ -52,6 +53,8 @@ public class GameServerCreationDto {
     @Valid
     private List<VolumeMountConfigurationDto> volumeMounts;
 
+    private List<String> mcRouterDomains;
+
     public GameServerEntity toEntity(UserEntity user, Function<Integer, GameEntity> gameProvider) {
 
         return GameServerEntity.builder()
@@ -71,6 +74,10 @@ public class GameServerCreationDto {
                                         .toList()
                                 : List.of())
                 .portMappings(this.getPortMappings() != null ? this.getPortMappings() : List.of())
+                .mcRouterDomains(
+                        this.getMcRouterDomains() != null
+                                ? new ArrayList<>(this.getMcRouterDomains())
+                                : List.of())
                 .build();
     }
 }

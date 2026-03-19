@@ -45,6 +45,8 @@ public class GameServerUpdateDto {
     @Valid
     private List<VolumeMountConfigurationDto> volumeMounts;
 
+    private List<String> mcRouterDomains;
+
     public void applyToEntity(GameServerEntity target, Function<Integer, GameEntity> gameProvider) {
         target.setGame(gameProvider.apply(this.externalGameId));
         target.setServerName(this.getServerName());
@@ -60,6 +62,8 @@ public class GameServerUpdateDto {
                         target.getEnvironmentVariables(),
                         this.getEnvironmentVariables(),
                         ArrayList::new));
+        target.setMcRouterDomains(
+                updateList(target.getMcRouterDomains(), this.getMcRouterDomains(), ArrayList::new));
         updateVolumeMounts(target);
     }
 

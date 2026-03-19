@@ -6,6 +6,7 @@ import com.magentamause.cosybackend.annotations.ValidUsername;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.Data;
 
 @Data
@@ -15,4 +16,15 @@ public class UserInviteCreationDto {
     private UserEntity.Role role;
 
     @Valid private DockerHardwareLimits dockerHardwareLimits;
+
+    // Port restrictions
+    private boolean portRestrictionsEnabled = false;
+    private List<String> allowedPorts;
+
+    // Game server creation permission
+    private boolean allowGameServerCreation = true;
+
+    // MC-Router domain restrictions
+    private boolean mcRouterAllowAllDomains = false;
+    private List<String> mcRouterAllowedDomains;
 }

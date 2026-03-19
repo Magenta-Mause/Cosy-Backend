@@ -1,30 +1,20 @@
-package com.magentamause.cosybackend.dtos.entitydtos;
+package com.magentamause.cosybackend.dtos.actiondtos.user;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.entities.UserEntity;
-import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
-import java.time.Instant;
 import java.util.List;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserInviteDto {
-    private String uuid;
-    private String username;
-    private String invitedBy;
-    private String inviteByUsername;
-    private String secretKey;
-    private Instant createdAt;
-    private UserEntity.Role role;
-    private DockerHardwareLimits dockerHardwareLimits;
+public class UserRestrictionsUpdateDto {
 
     // Port restrictions
     private boolean portRestrictionsEnabled;
@@ -36,4 +26,13 @@ public class UserInviteDto {
     // MC-Router domain restrictions
     private boolean mcRouterAllowAllDomains;
     private List<String> mcRouterAllowedDomains;
+
+    public UserEntity applyToEntity(UserEntity entity) {
+        entity.setPortRestrictionsEnabled(this.portRestrictionsEnabled);
+        entity.setAllowedPorts(this.allowedPorts);
+        entity.setAllowGameServerCreation(this.allowGameServerCreation);
+        entity.setMcRouterAllowAllDomains(this.mcRouterAllowAllDomains);
+        entity.setMcRouterAllowedDomains(this.mcRouterAllowedDomains);
+        return entity;
+    }
 }

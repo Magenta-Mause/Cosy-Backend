@@ -1,0 +1,384 @@
+package com.magentamause.cosybackend.services.engine.docker;
+
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.CreateNetworkResponse;
+import com.github.dockerjava.api.exception.ConflictException;
+import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.HostConfig;
+import com.github.dockerjava.api.model.Network;
+import com.github.dockerjava.api.model.Ports;
+import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.dtos.entitydtos.McRouterStatusDto;
+import com.magentamause.cosybackend.entities.McRouterConfiguration;
+import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
+import com.magentamause.cosybackend.exceptions.McRouterException;
+import com.magentamause.cosybackend.repositories.GameServerRepository;
+import com.magentamause.cosybackend.services.CosyInstanceSettingsService;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+/**
+ * Service for managing the mc-router Docker container. MC-Router enables multiple Minecraft servers
+ * to share port 25565 with domain-based routing.
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class McRouterContainerService {
+
+    private static final String MC_ROUTER_CONTAINER_NAME = "cosy-mc-router";
+    private static final String MC_ROUTER_IMAGE = "itzg/mc-router";
+    private static final String COSY_NETWORK_NAME = "cosy-network";
+    private static final int MINECRAFT_GAME_ID = 38365;
+    private static final int DEFAULT_MC_ROUTER_PORT = 25565;
+
+    private final DockerClient dockerClient;
+    private final GameServerRepository gameServerRepository;
+    private final CosyInstanceSettingsService settingsService;
+
+    /**
+     * Ensures the cosy-network Docker network exists. Creates it if it doesn't exist.
+     *
+     * @return the network ID
+     */
+    public String ensureNetworkExists() {
+        Optional<Network> existingNetwork = findNetwork(COSY_NETWORK_NAME);
+        if (existingNetwork.isPresent()) {
+            log.debug(
+                    "Network {} already exists with ID: {}",
+                    COSY_NETWORK_NAME,
+                    existingNetwork.get().getId());
+            return existingNetwork.get().getId();
+        }
+
+        log.info("Creating Docker network: {}", COSY_NETWORK_NAME);
+        CreateNetworkResponse response =
+                dockerClient
+                        .createNetworkCmd()
+                        .withName(COSY_NETWORK_NAME)
+                        .withDriver("bridge")
+                        .exec();
+        log.info("Created network {} with ID: {}", COSY_NETWORK_NAME, response.getId());
+        return response.getId();
+    }
+
+    /**
+     * Finds a Docker network by name.
+     *
+     * @param networkName the name of the network
+     * @return the network if found
+     */
+    private Optional<Network> findNetwork(String networkName) {
+        return dockerClient.listNetworksCmd().withNameFilter(networkName).exec().stream()
+                .filter(n -> networkName.equals(n.getName()))
+                .findFirst();
+    }
+
+    /**
+     * Starts the mc-router container if not already running.
+     *
+     * @throws McRouterException if there's a port conflict or start failure
+     */
+    public void startMcRouter() throws McRouterException {
+        McRouterConfiguration config = settingsService.getMcRouterConfiguration();
+        if (!config.isEnabled()) {
+            throw new McRouterException("MC-Router is not enabled");
+        }
+
+        Optional<Container> existingContainer = findMcRouterContainer();
+        if (existingContainer.isPresent()) {
+            String state = existingContainer.get().getState();
+            if ("running".equalsIgnoreCase(state)) {
+                log.info("MC-Router container is already running");
+                return;
+            }
+            // Remove non-running container to recreate with possibly updated config
+            log.info("Removing existing non-running mc-router container");
+            removeMcRouterContainer();
+        }
+
+        int port = config.getPort() > 0 ? config.getPort() : DEFAULT_MC_ROUTER_PORT;
+
+        // Check for port conflicts with COSY game servers
+        checkPortConflicts(port);
+
+        // Ensure network exists
+        ensureNetworkExists();
+
+        log.info("Starting MC-Router container on port {}", port);
+
+        // Pull image if needed
+        try {
+            dockerClient.inspectImageCmd(MC_ROUTER_IMAGE).exec();
+        } catch (NotFoundException e) {
+            log.info("Pulling MC-Router image: {}", MC_ROUTER_IMAGE);
+            try {
+                dockerClient.pullImageCmd(MC_ROUTER_IMAGE).start().awaitCompletion();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new McRouterException("Interrupted while pulling MC-Router image", ie);
+            }
+        }
+
+        // Create port bindings
+        ExposedPort exposedPort = ExposedPort.tcp(25565);
+        Ports portBindings = new Ports();
+        portBindings.bind(exposedPort, Ports.Binding.bindPort(port));
+
+        // Create host config with network and port bindings
+        HostConfig hostConfig =
+                HostConfig.newHostConfig()
+                        .withNetworkMode(COSY_NETWORK_NAME)
+                        .withPortBindings(portBindings)
+                        .withExtraHosts("host.docker.internal:host-gateway");
+
+        // Create container with Docker discovery mode enabled
+        CreateContainerResponse response =
+                dockerClient
+                        .createContainerCmd(MC_ROUTER_IMAGE)
+                        .withName(MC_ROUTER_CONTAINER_NAME)
+                        .withEnv("IN_DOCKER_SWARM=true") // Enable Docker discovery mode
+                        .withExposedPorts(exposedPort)
+                        .withHostConfig(hostConfig)
+                        .withLabels(Map.of("cosy.managed", "true", "cosy.service", "mc-router"))
+                        .exec();
+
+        // Start the container
+        try {
+            dockerClient.startContainerCmd(response.getId()).exec();
+            log.info("MC-Router container started successfully with ID: {}", response.getId());
+        } catch (Exception e) {
+            // Clean up on failure
+            try {
+                dockerClient.removeContainerCmd(response.getId()).withForce(true).exec();
+            } catch (Exception cleanupEx) {
+                log.warn("Failed to cleanup mc-router container after start failure", cleanupEx);
+            }
+            throw new McRouterException(
+                    "Failed to start MC-Router container: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Stops and removes the mc-router container.
+     *
+     * @param force if true, stops even if Minecraft servers with domains are running
+     * @throws McRouterException if servers with domains are running and force is false
+     */
+    public void stopMcRouter(boolean force) throws McRouterException {
+        if (!force) {
+            List<GameServerEntity> serversWithDomains = getRunningMinecraftServersWithDomains();
+            if (!serversWithDomains.isEmpty()) {
+                String serverNames =
+                        serversWithDomains.stream()
+                                .map(GameServerEntity::getServerName)
+                                .collect(Collectors.joining(", "));
+                throw new McRouterException(
+                        "Cannot stop MC-Router while Minecraft servers with domains are running: "
+                                + serverNames);
+            }
+        }
+
+        removeMcRouterContainer();
+    }
+
+    /** Removes the mc-router container if it exists. */
+    public void removeMcRouterContainer() {
+        findMcRouterContainer()
+                .ifPresent(
+                        container -> {
+                            log.info("Stopping and removing MC-Router container");
+                            try {
+                                if ("running".equalsIgnoreCase(container.getState())) {
+                                    dockerClient.stopContainerCmd(container.getId()).exec();
+                                }
+                            } catch (Exception e) {
+                                log.warn("Error stopping mc-router container, forcing removal", e);
+                            }
+                            try {
+                                dockerClient
+                                        .removeContainerCmd(container.getId())
+                                        .withForce(true)
+                                        .exec();
+                            } catch (Exception e) {
+                                log.error("Failed to remove mc-router container", e);
+                            }
+                        });
+    }
+
+    /**
+     * Finds the mc-router container.
+     *
+     * @return the container if found
+     */
+    public Optional<Container> findMcRouterContainer() {
+        String nameToMatch = "/" + MC_ROUTER_CONTAINER_NAME;
+        return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
+                .filter(
+                        c ->
+                                Arrays.asList(
+                                                Optional.ofNullable(c.getNames())
+                                                        .orElse(new String[0]))
+                                        .contains(nameToMatch))
+                .findFirst();
+    }
+
+    /**
+     * Gets the current status of the mc-router container.
+     *
+     * @return the status DTO
+     */
+    public McRouterStatusDto getStatus() {
+        McRouterConfiguration config = settingsService.getMcRouterConfiguration();
+        Optional<Container> container = findMcRouterContainer();
+
+        boolean isRunning =
+                container.map(c -> "running".equalsIgnoreCase(c.getState())).orElse(false);
+        String containerId = container.map(Container::getId).orElse(null);
+
+        return McRouterStatusDto.builder()
+                .enabled(config.isEnabled())
+                .port(config.getPort() > 0 ? config.getPort() : DEFAULT_MC_ROUTER_PORT)
+                .running(isRunning)
+                .containerId(containerId)
+                .build();
+    }
+
+    /**
+     * Checks if the specified port is in use by any COSY-managed game server.
+     *
+     * @param port the port to check
+     * @throws McRouterException if the port is in use
+     */
+    private void checkPortConflicts(int port) throws McRouterException {
+        Set<Integer> portsInUse = getPortsInUseByGameServers();
+        if (portsInUse.contains(port)) {
+            throw new McRouterException(
+                    "Port "
+                            + port
+                            + " is already in use by a COSY game server. "
+                            + "Please stop the conflicting server or change the MC-Router port.");
+        }
+    }
+
+    /**
+     * Gets all instance ports currently in use by game servers.
+     *
+     * @return set of ports in use
+     */
+    public Set<Integer> getPortsInUseByGameServers() {
+        return gameServerRepository.findAll().stream()
+                .filter(gs -> gs.getPortMappings() != null)
+                .flatMap(gs -> gs.getPortMappings().stream())
+                .map(PortMapping::getInstancePort)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Gets all running Minecraft servers that have mc-router domains configured.
+     *
+     * @return list of servers with domains
+     */
+    public List<GameServerEntity> getRunningMinecraftServersWithDomains() {
+        return gameServerRepository.findAll().stream()
+                .filter(this::isMinecraftServer)
+                .filter(this::isRunning)
+                .filter(this::hasMcRouterDomains)
+                .toList();
+    }
+
+    /**
+     * Gets all Minecraft servers (regardless of status) that have mc-router domains configured.
+     *
+     * @return list of servers with domains
+     */
+    public List<GameServerEntity> getMinecraftServersWithDomains() {
+        return gameServerRepository.findAll().stream()
+                .filter(this::isMinecraftServer)
+                .filter(this::hasMcRouterDomains)
+                .toList();
+    }
+
+    /**
+     * Checks if a game server is a Minecraft server.
+     *
+     * @param server the game server
+     * @return true if it's a Minecraft server
+     */
+    public boolean isMinecraftServer(GameServerEntity server) {
+        return server.getGame() != null
+                && server.getGame().getExternalGameId() == MINECRAFT_GAME_ID;
+    }
+
+    /**
+     * Checks if a game server is currently running.
+     *
+     * @param server the game server
+     * @return true if running
+     */
+    private boolean isRunning(GameServerEntity server) {
+        return server.getStatus() == GameServerDto.GameServerStatus.RUNNING;
+    }
+
+    /**
+     * Checks if a game server has mc-router domains configured.
+     *
+     * @param server the game server
+     * @return true if it has domains
+     */
+    private boolean hasMcRouterDomains(GameServerEntity server) {
+        return server.getMcRouterDomains() != null && !server.getMcRouterDomains().isEmpty();
+    }
+
+    /**
+     * Connects a container to the cosy-network.
+     *
+     * @param containerId the container ID to connect
+     */
+    public void connectContainerToNetwork(String containerId) {
+        ensureNetworkExists();
+        try {
+            dockerClient
+                    .connectToNetworkCmd()
+                    .withContainerId(containerId)
+                    .withNetworkId(COSY_NETWORK_NAME)
+                    .exec();
+            log.debug("Connected container {} to network {}", containerId, COSY_NETWORK_NAME);
+        } catch (ConflictException e) {
+            // Container is already connected to the network
+            log.debug(
+                    "Container {} is already connected to network {}",
+                    containerId,
+                    COSY_NETWORK_NAME);
+        }
+    }
+
+    /**
+     * Gets the cosy-network name for use by other services.
+     *
+     * @return the network name
+     */
+    public String getNetworkName() {
+        return COSY_NETWORK_NAME;
+    }
+
+    /**
+     * Gets the mc-router container name.
+     *
+     * @return the container name
+     */
+    public String getContainerName() {
+        return MC_ROUTER_CONTAINER_NAME;
+    }
+}
