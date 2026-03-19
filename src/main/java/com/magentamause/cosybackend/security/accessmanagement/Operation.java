@@ -16,6 +16,7 @@ public enum Operation {
     USER_CHANGE_ROLE,
     USER_DELETE,
     USER_READ_PERMISSIONS,
+    USER_UPDATE_RESTRICTIONS,
 
     // Game Server operations
     GAME_SERVER_CREATE,
@@ -58,5 +59,10 @@ public enum Operation {
     USER_INVITE_DELETE,
 
     // Footer operations
-    FOOTER_UPDATE
+    FOOTER_UPDATE,
+
+    // Cosy Instance Settings operations
+    COSY_SETTINGS_READ,
+    COSY_SETTINGS_UPDATE,
+    MC_ROUTER_STATUS_READ
 }

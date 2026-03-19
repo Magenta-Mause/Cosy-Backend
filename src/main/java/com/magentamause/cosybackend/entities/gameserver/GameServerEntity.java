@@ -116,6 +116,13 @@ public class GameServerEntity {
     @JoinColumn(name = "public_dashboard_uuid")
     private PublicDashboard publicDashboard;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "mc_router_server_domains",
+            joinColumns = @JoinColumn(name = "game_server_uuid"))
+    @Column(name = "domain")
+    private List<String> mcRouterDomains;
+
     public GameServerDto toDto() {
         return GameServerDto.builder()
                 .uuid(this.getUuid())
@@ -141,6 +148,7 @@ public class GameServerEntity {
                 .volumeMounts(this.getVolumeMounts())
                 .metricLayout(this.getMetricLayout())
                 .publicDashboard(this.getPublicDashboard())
+                .mcRouterDomains(this.getMcRouterDomains())
                 .accessGroups(
                         Optional.ofNullable(this.getAccessGroups())
                                 .map(
@@ -202,7 +210,8 @@ public class GameServerEntity {
                     .executionCommand(this.getDockerExecutionCommand())
                     .portMappings(this.getPortMappings())
                     .environmentVariables(this.getEnvironmentVariables())
-                    .volumeMounts(this.getVolumeMounts());
+                    .volumeMounts(this.getVolumeMounts())
+                    .mcRouterDomains(this.getMcRouterDomains());
         }
         if (GameServerFieldVisibilityPolicy.canSeeFiles(permissions)) {
             builder.volumeMounts(this.getVolumeMounts());

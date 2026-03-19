@@ -113,4 +113,21 @@ public class UserPolicy {
             ResourceResolver resolver, Object referenceId, UserEntity user) {
         return user.getUuid().equals(referenceId);
     }
+
+    @Validates(Operation.USER_UPDATE_RESTRICTIONS)
+    public static boolean canUpdateRestrictions(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+
+        UserEntity targetUser = resolver.getUserEntity((String) referenceId).orElse(null);
+        if (targetUser == null) {
+            return false;
+        }
+        if (user.getRole().equals(UserEntity.Role.OWNER)) {
+            return true;
+        } else if (targetUser.getRole().isAdmin()) {
+            return false;
+        } else {
+            return user.getRole().isAdmin();
+        }
+    }
 }

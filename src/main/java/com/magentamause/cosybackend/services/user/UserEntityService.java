@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.services.user;
 
+import com.magentamause.cosybackend.dtos.actiondtos.user.UserRestrictionsUpdateDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.UserEntity.Role;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
@@ -112,6 +113,14 @@ public class UserEntityService {
         UserEntity user = getUserByUuid(uuid);
 
         user.setDockerHardwareLimits(dockerHardwareLimits);
+        return saveUserEntity(user);
+    }
+
+    public UserEntity updateRestrictions(String uuid, UserRestrictionsUpdateDto restrictionsDto) {
+        log.info("Updating restrictions for user with UUID: {}", uuid);
+        UserEntity user = getUserByUuid(uuid);
+
+        restrictionsDto.applyToEntity(user);
         return saveUserEntity(user);
     }
 

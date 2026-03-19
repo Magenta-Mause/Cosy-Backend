@@ -59,6 +59,11 @@ public class UserInviteService {
                         .username(presetUsername)
                         .role(userInviteCreationDto.getRole())
                         .dockerHardwareLimits(userInviteCreationDto.getDockerHardwareLimits())
+                        .portRestrictionsEnabled(userInviteCreationDto.isPortRestrictionsEnabled())
+                        .allowedPorts(userInviteCreationDto.getAllowedPorts())
+                        .allowGameServerCreation(userInviteCreationDto.isAllowGameServerCreation())
+                        .mcRouterAllowAllDomains(userInviteCreationDto.isMcRouterAllowAllDomains())
+                        .mcRouterAllowedDomains(userInviteCreationDto.getMcRouterAllowedDomains())
                         .build();
 
         return userInviteRepository.save(invite);
@@ -107,6 +112,11 @@ public class UserInviteService {
                         .role(inviteRole)
                         .password(passwordEncoder.encode(password))
                         .dockerHardwareLimits(invite.getDockerHardwareLimits())
+                        .portRestrictionsEnabled(invite.isPortRestrictionsEnabled())
+                        .allowedPorts(invite.getAllowedPorts())
+                        .allowGameServerCreation(invite.isAllowGameServerCreation())
+                        .mcRouterAllowAllDomains(invite.isMcRouterAllowAllDomains())
+                        .mcRouterAllowedDomains(invite.getMcRouterAllowedDomains())
                         .defaultPasswordReset(true);
 
         if (Objects.isNull(invite.getUsername())) {

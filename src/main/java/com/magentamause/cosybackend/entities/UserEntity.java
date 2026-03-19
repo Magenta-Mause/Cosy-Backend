@@ -4,6 +4,7 @@ import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.*;
 
@@ -40,6 +41,33 @@ public class UserEntity {
 
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
+    // Port restrictions
+    @Column(columnDefinition = "boolean default false")
+    @Builder.Default
+    private boolean portRestrictionsEnabled = false;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_allowed_ports", joinColumns = @JoinColumn(name = "user_uuid"))
+    @Column(name = "port_range")
+    @Builder.Default
+    private List<String> allowedPorts = new ArrayList<>();
+
+    // Game server creation permission
+    @Column(columnDefinition = "boolean default true")
+    @Builder.Default
+    private boolean allowGameServerCreation = true;
+
+    // MC-Router domain restrictions
+    @Column(columnDefinition = "boolean default false")
+    @Builder.Default
+    private boolean mcRouterAllowAllDomains = false;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_mc_router_domains", joinColumns = @JoinColumn(name = "user_uuid"))
+    @Column(name = "domain")
+    @Builder.Default
+    private List<String> mcRouterAllowedDomains = new ArrayList<>();
+
     @Getter
     @RequiredArgsConstructor
     public enum Role {
@@ -56,6 +84,11 @@ public class UserEntity {
                 .username(this.username)
                 .role(this.role)
                 .dockerHardwareLimits(this.dockerHardwareLimits)
+                .portRestrictionsEnabled(this.portRestrictionsEnabled)
+                .allowedPorts(this.allowedPorts)
+                .allowGameServerCreation(this.allowGameServerCreation)
+                .mcRouterAllowAllDomains(this.mcRouterAllowAllDomains)
+                .mcRouterAllowedDomains(this.mcRouterAllowedDomains)
                 .build();
     }
 }

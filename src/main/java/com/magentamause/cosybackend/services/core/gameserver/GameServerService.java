@@ -12,6 +12,7 @@ import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
+import com.magentamause.cosybackend.exceptions.McRouterException;
 import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
 import com.magentamause.cosybackend.exceptions.RconException;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
@@ -21,6 +22,7 @@ import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.security.SecretGenerator;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerPolicy;
+import com.magentamause.cosybackend.services.McRouterDomainValidationService;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
@@ -68,6 +70,7 @@ public class GameServerService {
     private final RCONService rCONService;
     private final DefaultSettingsMapper defaultSettingsMapper;
     private final GameServerWebhookService webhookService;
+    private final McRouterDomainValidationService mcRouterDomainValidationService;
 
     @PostConstruct
     public void init() {
@@ -262,6 +265,10 @@ public class GameServerService {
                 hardwareQuotaChecker.assertSufficientQuota(
                         gameServerOwner, serverConfig, gameServersByOwner);
 
+                // Validate mc-router domains if configured
+                mcRouterDomainValidationService.validateDomainsForStart(
+                        serverConfig, gameServerOwner);
+
                 startServerAsync(gameServerUuid, serverConfig);
             }
         } catch (HardwareLimitException e) {
@@ -274,6 +281,20 @@ public class GameServerService {
                     false);
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "Hardware quota limit reached: " + e.getMessage());
+        } catch (McRouterException e) {
+            startingServers.remove(gameServerUuid);
+            log.warn(
+                    "Could not start Server '{}' - MC-Router domain validation failed: {}",
+                    gameServerUuid,
+                    e.getMessage());
+            gameServerLogService.publishAndSaveLog(
+                    serverConfig,
+                    GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
+                    "MC-Router domain validation failed: " + e.getMessage(),
+                    false);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "MC-Router domain validation failed: " + e.getMessage());
         } catch (Exception e) {
             startingServers.remove(gameServerUuid);
             throw e;

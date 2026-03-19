@@ -6,6 +6,7 @@ import com.magentamause.cosybackend.dtos.entitydtos.UserInviteDto;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.List;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -42,6 +43,35 @@ public class UserInviteEntity {
 
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
+    // Port restrictions
+    @Column(columnDefinition = "boolean default false")
+    @Builder.Default
+    private boolean portRestrictionsEnabled = false;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "user_invite_allowed_ports",
+            joinColumns = @JoinColumn(name = "user_invite_uuid"))
+    @Column(name = "port_range")
+    private List<String> allowedPorts;
+
+    // Game server creation permission
+    @Column(columnDefinition = "boolean default true")
+    @Builder.Default
+    private boolean allowGameServerCreation = true;
+
+    // MC-Router domain restrictions
+    @Column(columnDefinition = "boolean default false")
+    @Builder.Default
+    private boolean mcRouterAllowAllDomains = false;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "user_invite_mc_router_domains",
+            joinColumns = @JoinColumn(name = "user_invite_uuid"))
+    @Column(name = "domain")
+    private List<String> mcRouterAllowedDomains;
+
     public UserInviteDto convertToDto() {
         return UserInviteDto.builder()
                 .uuid(this.getUuid())
@@ -52,6 +82,11 @@ public class UserInviteEntity {
                 .inviteByUsername(this.getInvitedBy().getUsername())
                 .role(this.getRole())
                 .dockerHardwareLimits(this.dockerHardwareLimits)
+                .portRestrictionsEnabled(this.portRestrictionsEnabled)
+                .allowedPorts(this.allowedPorts)
+                .allowGameServerCreation(this.allowGameServerCreation)
+                .mcRouterAllowAllDomains(this.mcRouterAllowAllDomains)
+                .mcRouterAllowedDomains(this.mcRouterAllowedDomains)
                 .build();
     }
 }

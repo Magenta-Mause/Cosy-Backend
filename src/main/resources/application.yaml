@@ -14,12 +14,23 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
+      # Using 'update' for base schema, Flyway handles incremental migrations
+      # Can be changed to 'validate' once full schema is managed by Flyway
       ddl-auto: update
     show-sql: false
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    # Baseline allows Flyway to work with existing databases
+    baseline-on-migrate: true
+    baseline-version: '0'
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    # Run Flyway migrations before Hibernate validation
+    # This ensures tables exist before Hibernate checks them
   jackson:
     property-naming-strategy: SNAKE_CASE
 jwt:
