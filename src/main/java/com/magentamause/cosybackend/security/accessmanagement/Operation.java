@@ -63,6 +63,5 @@ public enum Operation {
 
     // Cosy Instance Settings operations
     COSY_SETTINGS_READ,
-    COSY_SETTINGS_UPDATE,
-    MC_ROUTER_STATUS_READ
+    COSY_SETTINGS_UPDATE
 }

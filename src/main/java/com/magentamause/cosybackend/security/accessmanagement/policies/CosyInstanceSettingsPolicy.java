@@ -20,10 +20,4 @@ public class CosyInstanceSettingsPolicy {
             ResourceResolver resolver, Object referenceId, UserEntity user) {
         return user != null && user.getRole().isAdmin();
     }
-
-    @Validates(Operation.MC_ROUTER_STATUS_READ)
-    public static boolean canReadMcRouterStatus(
-            ResourceResolver resolver, Object referenceId, UserEntity user) {
-        return user != null && user.getRole().isAdmin();
-    }
 }

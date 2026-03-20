@@ -26,6 +26,7 @@ import com.magentamause.cosybackend.services.McRouterDomainValidationService;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.docker.McRouterContainerService;
 import com.magentamause.cosybackend.services.engine.docker.util.HardwareLimitPresentValidator;
 import com.magentamause.cosybackend.services.engine.docker.util.HardwareQuotaChecker;
 import com.magentamause.cosybackend.services.engine.docker.util.VolumeDirectoryService;
@@ -71,6 +72,7 @@ public class GameServerService {
     private final DefaultSettingsMapper defaultSettingsMapper;
     private final GameServerWebhookService webhookService;
     private final McRouterDomainValidationService mcRouterDomainValidationService;
+    private final McRouterContainerService mcRouterContainerService;
 
     @PostConstruct
     public void init() {
@@ -135,6 +137,13 @@ public class GameServerService {
                 GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
                 "Docker game server stop event received",
                 false);
+
+        // Auto-stop mc-router if this was a Minecraft server with domains
+        if (mcRouterContainerService.isMinecraftServer(gameServerEntity)
+                && gameServerEntity.getMcRouterDomains() != null
+                && !gameServerEntity.getMcRouterDomains().isEmpty()) {
+            mcRouterContainerService.stopMcRouterIfNoServersNeedIt();
+        }
     }
 
     private void handleGameServerEngineFailEvent(GameServerEntity gameServerEntity) {
@@ -144,6 +153,13 @@ public class GameServerService {
                 GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
                 "Docker game server failure event received",
                 false);
+
+        // Auto-stop mc-router if this was a Minecraft server with domains
+        if (mcRouterContainerService.isMinecraftServer(gameServerEntity)
+                && gameServerEntity.getMcRouterDomains() != null
+                && !gameServerEntity.getMcRouterDomains().isEmpty()) {
+            mcRouterContainerService.stopMcRouterIfNoServersNeedIt();
+        }
     }
 
     public List<GameServerEntity> getAllGameServers() {
@@ -268,6 +284,13 @@ public class GameServerService {
                 // Validate mc-router domains if configured
                 mcRouterDomainValidationService.validateDomainsForStart(
                         serverConfig, gameServerOwner);
+
+                // Auto-start mc-router if this server has domains configured
+                if (mcRouterContainerService.isMinecraftServer(serverConfig)
+                        && serverConfig.getMcRouterDomains() != null
+                        && !serverConfig.getMcRouterDomains().isEmpty()) {
+                    mcRouterContainerService.ensureMcRouterRunningIfNeeded(serverConfig);
+                }
 
                 startServerAsync(gameServerUuid, serverConfig);
             }
