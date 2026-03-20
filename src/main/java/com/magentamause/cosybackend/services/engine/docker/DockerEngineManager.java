@@ -170,10 +170,11 @@ public class DockerEngineManager implements EngineManager, Closeable {
         labels.put("cosy.server.uuid", serverConfig.getUuid());
         labels.put("cosy.server.name", serverConfig.getServerName());
 
-        // Add mc-router.host label if mc-router domains are configured
+        // Add mc-router labels if mc-router domains are configured
         if (hasMcRouterDomains(serverConfig)) {
             String domains = String.join(",", serverConfig.getMcRouterDomains());
             labels.put("mc-router.host", domains);
+            labels.put("mc-router.network", mcRouterContainerService.getNetworkName());
             log.info("Added mc-router.host label with domains: {}", domains);
         }
 

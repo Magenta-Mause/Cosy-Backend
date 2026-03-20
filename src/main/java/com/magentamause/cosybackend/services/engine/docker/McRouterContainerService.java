@@ -1,15 +1,19 @@
 package com.magentamause.cosybackend.services.engine.docker;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.CreateNetworkResponse;
 import com.github.dockerjava.api.exception.ConflictException;
 import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Ports;
+import com.github.dockerjava.api.model.Volume;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.McRouterStatusDto;
 import com.magentamause.cosybackend.entities.McRouterConfiguration;
@@ -18,12 +22,17 @@ import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.McRouterException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.CosyInstanceSettingsService;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,7 +47,7 @@ import org.springframework.stereotype.Service;
 public class McRouterContainerService {
 
     private static final String MC_ROUTER_CONTAINER_NAME = "cosy-mc-router";
-    private static final String MC_ROUTER_IMAGE = "itzg/mc-router";
+    private static final String MC_ROUTER_IMAGE = "itzg/mc-router:latest";
     private static final String COSY_NETWORK_NAME = "cosy-network";
     private static final int MINECRAFT_GAME_ID = 38365;
     private static final int DEFAULT_MC_ROUTER_PORT = 25565;
@@ -46,6 +55,8 @@ public class McRouterContainerService {
     private final DockerClient dockerClient;
     private final GameServerRepository gameServerRepository;
     private final CosyInstanceSettingsService settingsService;
+
+    private Closeable mcRouterLogCallback;
 
     /**
      * Ensures the cosy-network Docker network exists. Creates it if it doesn't exist.
@@ -136,11 +147,15 @@ public class McRouterContainerService {
         Ports portBindings = new Ports();
         portBindings.bind(exposedPort, Ports.Binding.bindPort(port));
 
-        // Create host config with network and port bindings
+        // Create host config with network, port bindings, and Docker socket access
         HostConfig hostConfig =
                 HostConfig.newHostConfig()
                         .withNetworkMode(COSY_NETWORK_NAME)
                         .withPortBindings(portBindings)
+                        .withBinds(
+                                new Bind(
+                                        "/var/run/docker.sock",
+                                        new Volume("/var/run/docker.sock")))
                         .withExtraHosts("host.docker.internal:host-gateway");
 
         // Create container with Docker discovery mode enabled
@@ -148,7 +163,7 @@ public class McRouterContainerService {
                 dockerClient
                         .createContainerCmd(MC_ROUTER_IMAGE)
                         .withName(MC_ROUTER_CONTAINER_NAME)
-                        .withEnv("IN_DOCKER_SWARM=true") // Enable Docker discovery mode
+                        .withEnv("IN_DOCKER=true") // Enable Docker discovery mode
                         .withExposedPorts(exposedPort)
                         .withHostConfig(hostConfig)
                         .withLabels(Map.of("cosy.managed", "true", "cosy.service", "mc-router"))
@@ -158,6 +173,9 @@ public class McRouterContainerService {
         try {
             dockerClient.startContainerCmd(response.getId()).exec();
             log.info("MC-Router container started successfully with ID: {}", response.getId());
+
+            attachMcRouterLogListener(response.getId());
+
         } catch (Exception e) {
             // Clean up on failure
             try {
@@ -170,31 +188,94 @@ public class McRouterContainerService {
         }
     }
 
-    /**
-     * Stops and removes the mc-router container.
-     *
-     * @param force if true, stops even if Minecraft servers with domains are running
-     * @throws McRouterException if servers with domains are running and force is false
-     */
-    public void stopMcRouter(boolean force) throws McRouterException {
-        if (!force) {
-            List<GameServerEntity> serversWithDomains = getRunningMinecraftServersWithDomains();
-            if (!serversWithDomains.isEmpty()) {
-                String serverNames =
-                        serversWithDomains.stream()
-                                .map(GameServerEntity::getServerName)
-                                .collect(Collectors.joining(", "));
-                throw new McRouterException(
-                        "Cannot stop MC-Router while Minecraft servers with domains are running: "
-                                + serverNames);
-            }
-        }
+    private void attachMcRouterLogListener(String containerId) {
+        detachMcRouterLogListener();
+        mcRouterLogCallback =
+                dockerClient
+                        .logContainerCmd(containerId)
+                        .withStdOut(true)
+                        .withStdErr(true)
+                        .withFollowStream(true)
+                        .withTailAll()
+                        .exec(
+                                new ResultCallback.Adapter<Frame>() {
+                                    @Override
+                                    public void onNext(Frame frame) {
+                                        String message =
+                                                new String(
+                                                                frame.getPayload(),
+                                                                StandardCharsets.UTF_8)
+                                                        .stripTrailing();
+                                        log.info("[mc-router] {}", message);
+                                    }
 
-        removeMcRouterContainer();
+                                    @Override
+                                    public void onError(Throwable throwable) {
+                                        log.warn("MC-Router log stream error", throwable);
+                                    }
+                                });
     }
 
-    /** Removes the mc-router container if it exists. */
+    private void detachMcRouterLogListener() {
+        if (mcRouterLogCallback != null) {
+            try {
+                mcRouterLogCallback.close();
+            } catch (IOException e) {
+                log.warn("Failed to close MC-Router log listener: {}", e.getMessage());
+            }
+            mcRouterLogCallback = null;
+        }
+    }
+
+    /**
+     * Ensures mc-router is running if it's enabled and there are running Minecraft servers with
+     * domains. Call this when a Minecraft server with domains starts or when mc-router is enabled.
+     *
+     * @throws McRouterException if mc-router fails to start
+     */
+    public void ensureMcRouterRunningIfNeeded() throws McRouterException {
+        log.info("Ensuring MC-Router is running if needed");
+        if (!settingsService.isMcRouterEnabled()) {
+            log.info("Not enabled");
+            return;
+        }
+        if (getRunningMinecraftServersWithDomains().isEmpty()) {
+            log.info("No running Minecraft servers with MC-Router domains");
+            return;
+        }
+        log.info("Starting MC-Router if needed");
+        startMcRouter();
+    }
+
+
+    public void ensureMcRouterRunningIfNeeded(GameServerEntity currentlyStartingGameServer) throws McRouterException {
+        if (!settingsService.isMcRouterEnabled()) {
+            log.info("Not enabled");
+            return;
+        } if (currentlyStartingGameServer != null && isMinecraftServer(currentlyStartingGameServer) && hasMcRouterDomains(currentlyStartingGameServer) ) {
+            startMcRouter();
+        } else {
+            ensureMcRouterRunningIfNeeded();
+        }
+    }
+
+    /**
+     * Stops mc-router if no running Minecraft servers with domains need it. Call this after a
+     * Minecraft server with domains stops.
+     */
+    public void stopMcRouterIfNoServersNeedIt() {
+        if (getRunningMinecraftServersWithDomains().isEmpty()) {
+            log.info(
+                    "No running Minecraft servers with MC-Router domains, stopping MC-Router container");
+            removeMcRouterContainer();
+        }
+    }
+
+    /**
+     * Removes the mc-router container if it exists.
+     */
     public void removeMcRouterContainer() {
+        detachMcRouterLogListener();
         findMcRouterContainer()
                 .ifPresent(
                         container -> {
@@ -280,6 +361,7 @@ public class McRouterContainerService {
     public Set<Integer> getPortsInUseByGameServers() {
         return gameServerRepository.findAll().stream()
                 .filter(gs -> gs.getPortMappings() != null)
+                .filter(gs -> !gs.getStatus().isStopped())
                 .flatMap(gs -> gs.getPortMappings().stream())
                 .map(PortMapping::getInstancePort)
                 .collect(Collectors.toSet());
@@ -317,6 +399,7 @@ public class McRouterContainerService {
      * @return true if it's a Minecraft server
      */
     public boolean isMinecraftServer(GameServerEntity server) {
+        log.info("checking if server is a Minecraft server: {}", server.getGame());
         return server.getGame() != null
                 && server.getGame().getExternalGameId() == MINECRAFT_GAME_ID;
     }
