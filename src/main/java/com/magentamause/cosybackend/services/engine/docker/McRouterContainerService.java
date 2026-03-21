@@ -22,7 +22,6 @@ import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.McRouterException;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.CosyInstanceSettingsService;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -32,7 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -154,8 +152,7 @@ public class McRouterContainerService {
                         .withPortBindings(portBindings)
                         .withBinds(
                                 new Bind(
-                                        "/var/run/docker.sock",
-                                        new Volume("/var/run/docker.sock")))
+                                        "/var/run/docker.sock", new Volume("/var/run/docker.sock")))
                         .withExtraHosts("host.docker.internal:host-gateway");
 
         // Create container with Docker discovery mode enabled
@@ -247,12 +244,15 @@ public class McRouterContainerService {
         startMcRouter();
     }
 
-
-    public void ensureMcRouterRunningIfNeeded(GameServerEntity currentlyStartingGameServer) throws McRouterException {
+    public void ensureMcRouterRunningIfNeeded(GameServerEntity currentlyStartingGameServer)
+            throws McRouterException {
         if (!settingsService.isMcRouterEnabled()) {
             log.info("Not enabled");
             return;
-        } if (currentlyStartingGameServer != null && isMinecraftServer(currentlyStartingGameServer) && hasMcRouterDomains(currentlyStartingGameServer) ) {
+        }
+        if (currentlyStartingGameServer != null
+                && isMinecraftServer(currentlyStartingGameServer)
+                && hasMcRouterDomains(currentlyStartingGameServer)) {
             startMcRouter();
         } else {
             ensureMcRouterRunningIfNeeded();
@@ -271,9 +271,7 @@ public class McRouterContainerService {
         }
     }
 
-    /**
-     * Removes the mc-router container if it exists.
-     */
+    /** Removes the mc-router container if it exists. */
     public void removeMcRouterContainer() {
         detachMcRouterLogListener();
         findMcRouterContainer()
