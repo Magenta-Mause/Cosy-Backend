@@ -316,8 +316,7 @@ public class GameServerService {
                     "MC-Router operation failed: " + e.getMessage(),
                     false);
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "MC-Router operation failed: " + e.getMessage());
+                    HttpStatus.BAD_REQUEST, "MC-Router operation failed: " + e.getMessage());
         } catch (Exception e) {
             startingServers.remove(gameServerUuid);
             throw e;
