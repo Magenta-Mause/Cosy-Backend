@@ -81,6 +81,14 @@ public class CosyInstanceSettingsController {
                 mcRouterContainerService.ensureMcRouterRunningIfNeeded();
             } catch (McRouterException e) {
                 log.warn("Failed to auto-start MC-Router after enabling: {}", e.getMessage());
+                try {
+                    updateDto.setEnabled(wasEnabled);
+                    settingsService.updateMcRouterConfiguration(updateDto);
+                } catch (Exception rollbackEx) {
+                    log.error(
+                            "Failed to rollback MC-Router configuration after auto-start failure",
+                            rollbackEx);
+                }
                 throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
             }
         }

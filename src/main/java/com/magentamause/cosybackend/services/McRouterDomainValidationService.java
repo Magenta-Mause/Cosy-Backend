@@ -56,7 +56,11 @@ public class McRouterDomainValidationService {
 
         // Get allowed domains from global config
         Set<String> globalDomains =
-                config.getDomains() != null ? Set.copyOf(config.getDomains()) : Set.of();
+                config.getDomains() != null
+                        ? config.getDomains().stream()
+                                .filter(d -> d != null && !d.isBlank())
+                                .collect(Collectors.toSet())
+                        : Set.of();
 
         // Validate domains are in global list
         List<String> invalidDomains = new ArrayList<>();
@@ -93,7 +97,9 @@ public class McRouterDomainValidationService {
         // Get user's allowed domains
         Set<String> userAllowedDomains =
                 user.getMcRouterAllowedDomains() != null
-                        ? Set.copyOf(user.getMcRouterAllowedDomains())
+                        ? user.getMcRouterAllowedDomains().stream()
+                                .filter(d -> d != null && !d.isBlank())
+                                .collect(Collectors.toSet())
                         : Set.of();
 
         // Check each domain
@@ -125,7 +131,10 @@ public class McRouterDomainValidationService {
         }
 
         // Otherwise, return the intersection of user's allowed domains and global domains
-        Set<String> globalSet = Set.copyOf(globalDomains);
+        Set<String> globalSet =
+                globalDomains.stream()
+                        .filter(d -> d != null && !d.isBlank())
+                        .collect(Collectors.toSet());
         List<String> userDomains =
                 user.getMcRouterAllowedDomains() != null
                         ? user.getMcRouterAllowedDomains()

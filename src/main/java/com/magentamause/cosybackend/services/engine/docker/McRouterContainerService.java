@@ -45,7 +45,7 @@ import org.springframework.stereotype.Service;
 public class McRouterContainerService {
 
     private static final String MC_ROUTER_CONTAINER_NAME = "cosy-mc-router";
-    private static final String MC_ROUTER_IMAGE = "itzg/mc-router:latest";
+    private static final String MC_ROUTER_IMAGE = "itzg/mc-router:1.25.2";
     private static final String COSY_NETWORK_NAME = "cosy-network";
     private static final int MINECRAFT_GAME_ID = 38365;
     private static final int DEFAULT_MC_ROUTER_PORT = 25565;
@@ -397,7 +397,7 @@ public class McRouterContainerService {
      * @return true if it's a Minecraft server
      */
     public boolean isMinecraftServer(GameServerEntity server) {
-        log.info("checking if server is a Minecraft server: {}", server.getGame());
+        log.debug("checking if server is a Minecraft server: {}", server.getGame());
         return server.getGame() != null
                 && server.getGame().getExternalGameId() == MINECRAFT_GAME_ID;
     }

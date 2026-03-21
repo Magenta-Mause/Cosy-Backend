@@ -17,22 +17,32 @@ import lombok.NoArgsConstructor;
 public class UserRestrictionsUpdateDto {
 
     // Port restrictions
-    private boolean portRestrictionsEnabled;
+    private Boolean portRestrictionsEnabled;
     private List<String> allowedPorts;
 
     // Game server creation permission
-    private boolean allowGameServerCreation;
+    private Boolean allowGameServerCreation;
 
     // MC-Router domain restrictions
-    private boolean mcRouterAllowAllDomains;
+    private Boolean mcRouterAllowAllDomains;
     private List<String> mcRouterAllowedDomains;
 
     public UserEntity applyToEntity(UserEntity entity) {
-        entity.setPortRestrictionsEnabled(this.portRestrictionsEnabled);
-        entity.setAllowedPorts(this.allowedPorts);
-        entity.setAllowGameServerCreation(this.allowGameServerCreation);
-        entity.setMcRouterAllowAllDomains(this.mcRouterAllowAllDomains);
-        entity.setMcRouterAllowedDomains(this.mcRouterAllowedDomains);
+        if (this.portRestrictionsEnabled != null) {
+            entity.setPortRestrictionsEnabled(this.portRestrictionsEnabled);
+        }
+        if (this.allowedPorts != null) {
+            entity.setAllowedPorts(this.allowedPorts);
+        }
+        if (this.allowGameServerCreation != null) {
+            entity.setAllowGameServerCreation(this.allowGameServerCreation);
+        }
+        if (this.mcRouterAllowAllDomains != null) {
+            entity.setMcRouterAllowAllDomains(this.mcRouterAllowAllDomains);
+        }
+        if (this.mcRouterAllowedDomains != null) {
+            entity.setMcRouterAllowedDomains(this.mcRouterAllowedDomains);
+        }
         return entity;
     }
 }
