@@ -53,7 +53,7 @@ public class GameServerCreationDto {
     @Valid
     private List<VolumeMountConfigurationDto> volumeMounts;
 
-    private List<String> mcRouterDomains;
+    private List<@NotBlank String> mcRouterDomains;
 
     public GameServerEntity toEntity(UserEntity user, Function<Integer, GameEntity> gameProvider) {
 

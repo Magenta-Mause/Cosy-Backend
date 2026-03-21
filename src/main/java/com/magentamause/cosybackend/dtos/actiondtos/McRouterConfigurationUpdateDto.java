@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.magentamause.cosybackend.entities.McRouterConfiguration;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -25,7 +26,7 @@ public class McRouterConfigurationUpdateDto {
     @Max(value = 65535, message = "Port must be at most 65535")
     private Integer port;
 
-    private List<String> domains;
+    private List<@NotBlank String> domains;
 
     public McRouterConfiguration applyToEntity(McRouterConfiguration entity) {
         if (entity == null) {

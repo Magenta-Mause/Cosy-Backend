@@ -25,8 +25,8 @@ CREATE TABLE IF NOT EXISTS user_allowed_ports (
 -- Create collection table for user MC-Router allowed domains
 CREATE TABLE IF NOT EXISTS user_mc_router_domains (
     user_uuid VARCHAR(255) NOT NULL,
-    domain VARCHAR(255),
-    CONSTRAINT fk_user_mc_router_domains_user FOREIGN KEY (user_uuid) 
+    domain VARCHAR(255) NOT NULL,
+    CONSTRAINT fk_user_mc_router_domains_user FOREIGN KEY (user_uuid)
         REFERENCES user_entity(uuid) ON DELETE CASCADE
 );
 
@@ -50,8 +50,8 @@ CREATE TABLE IF NOT EXISTS user_invite_allowed_ports (
 -- Create collection table for user invite MC-Router allowed domains
 CREATE TABLE IF NOT EXISTS user_invite_mc_router_domains (
     user_invite_uuid VARCHAR(255) NOT NULL,
-    domain VARCHAR(255),
-    CONSTRAINT fk_user_invite_mc_router_domains_invite FOREIGN KEY (user_invite_uuid) 
+    domain VARCHAR(255) NOT NULL,
+    CONSTRAINT fk_user_invite_mc_router_domains_invite FOREIGN KEY (user_invite_uuid)
         REFERENCES user_invite_entity(uuid) ON DELETE CASCADE
 );
 
@@ -62,8 +62,8 @@ CREATE TABLE IF NOT EXISTS user_invite_mc_router_domains (
 -- Create collection table for game server MC-Router domains
 CREATE TABLE IF NOT EXISTS mc_router_server_domains (
     game_server_uuid VARCHAR(255) NOT NULL,
-    domain VARCHAR(255),
-    CONSTRAINT fk_mc_router_server_domains_gs FOREIGN KEY (game_server_uuid) 
+    domain VARCHAR(255) NOT NULL,
+    CONSTRAINT fk_mc_router_server_domains_gs FOREIGN KEY (game_server_uuid)
         REFERENCES game_server_entity(uuid) ON DELETE CASCADE
 );
 
@@ -81,8 +81,8 @@ CREATE TABLE IF NOT EXISTS cosy_instance_settings_entity (
 -- Create collection table for MC-Router available domains
 CREATE TABLE IF NOT EXISTS mc_router_domains (
     cosy_instance_settings_id BIGINT NOT NULL,
-    domain VARCHAR(255),
-    CONSTRAINT fk_mc_router_domains_settings FOREIGN KEY (cosy_instance_settings_id) 
+    domain VARCHAR(255) NOT NULL,
+    CONSTRAINT fk_mc_router_domains_settings FOREIGN KEY (cosy_instance_settings_id)
         REFERENCES cosy_instance_settings_entity(id) ON DELETE CASCADE
 );
 

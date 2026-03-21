@@ -18,8 +18,7 @@ public class CosyInstanceSettingsService {
     private final CosyInstanceSettingsRepository repository;
 
     public CosyInstanceSettingsEntity getSettings() {
-        return repository.findAll().stream()
-                .findFirst()
+        return repository.findFirstByOrderByIdAsc()
                 .orElseThrow(() -> new RuntimeException("Cosy instance settings not found"));
     }
 

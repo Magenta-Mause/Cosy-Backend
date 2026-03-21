@@ -307,17 +307,17 @@ public class GameServerService {
         } catch (McRouterException e) {
             startingServers.remove(gameServerUuid);
             log.warn(
-                    "Could not start Server '{}' - MC-Router domain validation failed: {}",
+                    "Could not start Server '{}' - MC-Router operation failed: {}",
                     gameServerUuid,
                     e.getMessage());
             gameServerLogService.publishAndSaveLog(
                     serverConfig,
                     GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
-                    "MC-Router domain validation failed: " + e.getMessage(),
+                    "MC-Router operation failed: " + e.getMessage(),
                     false);
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "MC-Router domain validation failed: " + e.getMessage());
+                    "MC-Router operation failed: " + e.getMessage());
         } catch (Exception e) {
             startingServers.remove(gameServerUuid);
             throw e;
