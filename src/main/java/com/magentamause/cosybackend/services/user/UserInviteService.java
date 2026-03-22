@@ -116,13 +116,13 @@ public class UserInviteService {
                         .portRestrictionsEnabled(invite.isPortRestrictionsEnabled())
                         .allowedPorts(
                                 invite.getAllowedPorts() != null
-                                        ? invite.getAllowedPorts()
+                                        ? new ArrayList<>(invite.getAllowedPorts())
                                         : new ArrayList<>())
                         .allowGameServerCreation(invite.isAllowGameServerCreation())
                         .mcRouterAllowAllDomains(invite.isMcRouterAllowAllDomains())
                         .mcRouterAllowedDomains(
                                 invite.getMcRouterAllowedDomains() != null
-                                        ? invite.getMcRouterAllowedDomains()
+                                        ? new ArrayList<>(invite.getMcRouterAllowedDomains())
                                         : new ArrayList<>())
                         .defaultPasswordReset(true);
 

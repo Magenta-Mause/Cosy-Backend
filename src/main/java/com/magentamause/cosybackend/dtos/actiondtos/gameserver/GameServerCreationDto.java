@@ -53,6 +53,9 @@ public class GameServerCreationDto {
     @Valid
     private List<VolumeMountConfigurationDto> volumeMounts;
 
+    @UniqueElementsBy(
+            fieldNames = {},
+            message = "duplicate mc router domains")
     private List<@NotBlank String> mcRouterDomains;
 
     public GameServerEntity toEntity(UserEntity user, Function<Integer, GameEntity> gameProvider) {
