@@ -10,9 +10,9 @@
 -- ============================================
 
 -- Add port restrictions columns to user_entity
-ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN DEFAULT false;
-ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS allow_game_server_creation BOOLEAN DEFAULT true;
-ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS mc_router_allow_all_domains BOOLEAN DEFAULT false;
+ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS allow_game_server_creation BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS mc_router_allow_all_domains BOOLEAN NOT NULL DEFAULT false;
 
 -- Create collection table for user allowed ports
 CREATE TABLE IF NOT EXISTS user_allowed_ports (
@@ -35,9 +35,9 @@ CREATE TABLE IF NOT EXISTS user_mc_router_domains (
 -- ============================================
 
 -- Add restriction columns to user_invite_entity
-ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN DEFAULT false;
-ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS allow_game_server_creation BOOLEAN DEFAULT true;
-ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS mc_router_allow_all_domains BOOLEAN DEFAULT false;
+ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS allow_game_server_creation BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS mc_router_allow_all_domains BOOLEAN NOT NULL DEFAULT false;
 
 -- Create collection table for user invite allowed ports
 CREATE TABLE IF NOT EXISTS user_invite_allowed_ports (

@@ -89,7 +89,7 @@ public class McRouterDomainValidationService {
      */
     public void validateUserDomainAccess(UserEntity user, List<String> domains)
             throws McRouterException {
-        // Owner and Admin roles with mcRouterAllowAllDomains=true can use any domain
+        // Users with mcRouterAllowAllDomains=true can use any domain
         if (user.isMcRouterAllowAllDomains()) {
             return;
         }

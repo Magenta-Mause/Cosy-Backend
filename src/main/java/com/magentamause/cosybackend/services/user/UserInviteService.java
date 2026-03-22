@@ -5,6 +5,7 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.UserInviteEntity;
 import com.magentamause.cosybackend.repositories.UserInviteRepository;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -113,10 +114,16 @@ public class UserInviteService {
                         .password(passwordEncoder.encode(password))
                         .dockerHardwareLimits(invite.getDockerHardwareLimits())
                         .portRestrictionsEnabled(invite.isPortRestrictionsEnabled())
-                        .allowedPorts(invite.getAllowedPorts())
+                        .allowedPorts(
+                                invite.getAllowedPorts() != null
+                                        ? invite.getAllowedPorts()
+                                        : new ArrayList<>())
                         .allowGameServerCreation(invite.isAllowGameServerCreation())
                         .mcRouterAllowAllDomains(invite.isMcRouterAllowAllDomains())
-                        .mcRouterAllowedDomains(invite.getMcRouterAllowedDomains())
+                        .mcRouterAllowedDomains(
+                                invite.getMcRouterAllowedDomains() != null
+                                        ? invite.getMcRouterAllowedDomains()
+                                        : new ArrayList<>())
                         .defaultPasswordReset(true);
 
         if (Objects.isNull(invite.getUsername())) {

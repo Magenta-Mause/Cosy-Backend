@@ -14,8 +14,9 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      # Using 'update' for base schema, Flyway handles incremental migrations
-      # Can be changed to 'validate' once full schema is managed by Flyway
+      # TODO: Switch to 'validate' once a full baseline migration exists for all entities.
+      # Currently 'update' is needed because Flyway only manages incremental migrations,
+      # and the base schema (user_entity, game_server_entity, etc.) is still created by Hibernate.
       ddl-auto: update
     show-sql: false
     properties:
