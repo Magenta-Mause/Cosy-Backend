@@ -3,6 +3,8 @@ package com.magentamause.cosybackend.controllers;
 import com.magentamause.cosybackend.dtos.actiondtos.user.PasswordUpdateByAdminDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.PasswordUpdateDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.UserDockerLimitsUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.user.UserMcRouterRestrictionsUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.user.UserPortRestrictionsUpdateDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.UserRestrictionsUpdateDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.UserRoleUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
@@ -94,6 +96,24 @@ public class UserEntityController {
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody UserRestrictionsUpdateDto request) {
         UserEntity updatedUser = userEntityService.updateRestrictions(uuid, request);
+        return ResponseEntity.ok(updatedUser.toDto());
+    }
+
+    @PatchMapping("/{uuid}/mc-router-restrictions")
+    @NeedsValidation(Operation.USER_UPDATE_RESTRICTIONS)
+    public ResponseEntity<UserEntityDto> updateMcRouterRestrictions(
+            @PathVariable @ResourceId String uuid,
+            @Valid @RequestBody UserMcRouterRestrictionsUpdateDto request) {
+        UserEntity updatedUser = userEntityService.updateMcRouterRestrictions(uuid, request);
+        return ResponseEntity.ok(updatedUser.toDto());
+    }
+
+    @PatchMapping("/{uuid}/port-restrictions")
+    @NeedsValidation(Operation.USER_UPDATE_RESTRICTIONS)
+    public ResponseEntity<UserEntityDto> updatePortRestrictions(
+            @PathVariable @ResourceId String uuid,
+            @Valid @RequestBody UserPortRestrictionsUpdateDto request) {
+        UserEntity updatedUser = userEntityService.updatePortRestrictions(uuid, request);
         return ResponseEntity.ok(updatedUser.toDto());
     }
 

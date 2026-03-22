@@ -1,5 +1,7 @@
 package com.magentamause.cosybackend.services.user;
 
+import com.magentamause.cosybackend.dtos.actiondtos.user.UserMcRouterRestrictionsUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.user.UserPortRestrictionsUpdateDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.UserRestrictionsUpdateDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.UserEntity.Role;
@@ -121,6 +123,23 @@ public class UserEntityService {
         UserEntity user = getUserByUuid(uuid);
 
         restrictionsDto.applyToEntity(user);
+        return saveUserEntity(user);
+    }
+
+    public UserEntity updateMcRouterRestrictions(
+            String uuid, UserMcRouterRestrictionsUpdateDto dto) {
+        log.info("Updating MC-Router restrictions for user with UUID: {}", uuid);
+        UserEntity user = getUserByUuid(uuid);
+
+        dto.applyToEntity(user);
+        return saveUserEntity(user);
+    }
+
+    public UserEntity updatePortRestrictions(String uuid, UserPortRestrictionsUpdateDto dto) {
+        log.info("Updating port restrictions for user with UUID: {}", uuid);
+        UserEntity user = getUserByUuid(uuid);
+
+        dto.applyToEntity(user);
         return saveUserEntity(user);
     }
 
