@@ -13,6 +13,7 @@ import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfi
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.McRouterException;
+import com.magentamause.cosybackend.exceptions.PortRestrictionException;
 import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
 import com.magentamause.cosybackend.exceptions.RconException;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
@@ -23,6 +24,7 @@ import com.magentamause.cosybackend.security.SecretGenerator;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceResolver;
 import com.magentamause.cosybackend.security.accessmanagement.policies.GameServerPolicy;
 import com.magentamause.cosybackend.services.McRouterDomainValidationService;
+import com.magentamause.cosybackend.services.PortRestrictionValidationService;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.core.logs.GameServerLogService;
 import com.magentamause.cosybackend.services.engine.EngineManager;
@@ -73,6 +75,7 @@ public class GameServerService {
     private final GameServerWebhookService webhookService;
     private final McRouterDomainValidationService mcRouterDomainValidationService;
     private final McRouterContainerService mcRouterContainerService;
+    private final PortRestrictionValidationService portRestrictionValidationService;
 
     @PostConstruct
     public void init() {
@@ -281,6 +284,10 @@ public class GameServerService {
                 hardwareQuotaChecker.assertSufficientQuota(
                         gameServerOwner, serverConfig, gameServersByOwner);
 
+                // Validate port restrictions
+                portRestrictionValidationService.validatePortsForServer(
+                        serverConfig, gameServerOwner);
+
                 // Validate mc-router domains if configured
                 mcRouterDomainValidationService.validateDomainsForStart(
                         serverConfig, gameServerOwner);
@@ -304,6 +311,19 @@ public class GameServerService {
                     false);
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "Hardware quota limit reached: " + e.getMessage());
+        } catch (PortRestrictionException e) {
+            startingServers.remove(gameServerUuid);
+            log.warn(
+                    "Could not start Server '{}' - Port restriction violated: {}",
+                    gameServerUuid,
+                    e.getMessage());
+            gameServerLogService.publishAndSaveLog(
+                    serverConfig,
+                    GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
+                    "Port restriction violated: " + e.getMessage(),
+                    false);
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Port restriction violated: " + e.getMessage());
         } catch (McRouterException e) {
             startingServers.remove(gameServerUuid);
             log.warn(
