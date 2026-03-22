@@ -22,23 +22,29 @@ public class UniqueElementsByValidator
         for (Object element : value) {
             if (element == null) continue;
             String key;
-            try {
-                key =
-                        Arrays.stream(fieldNames)
-                                .map(
-                                        fn -> {
-                                            try {
-                                                Field f = element.getClass().getDeclaredField(fn);
-                                                f.setAccessible(true);
-                                                Object v = f.get(element);
-                                                return String.valueOf(v);
-                                            } catch (Exception e) {
-                                                throw new RuntimeException(e);
-                                            }
-                                        })
-                                .collect(Collectors.joining("::"));
-            } catch (RuntimeException ex) {
-                return false; // invalid configuration -> fail validation
+            if (fieldNames.length == 0) {
+                key = String.valueOf(element);
+            } else {
+                try {
+                    key =
+                            Arrays.stream(fieldNames)
+                                    .map(
+                                            fn -> {
+                                                try {
+                                                    Field f =
+                                                            element.getClass()
+                                                                    .getDeclaredField(fn);
+                                                    f.setAccessible(true);
+                                                    Object v = f.get(element);
+                                                    return String.valueOf(v);
+                                                } catch (Exception e) {
+                                                    throw new RuntimeException(e);
+                                                }
+                                            })
+                                    .collect(Collectors.joining("::"));
+                } catch (RuntimeException ex) {
+                    return false; // invalid configuration -> fail validation
+                }
             }
             if (!seen.add(key)) return false;
         }

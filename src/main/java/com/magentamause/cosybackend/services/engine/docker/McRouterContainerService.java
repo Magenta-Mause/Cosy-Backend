@@ -99,7 +99,7 @@ public class McRouterContainerService {
      *
      * @throws McRouterException if there's a port conflict or start failure
      */
-    public void startMcRouter() throws McRouterException {
+    public synchronized void startMcRouter() throws McRouterException {
         McRouterConfiguration config = settingsService.getMcRouterConfiguration();
         if (!config.isEnabled()) {
             throw new McRouterException("MC-Router is not enabled");
