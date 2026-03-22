@@ -32,8 +32,7 @@ public class UniqueElementsByValidator
                                             fn -> {
                                                 try {
                                                     Field f =
-                                                            element.getClass()
-                                                                    .getDeclaredField(fn);
+                                                            element.getClass().getDeclaredField(fn);
                                                     f.setAccessible(true);
                                                     Object v = f.get(element);
                                                     return String.valueOf(v);
