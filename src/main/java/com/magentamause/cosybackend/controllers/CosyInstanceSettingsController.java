@@ -13,6 +13,7 @@ import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.services.CosyInstanceSettingsService;
 import com.magentamause.cosybackend.services.engine.docker.McRouterContainerService;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -62,21 +63,28 @@ public class CosyInstanceSettingsController {
             @Valid @RequestBody McRouterConfigurationUpdateDto updateDto) {
         log.info("Updating MC-Router configuration");
 
+        // Snapshot current values before update (the object may be mutated in-place by JPA)
         McRouterConfiguration currentConfig = settingsService.getMcRouterConfiguration();
-        boolean wasEnabled = currentConfig.isEnabled();
+        boolean previousEnabled = currentConfig.isEnabled();
+        int previousPort = currentConfig.getPort();
+        List<String> previousDomains =
+                currentConfig.getDomains() != null
+                        ? List.copyOf(currentConfig.getDomains())
+                        : List.of();
+
         boolean willBeEnabled =
-                updateDto.getEnabled() != null ? updateDto.getEnabled() : wasEnabled;
+                updateDto.getEnabled() != null ? updateDto.getEnabled() : previousEnabled;
 
         McRouterConfiguration updatedConfig =
                 settingsService.updateMcRouterConfiguration(updateDto);
 
         // Auto-stop when disabling
-        if (wasEnabled && !willBeEnabled) {
+        if (previousEnabled && !willBeEnabled) {
             mcRouterContainerService.removeMcRouterContainer();
         }
 
         // Auto-start when enabling if running servers with domains exist
-        if (!wasEnabled && willBeEnabled) {
+        if (!previousEnabled && willBeEnabled) {
             try {
                 mcRouterContainerService.ensureMcRouterRunningIfNeeded();
             } catch (McRouterException e) {
@@ -84,9 +92,9 @@ public class CosyInstanceSettingsController {
                 try {
                     McRouterConfigurationUpdateDto rollbackDto =
                             new McRouterConfigurationUpdateDto();
-                    rollbackDto.setEnabled(currentConfig.isEnabled());
-                    rollbackDto.setPort(currentConfig.getPort());
-                    rollbackDto.setDomains(currentConfig.getDomains());
+                    rollbackDto.setEnabled(previousEnabled);
+                    rollbackDto.setPort(previousPort);
+                    rollbackDto.setDomains(previousDomains);
                     settingsService.updateMcRouterConfiguration(rollbackDto);
                 } catch (Exception rollbackEx) {
                     log.error(
