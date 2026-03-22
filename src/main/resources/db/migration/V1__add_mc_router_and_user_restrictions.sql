@@ -9,63 +9,86 @@
 -- USER ENTITY RESTRICTIONS
 -- ============================================
 
--- Add port restrictions columns to user_entity
-ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN NOT NULL DEFAULT false;
-ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS allow_game_server_creation BOOLEAN NOT NULL DEFAULT true;
-ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS mc_router_allow_all_domains BOOLEAN NOT NULL DEFAULT false;
+-- Add port restrictions columns to user_entity (only if table already exists from Hibernate)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_entity') THEN
+        ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN NOT NULL DEFAULT false;
+        ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS allow_game_server_creation BOOLEAN NOT NULL DEFAULT true;
+        ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS mc_router_allow_all_domains BOOLEAN NOT NULL DEFAULT false;
+    END IF;
+END $$;
 
--- Create collection table for user allowed ports
-CREATE TABLE IF NOT EXISTS user_allowed_ports (
-    user_uuid VARCHAR(255) NOT NULL,
-    port_range VARCHAR(255),
-    CONSTRAINT fk_user_allowed_ports_user FOREIGN KEY (user_uuid) 
-        REFERENCES user_entity(uuid) ON DELETE CASCADE
-);
+-- Create collection tables for user restrictions (only if user_entity exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_entity') THEN
+        CREATE TABLE IF NOT EXISTS user_allowed_ports (
+            user_uuid VARCHAR(255) NOT NULL,
+            port_range VARCHAR(255),
+            CONSTRAINT fk_user_allowed_ports_user FOREIGN KEY (user_uuid)
+                REFERENCES user_entity(uuid) ON DELETE CASCADE
+        );
 
--- Create collection table for user MC-Router allowed domains
-CREATE TABLE IF NOT EXISTS user_mc_router_domains (
-    user_uuid VARCHAR(255) NOT NULL,
-    domain VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_user_mc_router_domains_user FOREIGN KEY (user_uuid)
-        REFERENCES user_entity(uuid) ON DELETE CASCADE
-);
+        CREATE TABLE IF NOT EXISTS user_mc_router_domains (
+            user_uuid VARCHAR(255) NOT NULL,
+            domain VARCHAR(255) NOT NULL,
+            CONSTRAINT fk_user_mc_router_domains_user FOREIGN KEY (user_uuid)
+                REFERENCES user_entity(uuid) ON DELETE CASCADE
+        );
+    END IF;
+END $$;
 
 -- ============================================
 -- USER INVITE ENTITY RESTRICTIONS
 -- ============================================
 
--- Add restriction columns to user_invite_entity
-ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN NOT NULL DEFAULT false;
-ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS allow_game_server_creation BOOLEAN NOT NULL DEFAULT true;
-ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS mc_router_allow_all_domains BOOLEAN NOT NULL DEFAULT false;
+-- Add restriction columns to user_invite_entity (only if table already exists from Hibernate)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_invite_entity') THEN
+        ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN NOT NULL DEFAULT false;
+        ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS allow_game_server_creation BOOLEAN NOT NULL DEFAULT true;
+        ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS mc_router_allow_all_domains BOOLEAN NOT NULL DEFAULT false;
+    END IF;
+END $$;
 
--- Create collection table for user invite allowed ports
-CREATE TABLE IF NOT EXISTS user_invite_allowed_ports (
-    user_invite_uuid VARCHAR(255) NOT NULL,
-    port_range VARCHAR(255),
-    CONSTRAINT fk_user_invite_allowed_ports_invite FOREIGN KEY (user_invite_uuid) 
-        REFERENCES user_invite_entity(uuid) ON DELETE CASCADE
-);
+-- Create collection tables for user invite restrictions (only if user_invite_entity exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_invite_entity') THEN
+        CREATE TABLE IF NOT EXISTS user_invite_allowed_ports (
+            user_invite_uuid VARCHAR(255) NOT NULL,
+            port_range VARCHAR(255),
+            CONSTRAINT fk_user_invite_allowed_ports_invite FOREIGN KEY (user_invite_uuid)
+                REFERENCES user_invite_entity(uuid) ON DELETE CASCADE
+        );
 
--- Create collection table for user invite MC-Router allowed domains
-CREATE TABLE IF NOT EXISTS user_invite_mc_router_domains (
-    user_invite_uuid VARCHAR(255) NOT NULL,
-    domain VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_user_invite_mc_router_domains_invite FOREIGN KEY (user_invite_uuid)
-        REFERENCES user_invite_entity(uuid) ON DELETE CASCADE
-);
+        CREATE TABLE IF NOT EXISTS user_invite_mc_router_domains (
+            user_invite_uuid VARCHAR(255) NOT NULL,
+            domain VARCHAR(255) NOT NULL,
+            CONSTRAINT fk_user_invite_mc_router_domains_invite FOREIGN KEY (user_invite_uuid)
+                REFERENCES user_invite_entity(uuid) ON DELETE CASCADE
+        );
+    END IF;
+END $$;
 
 -- ============================================
 -- GAME SERVER MC-ROUTER DOMAINS
 -- ============================================
 
--- Create collection table for game server MC-Router domains
-CREATE TABLE IF NOT EXISTS mc_router_server_domains (
-    game_server_uuid VARCHAR(255) NOT NULL,
-    domain VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_mc_router_server_domains_gs FOREIGN KEY (game_server_uuid)
-        REFERENCES game_server_entity(uuid) ON DELETE CASCADE
-);
+-- Create collection table for game server MC-Router domains (only if game_server_entity exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'game_server_entity') THEN
+        CREATE TABLE IF NOT EXISTS mc_router_server_domains (
+            game_server_uuid VARCHAR(255) NOT NULL,
+            domain VARCHAR(255) NOT NULL,
+            CONSTRAINT fk_mc_router_server_domains_gs FOREIGN KEY (game_server_uuid)
+                REFERENCES game_server_entity(uuid) ON DELETE CASCADE
+        );
+    END IF;
+END $$;
 
 -- ============================================
 -- COSY INSTANCE SETTINGS (MC-Router Config)
@@ -90,12 +113,22 @@ CREATE TABLE IF NOT EXISTS mc_router_domains (
 -- UPDATE EXISTING DATA WITH DEFAULTS
 -- ============================================
 
--- Ensure existing users have default values
-UPDATE user_entity SET port_restrictions_enabled = false WHERE port_restrictions_enabled IS NULL;
-UPDATE user_entity SET allow_game_server_creation = true WHERE allow_game_server_creation IS NULL;
-UPDATE user_entity SET mc_router_allow_all_domains = false WHERE mc_router_allow_all_domains IS NULL;
+-- Ensure existing users have default values (only if table exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_entity') THEN
+        UPDATE user_entity SET port_restrictions_enabled = false WHERE port_restrictions_enabled IS NULL;
+        UPDATE user_entity SET allow_game_server_creation = true WHERE allow_game_server_creation IS NULL;
+        UPDATE user_entity SET mc_router_allow_all_domains = false WHERE mc_router_allow_all_domains IS NULL;
+    END IF;
+END $$;
 
--- Ensure existing invites have default values
-UPDATE user_invite_entity SET port_restrictions_enabled = false WHERE port_restrictions_enabled IS NULL;
-UPDATE user_invite_entity SET allow_game_server_creation = true WHERE allow_game_server_creation IS NULL;
-UPDATE user_invite_entity SET mc_router_allow_all_domains = false WHERE mc_router_allow_all_domains IS NULL;
+-- Ensure existing invites have default values (only if table exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_invite_entity') THEN
+        UPDATE user_invite_entity SET port_restrictions_enabled = false WHERE port_restrictions_enabled IS NULL;
+        UPDATE user_invite_entity SET allow_game_server_creation = true WHERE allow_game_server_creation IS NULL;
+        UPDATE user_invite_entity SET mc_router_allow_all_domains = false WHERE mc_router_allow_all_domains IS NULL;
+    END IF;
+END $$;
