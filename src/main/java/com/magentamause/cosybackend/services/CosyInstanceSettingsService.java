@@ -61,7 +61,8 @@ public class CosyInstanceSettingsService {
         try {
             McRouterConfiguration config = getMcRouterConfiguration();
             return config != null && config.isEnabled();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            log.warn("Failed to determine if McRouter is enabled; defaulting to disabled", e);
             return false;
         }
     }
