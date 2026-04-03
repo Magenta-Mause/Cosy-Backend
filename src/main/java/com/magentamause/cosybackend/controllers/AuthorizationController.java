@@ -13,6 +13,8 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -26,9 +28,16 @@ public class AuthorizationController {
     private String basePath;
 
     @PostMapping("/login")
-    public ResponseEntity<Void> login(@Valid @RequestBody LoginDto loginDto) {
+    public ResponseEntity<?> login(
+            @Valid @RequestBody LoginDto loginDto,
+            @RequestParam(value = "tokenMode", defaultValue = "cookie") String tokenMode) {
         String refreshToken =
                 authorizationService.loginUser(loginDto.getUsername(), loginDto.getPassword());
+
+        if ("direct".equals(tokenMode)) {
+            return ResponseEntity.ok(Map.of("refreshToken", refreshToken));
+        }
+
         ResponseCookie responseCookie =
                 ResponseCookie.from("refreshToken", refreshToken)
                         .httpOnly(true)
