@@ -8,7 +8,6 @@ import com.magentamause.cosybackend.exceptions.McRouterException;
 import com.magentamause.cosybackend.repositories.CosyInstanceSettingsRepository;
 import com.magentamause.cosybackend.services.engine.docker.McRouterContainerService;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;

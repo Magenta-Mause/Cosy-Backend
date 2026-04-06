@@ -1,17 +1,22 @@
 package com.magentamause.cosybackend.services;
 
+import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.exceptions.PortRestrictionException;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PortRestrictionValidationService {
+
+    private final EngineProperties engineProperties;
 
     /**
      * Validates that all instance ports on a game server are allowed for the given user.
@@ -21,12 +26,32 @@ public class PortRestrictionValidationService {
      * @throws PortRestrictionException if any port is not allowed
      */
     public void validatePortsForServer(GameServerEntity server, UserEntity owner) {
-        if (!owner.isPortRestrictionsEnabled()) {
+        List<PortMapping> portMappings = server.getPortMappings();
+        if (portMappings == null || portMappings.isEmpty()) {
             return;
         }
 
-        List<PortMapping> portMappings = server.getPortMappings();
-        if (portMappings == null || portMappings.isEmpty()) {
+        // Check globally blocked ports first (applies to all users)
+        List<Integer> blockedPorts = engineProperties.blockedPorts();
+        if (blockedPorts != null && !blockedPorts.isEmpty()) {
+            List<Integer> blockedUsed = new ArrayList<>();
+            for (PortMapping mapping : portMappings) {
+                if (blockedPorts.contains(mapping.getInstancePort())) {
+                    blockedUsed.add(mapping.getInstancePort());
+                }
+            }
+            if (!blockedUsed.isEmpty()) {
+                throw new PortRestrictionException(
+                        "The following ports are globally blocked: "
+                                + blockedUsed.stream()
+                                        .map(Object::toString)
+                                        .reduce((a, b) -> a + ", " + b)
+                                        .orElse(""));
+            }
+        }
+
+        // Check user-specific port restrictions
+        if (!owner.isPortRestrictionsEnabled()) {
             return;
         }
 

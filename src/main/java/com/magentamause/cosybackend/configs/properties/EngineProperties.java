@@ -1,9 +1,10 @@
 package com.magentamause.cosybackend.configs.properties;
 
+import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "cosy.engine")
-public record EngineProperties(Docker docker) {
+public record EngineProperties(List<Integer> blockedPorts, Docker docker) {
 
     public record Docker(
             String socketPath,

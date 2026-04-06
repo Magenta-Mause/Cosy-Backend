@@ -44,9 +44,9 @@ public class UserInviteEntity {
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
     // Port restrictions
-    @Column(columnDefinition = "boolean default false")
+    @Column(columnDefinition = "boolean default true")
     @Builder.Default
-    private boolean portRestrictionsEnabled = false;
+    private boolean portRestrictionsEnabled = true;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(

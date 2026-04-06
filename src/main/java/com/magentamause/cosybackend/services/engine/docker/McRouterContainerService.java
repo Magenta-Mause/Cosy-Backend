@@ -3,15 +3,12 @@ package com.magentamause.cosybackend.services.engine.docker;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.CreateNetworkResponse;
-import com.github.dockerjava.api.exception.ConflictException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.HostConfig;
-import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.Volume;
 import com.magentamause.cosybackend.configs.properties.EngineProperties;
@@ -51,47 +48,9 @@ public class McRouterContainerService {
     private final CosyInstanceSettingsService settingsService;
     private final McRouterProperties mcRouterProperties;
     private final EngineProperties engineProperties;
+    private final DockerEngineManager dockerEngineManager;
 
     private Closeable mcRouterLogCallback;
-
-    /**
-     * Ensures the cosy-network Docker network exists. Creates it if it doesn't exist.
-     *
-     * @return the network ID
-     */
-    public String ensureNetworkExists() {
-        String networkName = engineProperties.docker().networkName();
-        Optional<Network> existingNetwork = findNetwork(networkName);
-        if (existingNetwork.isPresent()) {
-            log.debug(
-                    "Network {} already exists with ID: {}",
-                    networkName,
-                    existingNetwork.get().getId());
-            return existingNetwork.get().getId();
-        }
-
-        log.info("Creating Docker network: {}", networkName);
-        CreateNetworkResponse response =
-                dockerClient
-                        .createNetworkCmd()
-                        .withName(networkName)
-                        .withDriver("bridge")
-                        .exec();
-        log.info("Created network {} with ID: {}", networkName, response.getId());
-        return response.getId();
-    }
-
-    /**
-     * Finds a Docker network by name.
-     *
-     * @param networkName the name of the network
-     * @return the network if found
-     */
-    private Optional<Network> findNetwork(String networkName) {
-        return dockerClient.listNetworksCmd().withNameFilter(networkName).exec().stream()
-                .filter(n -> networkName.equals(n.getName()))
-                .findFirst();
-    }
 
     /**
      * Starts the mc-router container if not already running.
@@ -108,11 +67,10 @@ public class McRouterContainerService {
         if (existingContainer.isPresent()) {
             String state = existingContainer.get().getState();
             if ("running".equalsIgnoreCase(state)) {
-                log.info("MC-Router container is already running");
+                log.debug("MC-Router container is already running");
                 return;
             }
-            // Remove non-running container to recreate with possibly updated config
-            log.info("Removing existing non-running mc-router container");
+            log.info("Removing existing non-running MC-Router container to recreate");
             removeMcRouterContainer();
         }
 
@@ -122,7 +80,7 @@ public class McRouterContainerService {
         checkPortConflicts(port);
 
         // Ensure network exists
-        ensureNetworkExists();
+        dockerEngineManager.ensureNetworkExists();
 
         log.info("Starting MC-Router container on port {}", port);
 
@@ -233,23 +191,21 @@ public class McRouterContainerService {
      * @throws McRouterException if mc-router fails to start
      */
     public void ensureMcRouterRunningIfNeeded() throws McRouterException {
-        log.info("Ensuring MC-Router is running if needed");
         if (!settingsService.isMcRouterEnabled()) {
-            log.info("MC-Router is not enabled");
+            log.debug("MC-Router is not enabled, skipping");
             return;
         }
         if (getRunningServersWithDomains().isEmpty()) {
-            log.info("No running servers with MC-Router domains");
+            log.debug("No running servers with MC-Router domains, skipping");
             return;
         }
-        log.info("Starting MC-Router if needed");
         startMcRouter();
     }
 
     public void ensureMcRouterRunningIfNeeded(GameServerEntity currentlyStartingGameServer)
             throws McRouterException {
         if (!settingsService.isMcRouterEnabled()) {
-            log.info("MC-Router is not enabled");
+            log.debug("MC-Router is not enabled, skipping");
             return;
         }
         if (currentlyStartingGameServer != null
@@ -266,8 +222,7 @@ public class McRouterContainerService {
      */
     public void stopMcRouterIfNoServersNeedIt() {
         if (getRunningServersWithDomains().isEmpty()) {
-            log.info(
-                    "No running servers with MC-Router domains, stopping MC-Router container");
+            log.info("No servers with MC-Router domains running, stopping MC-Router");
             removeMcRouterContainer();
         }
     }
@@ -384,9 +339,7 @@ public class McRouterContainerService {
      * @return list of servers with domains
      */
     public List<GameServerEntity> getServersWithDomains() {
-        return gameServerRepository.findAll().stream()
-                .filter(this::hasMcRouterDomains)
-                .toList();
+        return gameServerRepository.findAll().stream().filter(this::hasMcRouterDomains).toList();
     }
 
     /**
@@ -407,38 +360,6 @@ public class McRouterContainerService {
      */
     private boolean hasMcRouterDomains(GameServerEntity server) {
         return server.getMcRouterDomains() != null && !server.getMcRouterDomains().isEmpty();
-    }
-
-    /**
-     * Connects a container to the cosy-network.
-     *
-     * @param containerId the container ID to connect
-     */
-    public void connectContainerToNetwork(String containerId) {
-        String networkName = engineProperties.docker().networkName();
-        ensureNetworkExists();
-        try {
-            dockerClient
-                    .connectToNetworkCmd()
-                    .withContainerId(containerId)
-                    .withNetworkId(networkName)
-                    .exec();
-            log.debug("Connected container {} to network {}", containerId, networkName);
-        } catch (ConflictException e) {
-            log.debug(
-                    "Container {} is already connected to network {}",
-                    containerId,
-                    networkName);
-        }
-    }
-
-    /**
-     * Gets the network name for use by other services.
-     *
-     * @return the network name
-     */
-    public String getNetworkName() {
-        return engineProperties.docker().networkName();
     }
 
     /**

@@ -2,9 +2,13 @@ package com.magentamause.cosybackend.services.engine.docker;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.CreateNetworkResponse;
+import com.github.dockerjava.api.exception.ConflictException;
 import com.github.dockerjava.api.exception.InternalServerErrorException;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Network;
+import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
@@ -56,6 +60,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     private final DockerCommandSender commandSender;
     private final DockerHostConfigFactory hostConfigFactory;
     private final DockerContainerNameResolver containerNameResolver;
+    private final EngineProperties engineProperties;
     @Lazy private final McRouterContainerService mcRouterContainerService;
 
     @Value("${cosy.custom-metrics.base-url}")
@@ -148,9 +153,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         .withAttachStdin(true)
                         .exec();
 
-        // Connect to cosy-network if mc-router domains are configured
         if (hasMcRouterDomains(serverConfig)) {
-            mcRouterContainerService.connectContainerToNetwork(response.getId());
+            connectContainerToNetwork(response.getId());
         }
 
         eventHandler.attachStatusSupplier(serverConfig.getUuid(), gameServerStatusSupplier);
@@ -173,7 +177,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
         if (hasMcRouterDomains(serverConfig)) {
             String domains = String.join(",", serverConfig.getMcRouterDomains());
             labels.put("mc-router.host", domains);
-            labels.put("mc-router.network", mcRouterContainerService.getNetworkName());
+            labels.put("mc-router.network", engineProperties.docker().networkName());
             log.info("Added mc-router.host label with domains: {}", domains);
         }
 
@@ -252,6 +256,41 @@ public class DockerEngineManager implements EngineManager, Closeable {
     public void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener) {
         logStreamer.attachLogListener(serviceConfig, listener);
+    }
+
+    public String ensureNetworkExists() {
+        String networkName = engineProperties.docker().networkName();
+        Optional<Network> existingNetwork =
+                client.listNetworksCmd().withNameFilter(networkName).exec().stream()
+                        .filter(n -> networkName.equals(n.getName()))
+                        .findFirst();
+        if (existingNetwork.isPresent()) {
+            log.debug(
+                    "Network {} already exists with ID: {}",
+                    networkName,
+                    existingNetwork.get().getId());
+            return existingNetwork.get().getId();
+        }
+
+        log.info("Creating Docker network: {}", networkName);
+        CreateNetworkResponse response =
+                client.createNetworkCmd().withName(networkName).withDriver("bridge").exec();
+        log.info("Created network {} with ID: {}", networkName, response.getId());
+        return response.getId();
+    }
+
+    public void connectContainerToNetwork(String containerId) {
+        String networkName = engineProperties.docker().networkName();
+        ensureNetworkExists();
+        try {
+            client.connectToNetworkCmd()
+                    .withContainerId(containerId)
+                    .withNetworkId(networkName)
+                    .exec();
+            log.debug("Connected container {} to network {}", containerId, networkName);
+        } catch (ConflictException e) {
+            log.debug("Container {} is already connected to network {}", containerId, networkName);
+        }
     }
 
     @Override

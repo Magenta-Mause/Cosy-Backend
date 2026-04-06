@@ -140,12 +140,7 @@ public class GameServerService {
                 GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
                 "Docker game server stop event received",
                 false);
-
-        // Auto-stop mc-router if no servers with domains remain running
-        if (gameServerEntity.getMcRouterDomains() != null
-                && !gameServerEntity.getMcRouterDomains().isEmpty()) {
-            mcRouterContainerService.stopMcRouterIfNoServersNeedIt();
-        }
+        stopMcRouterIfNotNeeded(gameServerEntity);
     }
 
     private void handleGameServerEngineFailEvent(GameServerEntity gameServerEntity) {
@@ -155,8 +150,10 @@ public class GameServerService {
                 GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
                 "Docker game server failure event received",
                 false);
+        stopMcRouterIfNotNeeded(gameServerEntity);
+    }
 
-        // Auto-stop mc-router if no servers with domains remain running
+    private void stopMcRouterIfNotNeeded(GameServerEntity gameServerEntity) {
         if (gameServerEntity.getMcRouterDomains() != null
                 && !gameServerEntity.getMcRouterDomains().isEmpty()) {
             mcRouterContainerService.stopMcRouterIfNoServersNeedIt();

@@ -13,7 +13,7 @@
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_entity') THEN
-        ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN NOT NULL DEFAULT false;
+        ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN NOT NULL DEFAULT true;
         ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS allow_game_server_creation BOOLEAN NOT NULL DEFAULT true;
         ALTER TABLE user_entity ADD COLUMN IF NOT EXISTS mc_router_allow_all_domains BOOLEAN NOT NULL DEFAULT false;
     END IF;
@@ -47,7 +47,7 @@ END $$;
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_invite_entity') THEN
-        ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN NOT NULL DEFAULT false;
+        ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS port_restrictions_enabled BOOLEAN NOT NULL DEFAULT true;
         ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS allow_game_server_creation BOOLEAN NOT NULL DEFAULT true;
         ALTER TABLE user_invite_entity ADD COLUMN IF NOT EXISTS mc_router_allow_all_domains BOOLEAN NOT NULL DEFAULT false;
     END IF;

@@ -42,9 +42,9 @@ public class UserEntity {
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
     // Port restrictions
-    @Column(columnDefinition = "boolean default false")
+    @Column(columnDefinition = "boolean default true")
     @Builder.Default
-    private boolean portRestrictionsEnabled = false;
+    private boolean portRestrictionsEnabled = true;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_allowed_ports", joinColumns = @JoinColumn(name = "user_uuid"))
