@@ -61,10 +61,17 @@ public class UserInviteService {
                         .role(userInviteCreationDto.getRole())
                         .dockerHardwareLimits(userInviteCreationDto.getDockerHardwareLimits())
                         .portRestrictionsEnabled(userInviteCreationDto.isPortRestrictionsEnabled())
-                        .allowedPorts(userInviteCreationDto.getAllowedPorts())
+                        .allowedPorts(
+                                userInviteCreationDto.getAllowedPorts() != null
+                                        ? new ArrayList<>(userInviteCreationDto.getAllowedPorts())
+                                        : new ArrayList<>())
                         .allowGameServerCreation(userInviteCreationDto.isAllowGameServerCreation())
                         .mcRouterAllowAllDomains(userInviteCreationDto.isMcRouterAllowAllDomains())
-                        .mcRouterAllowedDomains(userInviteCreationDto.getMcRouterAllowedDomains())
+                        .mcRouterAllowedDomains(
+                                userInviteCreationDto.getMcRouterAllowedDomains() != null
+                                        ? new ArrayList<>(
+                                                userInviteCreationDto.getMcRouterAllowedDomains())
+                                        : new ArrayList<>())
                         .build();
 
         return userInviteRepository.save(invite);
