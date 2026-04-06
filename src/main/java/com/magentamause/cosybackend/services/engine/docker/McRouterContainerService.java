@@ -30,8 +30,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 /**
@@ -40,7 +40,6 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class McRouterContainerService {
 
     private final DockerClient dockerClient;
@@ -49,6 +48,21 @@ public class McRouterContainerService {
     private final McRouterProperties mcRouterProperties;
     private final EngineProperties engineProperties;
     private final DockerEngineManager dockerEngineManager;
+
+    public McRouterContainerService(
+            DockerClient dockerClient,
+            GameServerRepository gameServerRepository,
+            CosyInstanceSettingsService settingsService,
+            McRouterProperties mcRouterProperties,
+            EngineProperties engineProperties,
+            @Lazy DockerEngineManager dockerEngineManager) {
+        this.dockerClient = dockerClient;
+        this.gameServerRepository = gameServerRepository;
+        this.settingsService = settingsService;
+        this.mcRouterProperties = mcRouterProperties;
+        this.engineProperties = engineProperties;
+        this.dockerEngineManager = dockerEngineManager;
+    }
 
     private Closeable mcRouterLogCallback;
 
