@@ -131,9 +131,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
         addUtilEnvVars(env, serverConfig);
 
-        log.info("Starting container {} with env {}", containerName, env);
+        log.info("Starting container {}", containerName);
 
-        // Build container labels including mc-router.host if configured
         Map<String, String> labels = buildContainerLabels(serverConfig);
 
         CreateContainerResponse response =

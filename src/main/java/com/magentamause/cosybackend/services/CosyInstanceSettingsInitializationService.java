@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.services;
 
+import com.magentamause.cosybackend.configs.properties.McRouterProperties;
 import com.magentamause.cosybackend.entities.CosyInstanceSettingsEntity;
 import com.magentamause.cosybackend.entities.McRouterConfiguration;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CosyInstanceSettingsInitializationService {
 
     private final CosyInstanceSettingsService settingsService;
+    private final McRouterProperties mcRouterProperties;
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
@@ -29,7 +31,10 @@ public class CosyInstanceSettingsInitializationService {
         CosyInstanceSettingsEntity settings =
                 CosyInstanceSettingsEntity.builder()
                         .mcRouterConfiguration(
-                                McRouterConfiguration.builder().enabled(false).port(25565).build())
+                                McRouterConfiguration.builder()
+                                        .enabled(false)
+                                        .port(mcRouterProperties.defaultPort())
+                                        .build())
                         .build();
 
         settingsService.saveSettings(settings);

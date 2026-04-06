@@ -4,7 +4,6 @@ import com.magentamause.cosybackend.entities.McRouterConfiguration;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.exceptions.McRouterException;
-import com.magentamause.cosybackend.services.engine.docker.McRouterContainerService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -23,7 +22,6 @@ import org.springframework.stereotype.Service;
 public class McRouterDomainValidationService {
 
     private final CosyInstanceSettingsService settingsService;
-    private final McRouterContainerService mcRouterContainerService;
 
     /**
      * Validates mc-router domains for a game server before starting.
@@ -39,12 +37,6 @@ public class McRouterDomainValidationService {
         // If no domains configured, no validation needed
         if (serverDomains == null || serverDomains.isEmpty()) {
             return;
-        }
-
-        // Check if this is a Minecraft server
-        if (!mcRouterContainerService.isMinecraftServer(server)) {
-            throw new McRouterException(
-                    "MC-Router domains can only be configured for Minecraft servers");
         }
 
         // Check if mc-router is enabled

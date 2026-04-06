@@ -141,9 +141,8 @@ public class GameServerService {
                 "Docker game server stop event received",
                 false);
 
-        // Auto-stop mc-router if this was a Minecraft server with domains
-        if (mcRouterContainerService.isMinecraftServer(gameServerEntity)
-                && gameServerEntity.getMcRouterDomains() != null
+        // Auto-stop mc-router if no servers with domains remain running
+        if (gameServerEntity.getMcRouterDomains() != null
                 && !gameServerEntity.getMcRouterDomains().isEmpty()) {
             mcRouterContainerService.stopMcRouterIfNoServersNeedIt();
         }
@@ -157,9 +156,8 @@ public class GameServerService {
                 "Docker game server failure event received",
                 false);
 
-        // Auto-stop mc-router if this was a Minecraft server with domains
-        if (mcRouterContainerService.isMinecraftServer(gameServerEntity)
-                && gameServerEntity.getMcRouterDomains() != null
+        // Auto-stop mc-router if no servers with domains remain running
+        if (gameServerEntity.getMcRouterDomains() != null
                 && !gameServerEntity.getMcRouterDomains().isEmpty()) {
             mcRouterContainerService.stopMcRouterIfNoServersNeedIt();
         }
@@ -293,8 +291,7 @@ public class GameServerService {
                         serverConfig, gameServerOwner);
 
                 // Auto-start mc-router if this server has domains configured
-                if (mcRouterContainerService.isMinecraftServer(serverConfig)
-                        && serverConfig.getMcRouterDomains() != null
+                if (serverConfig.getMcRouterDomains() != null
                         && !serverConfig.getMcRouterDomains().isEmpty()) {
                     mcRouterContainerService.ensureMcRouterRunningIfNeeded(serverConfig);
                 }

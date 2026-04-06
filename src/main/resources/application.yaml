@@ -77,6 +77,11 @@ cosy:
       volume-directory: ${COSY_DOCKER_VOLUME_DIRECTORY:./dummy/cosy/volume-mounts}
       container-name-prefix: ${COSY_DOCKER_CONTAINER_PREFIX:cosy-} # Prefix for container names
       in-backend-volume-mount-path: ${COSY_DOCKER_BACKEND_VOLUME_MOUNT_PATH:./dummy/cosy/volume-mounts}
+      network-name: ${COSY_DOCKER_NETWORK_NAME:cosy-network}
+  mc-router:
+    image: itzg/mc-router:1.25.2
+    container-name: cosy-mc-router
+    default-port: 25565
   footer:
     full-name: ${COSY_FOOTER_FULL_NAME:Full Name}
     email: ${COSY_FOOTER_EMAIL:yourEmail@example.org}

@@ -13,7 +13,6 @@ import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.services.CosyInstanceSettingsService;
 import com.magentamause.cosybackend.services.engine.docker.McRouterContainerService;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -62,50 +61,13 @@ public class CosyInstanceSettingsController {
     public ResponseEntity<McRouterConfigurationDto> updateMcRouterConfiguration(
             @Valid @RequestBody McRouterConfigurationUpdateDto updateDto) {
         log.info("Updating MC-Router configuration");
-
-        // Snapshot current values before update (the object may be mutated in-place by JPA)
-        McRouterConfiguration currentConfig = settingsService.getMcRouterConfiguration();
-        boolean previousEnabled = currentConfig.isEnabled();
-        int previousPort = currentConfig.getPort();
-        List<String> previousDomains =
-                currentConfig.getDomains() != null
-                        ? List.copyOf(currentConfig.getDomains())
-                        : List.of();
-
-        boolean willBeEnabled =
-                updateDto.getEnabled() != null ? updateDto.getEnabled() : previousEnabled;
-
-        McRouterConfiguration updatedConfig =
-                settingsService.updateMcRouterConfiguration(updateDto);
-
-        // Auto-stop when disabling
-        if (previousEnabled && !willBeEnabled) {
-            mcRouterContainerService.removeMcRouterContainer();
+        try {
+            McRouterConfiguration updatedConfig =
+                    settingsService.updateMcRouterConfigurationWithLifecycle(updateDto);
+            return ResponseEntity.ok(updatedConfig.toDto());
+        } catch (McRouterException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
         }
-
-        // Auto-start when enabling if running servers with domains exist
-        if (!previousEnabled && willBeEnabled) {
-            try {
-                mcRouterContainerService.ensureMcRouterRunningIfNeeded();
-            } catch (McRouterException e) {
-                log.warn("Failed to auto-start MC-Router after enabling: {}", e.getMessage());
-                try {
-                    McRouterConfigurationUpdateDto rollbackDto =
-                            new McRouterConfigurationUpdateDto();
-                    rollbackDto.setEnabled(previousEnabled);
-                    rollbackDto.setPort(previousPort);
-                    rollbackDto.setDomains(previousDomains);
-                    settingsService.updateMcRouterConfiguration(rollbackDto);
-                } catch (Exception rollbackEx) {
-                    log.error(
-                            "Failed to rollback MC-Router configuration after auto-start failure",
-                            rollbackEx);
-                }
-                throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-            }
-        }
-
-        return ResponseEntity.ok(updatedConfig.toDto());
     }
 
     @GetMapping("/mc-router/status")

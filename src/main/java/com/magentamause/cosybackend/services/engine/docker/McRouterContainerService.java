@@ -14,6 +14,8 @@ import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.api.model.Volume;
+import com.magentamause.cosybackend.configs.properties.EngineProperties;
+import com.magentamause.cosybackend.configs.properties.McRouterProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.McRouterStatusDto;
 import com.magentamause.cosybackend.entities.McRouterConfiguration;
@@ -36,23 +38,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
- * Service for managing the mc-router Docker container. MC-Router enables multiple Minecraft servers
- * to share port 25565 with domain-based routing.
+ * Service for managing the mc-router Docker container. MC-Router enables multiple game servers to
+ * share a single port with domain-based routing.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class McRouterContainerService {
 
-    private static final String MC_ROUTER_CONTAINER_NAME = "cosy-mc-router";
-    private static final String MC_ROUTER_IMAGE = "itzg/mc-router:1.25.2";
-    private static final String COSY_NETWORK_NAME = "cosy-network";
-    private static final int MINECRAFT_GAME_ID = 38365;
-    private static final int DEFAULT_MC_ROUTER_PORT = 25565;
-
     private final DockerClient dockerClient;
     private final GameServerRepository gameServerRepository;
     private final CosyInstanceSettingsService settingsService;
+    private final McRouterProperties mcRouterProperties;
+    private final EngineProperties engineProperties;
 
     private Closeable mcRouterLogCallback;
 
@@ -62,23 +60,24 @@ public class McRouterContainerService {
      * @return the network ID
      */
     public String ensureNetworkExists() {
-        Optional<Network> existingNetwork = findNetwork(COSY_NETWORK_NAME);
+        String networkName = engineProperties.docker().networkName();
+        Optional<Network> existingNetwork = findNetwork(networkName);
         if (existingNetwork.isPresent()) {
             log.debug(
                     "Network {} already exists with ID: {}",
-                    COSY_NETWORK_NAME,
+                    networkName,
                     existingNetwork.get().getId());
             return existingNetwork.get().getId();
         }
 
-        log.info("Creating Docker network: {}", COSY_NETWORK_NAME);
+        log.info("Creating Docker network: {}", networkName);
         CreateNetworkResponse response =
                 dockerClient
                         .createNetworkCmd()
-                        .withName(COSY_NETWORK_NAME)
+                        .withName(networkName)
                         .withDriver("bridge")
                         .exec();
-        log.info("Created network {} with ID: {}", COSY_NETWORK_NAME, response.getId());
+        log.info("Created network {} with ID: {}", networkName, response.getId());
         return response.getId();
     }
 
@@ -117,7 +116,7 @@ public class McRouterContainerService {
             removeMcRouterContainer();
         }
 
-        int port = config.getPort() > 0 ? config.getPort() : DEFAULT_MC_ROUTER_PORT;
+        int port = config.getPort() > 0 ? config.getPort() : mcRouterProperties.defaultPort();
 
         // Check for port conflicts with COSY game servers
         checkPortConflicts(port);
@@ -127,13 +126,16 @@ public class McRouterContainerService {
 
         log.info("Starting MC-Router container on port {}", port);
 
+        String image = mcRouterProperties.image();
+        String networkName = engineProperties.docker().networkName();
+
         // Pull image if needed
         try {
-            dockerClient.inspectImageCmd(MC_ROUTER_IMAGE).exec();
+            dockerClient.inspectImageCmd(image).exec();
         } catch (NotFoundException e) {
-            log.info("Pulling MC-Router image: {}", MC_ROUTER_IMAGE);
+            log.info("Pulling MC-Router image: {}", image);
             try {
-                dockerClient.pullImageCmd(MC_ROUTER_IMAGE).start().awaitCompletion();
+                dockerClient.pullImageCmd(image).start().awaitCompletion();
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 throw new McRouterException("Interrupted while pulling MC-Router image", ie);
@@ -141,14 +143,14 @@ public class McRouterContainerService {
         }
 
         // Create port bindings
-        ExposedPort exposedPort = ExposedPort.tcp(25565);
+        ExposedPort exposedPort = ExposedPort.tcp(mcRouterProperties.defaultPort());
         Ports portBindings = new Ports();
         portBindings.bind(exposedPort, Ports.Binding.bindPort(port));
 
         // Create host config with network, port bindings, and Docker socket access
         HostConfig hostConfig =
                 HostConfig.newHostConfig()
-                        .withNetworkMode(COSY_NETWORK_NAME)
+                        .withNetworkMode(networkName)
                         .withPortBindings(portBindings)
                         .withBinds(
                                 new Bind(
@@ -158,8 +160,8 @@ public class McRouterContainerService {
         // Create container with Docker discovery mode enabled
         CreateContainerResponse response =
                 dockerClient
-                        .createContainerCmd(MC_ROUTER_IMAGE)
-                        .withName(MC_ROUTER_CONTAINER_NAME)
+                        .createContainerCmd(image)
+                        .withName(mcRouterProperties.containerName())
                         .withEnv("IN_DOCKER=true") // Enable Docker discovery mode
                         .withExposedPorts(exposedPort)
                         .withHostConfig(hostConfig)
@@ -225,19 +227,19 @@ public class McRouterContainerService {
     }
 
     /**
-     * Ensures mc-router is running if it's enabled and there are running Minecraft servers with
-     * domains. Call this when a Minecraft server with domains starts or when mc-router is enabled.
+     * Ensures mc-router is running if it's enabled and there are running servers with domains. Call
+     * this when a server with domains starts or when mc-router is enabled.
      *
      * @throws McRouterException if mc-router fails to start
      */
     public void ensureMcRouterRunningIfNeeded() throws McRouterException {
         log.info("Ensuring MC-Router is running if needed");
         if (!settingsService.isMcRouterEnabled()) {
-            log.info("Not enabled");
+            log.info("MC-Router is not enabled");
             return;
         }
-        if (getRunningMinecraftServersWithDomains().isEmpty()) {
-            log.info("No running Minecraft servers with MC-Router domains");
+        if (getRunningServersWithDomains().isEmpty()) {
+            log.info("No running servers with MC-Router domains");
             return;
         }
         log.info("Starting MC-Router if needed");
@@ -247,11 +249,10 @@ public class McRouterContainerService {
     public void ensureMcRouterRunningIfNeeded(GameServerEntity currentlyStartingGameServer)
             throws McRouterException {
         if (!settingsService.isMcRouterEnabled()) {
-            log.info("Not enabled");
+            log.info("MC-Router is not enabled");
             return;
         }
         if (currentlyStartingGameServer != null
-                && isMinecraftServer(currentlyStartingGameServer)
                 && hasMcRouterDomains(currentlyStartingGameServer)) {
             startMcRouter();
         } else {
@@ -260,13 +261,13 @@ public class McRouterContainerService {
     }
 
     /**
-     * Stops mc-router if no running Minecraft servers with domains need it. Call this after a
-     * Minecraft server with domains stops.
+     * Stops mc-router if no running servers with domains need it. Call this after a server with
+     * domains stops.
      */
     public void stopMcRouterIfNoServersNeedIt() {
-        if (getRunningMinecraftServersWithDomains().isEmpty()) {
+        if (getRunningServersWithDomains().isEmpty()) {
             log.info(
-                    "No running Minecraft servers with MC-Router domains, stopping MC-Router container");
+                    "No running servers with MC-Router domains, stopping MC-Router container");
             removeMcRouterContainer();
         }
     }
@@ -302,7 +303,7 @@ public class McRouterContainerService {
      * @return the container if found
      */
     public Optional<Container> findMcRouterContainer() {
-        String nameToMatch = "/" + MC_ROUTER_CONTAINER_NAME;
+        String nameToMatch = "/" + mcRouterProperties.containerName();
         return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
                 .filter(
                         c ->
@@ -328,7 +329,7 @@ public class McRouterContainerService {
 
         return McRouterStatusDto.builder()
                 .enabled(config.isEnabled())
-                .port(config.getPort() > 0 ? config.getPort() : DEFAULT_MC_ROUTER_PORT)
+                .port(config.getPort() > 0 ? config.getPort() : mcRouterProperties.defaultPort())
                 .running(isRunning)
                 .containerId(containerId)
                 .build();
@@ -366,40 +367,26 @@ public class McRouterContainerService {
     }
 
     /**
-     * Gets all running Minecraft servers that have mc-router domains configured.
+     * Gets all running servers that have mc-router domains configured.
      *
      * @return list of servers with domains
      */
-    public List<GameServerEntity> getRunningMinecraftServersWithDomains() {
+    public List<GameServerEntity> getRunningServersWithDomains() {
         return gameServerRepository.findAll().stream()
-                .filter(this::isMinecraftServer)
                 .filter(this::isRunning)
                 .filter(this::hasMcRouterDomains)
                 .toList();
     }
 
     /**
-     * Gets all Minecraft servers (regardless of status) that have mc-router domains configured.
+     * Gets all servers (regardless of status) that have mc-router domains configured.
      *
      * @return list of servers with domains
      */
-    public List<GameServerEntity> getMinecraftServersWithDomains() {
+    public List<GameServerEntity> getServersWithDomains() {
         return gameServerRepository.findAll().stream()
-                .filter(this::isMinecraftServer)
                 .filter(this::hasMcRouterDomains)
                 .toList();
-    }
-
-    /**
-     * Checks if a game server is a Minecraft server.
-     *
-     * @param server the game server
-     * @return true if it's a Minecraft server
-     */
-    public boolean isMinecraftServer(GameServerEntity server) {
-        log.debug("checking if server is a Minecraft server: {}", server.getGame());
-        return server.getGame() != null
-                && server.getGame().getExternalGameId() == MINECRAFT_GAME_ID;
     }
 
     /**
@@ -428,30 +415,30 @@ public class McRouterContainerService {
      * @param containerId the container ID to connect
      */
     public void connectContainerToNetwork(String containerId) {
+        String networkName = engineProperties.docker().networkName();
         ensureNetworkExists();
         try {
             dockerClient
                     .connectToNetworkCmd()
                     .withContainerId(containerId)
-                    .withNetworkId(COSY_NETWORK_NAME)
+                    .withNetworkId(networkName)
                     .exec();
-            log.debug("Connected container {} to network {}", containerId, COSY_NETWORK_NAME);
+            log.debug("Connected container {} to network {}", containerId, networkName);
         } catch (ConflictException e) {
-            // Container is already connected to the network
             log.debug(
                     "Container {} is already connected to network {}",
                     containerId,
-                    COSY_NETWORK_NAME);
+                    networkName);
         }
     }
 
     /**
-     * Gets the cosy-network name for use by other services.
+     * Gets the network name for use by other services.
      *
      * @return the network name
      */
     public String getNetworkName() {
-        return COSY_NETWORK_NAME;
+        return engineProperties.docker().networkName();
     }
 
     /**
@@ -460,6 +447,6 @@ public class McRouterContainerService {
      * @return the container name
      */
     public String getContainerName() {
-        return MC_ROUTER_CONTAINER_NAME;
+        return mcRouterProperties.containerName();
     }
 }

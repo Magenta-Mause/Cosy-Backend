@@ -12,5 +12,6 @@ public record EngineProperties(Docker docker) {
             String certPath,
             String volumeDirectory,
             String containerNamePrefix,
-            String inBackendVolumeMountPath) {}
+            String inBackendVolumeMountPath,
+            String networkName) {}
 }
