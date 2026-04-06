@@ -1,13 +1,14 @@
 package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.actiondtos.user.LoginDto;
+import com.magentamause.cosybackend.dtos.actiondtos.user.LoginResponseDto;
 import com.magentamause.cosybackend.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosybackend.security.jwtfilter.JwtUtils;
 import com.magentamause.cosybackend.services.auth.AuthorizationService;
 import jakarta.validation.Valid;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -27,14 +28,17 @@ public class AuthorizationController {
     private String basePath;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(
+    public ResponseEntity<LoginResponseDto> login(
             @Valid @RequestBody LoginDto loginDto,
-            @RequestParam(value = "tokenMode", defaultValue = "cookie") String tokenMode) {
+            @RequestParam(value = "tokenMode", defaultValue = "COOKIE") TokenMode tokenMode) {
         String refreshToken =
                 authorizationService.loginUser(loginDto.getUsername(), loginDto.getPassword());
 
-        if ("direct".equals(tokenMode)) {
-            return ResponseEntity.ok(Map.of("refreshToken", refreshToken));
+        if (tokenMode == TokenMode.DIRECT) {
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.noStore())
+                    .header("Pragma", "no-cache")
+                    .body(new LoginResponseDto(refreshToken));
         }
 
         ResponseCookie responseCookie =
@@ -50,7 +54,7 @@ public class AuthorizationController {
                         .build();
         return ResponseEntity.status(HttpStatus.OK)
                 .header(HttpHeaders.SET_COOKIE, responseCookie.toString())
-                .build();
+                .<LoginResponseDto>build();
     }
 
     @GetMapping("/token")
