@@ -82,7 +82,7 @@ cosy:
       in-backend-volume-mount-path: ${COSY_DOCKER_BACKEND_VOLUME_MOUNT_PATH:./dummy/cosy/volume-mounts}
       network-name: ${COSY_DOCKER_NETWORK_NAME:cosy-network}
   mc-router:
-    image: itzg/mc-router:1.25.2
+    image: itzg/mc-router:1.42.0
     container-name: cosy-mc-router
     default-port: 25565
   footer:
