@@ -123,7 +123,6 @@ public class UserPolicy {
             return false;
         }
         // Only QUOTA_USER targets are valid (admins always can create)
-        return user.getRole().isAdmin()
-                && targetUser.getRole().equals(UserEntity.Role.QUOTA_USER);
+        return user.getRole().isAdmin() && targetUser.getRole().equals(UserEntity.Role.QUOTA_USER);
     }
 }
