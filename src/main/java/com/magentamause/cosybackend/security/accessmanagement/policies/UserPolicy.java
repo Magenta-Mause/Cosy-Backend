@@ -122,8 +122,8 @@ public class UserPolicy {
         if (targetUser == null) {
             return false;
         }
-        // Only OWNER can toggle; only QUOTA_USER targets are valid (admins always can create)
-        return user.getRole().equals(UserEntity.Role.OWNER)
+        // Only QUOTA_USER targets are valid (admins always can create)
+        return user.getRole().isAdmin()
                 && targetUser.getRole().equals(UserEntity.Role.QUOTA_USER);
     }
 }
