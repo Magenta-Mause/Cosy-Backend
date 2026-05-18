@@ -115,6 +115,13 @@ public class UserEntityService {
         return saveUserEntity(user);
     }
 
+    public UserEntity setCanCreateGameServers(String uuid, boolean canCreateGameServers) {
+        log.info("Setting canCreateGameServers={} for user with UUID: {}", canCreateGameServers, uuid);
+        UserEntity user = getUserByUuid(uuid);
+        user.setCanCreateGameServers(canCreateGameServers);
+        return saveUserEntity(user);
+    }
+
     public boolean existsByUsername(String username) {
         return userEntityRepository.existsByUsernameIgnoreCase(username);
     }

@@ -42,6 +42,10 @@ public class UserInviteEntity {
 
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean canCreateGameServers = true;
+
     public UserInviteDto convertToDto() {
         return UserInviteDto.builder()
                 .uuid(this.getUuid())

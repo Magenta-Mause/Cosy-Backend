@@ -52,6 +52,9 @@ public class UserInviteService {
 
         log.info("Creating Invite for User: {}", userInviteCreationDto);
 
+        boolean canCreate = userInviteCreationDto.getCanCreateGameServers() == null
+                || userInviteCreationDto.getCanCreateGameServers();
+
         UserInviteEntity invite =
                 UserInviteEntity.builder()
                         .invitedBy(userEntityService.getUserByUuid(ownerCreationId))
@@ -59,6 +62,7 @@ public class UserInviteService {
                         .username(presetUsername)
                         .role(userInviteCreationDto.getRole())
                         .dockerHardwareLimits(userInviteCreationDto.getDockerHardwareLimits())
+                        .canCreateGameServers(canCreate)
                         .build();
 
         return userInviteRepository.save(invite);
@@ -107,6 +111,7 @@ public class UserInviteService {
                         .role(inviteRole)
                         .password(passwordEncoder.encode(password))
                         .dockerHardwareLimits(invite.getDockerHardwareLimits())
+                        .canCreateGameServers(invite.isCanCreateGameServers())
                         .defaultPasswordReset(true);
 
         if (Objects.isNull(invite.getUsername())) {

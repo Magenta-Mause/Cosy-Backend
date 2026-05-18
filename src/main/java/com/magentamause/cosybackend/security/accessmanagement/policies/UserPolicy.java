@@ -113,4 +113,17 @@ public class UserPolicy {
             ResourceResolver resolver, Object referenceId, UserEntity user) {
         return user.getUuid().equals(referenceId);
     }
+
+    @Validates(Operation.USER_TOGGLE_CAN_CREATE_GAME_SERVERS)
+    public static boolean canToggleCanCreateGameServers(
+            ResourceResolver resolver, Object referenceId, UserEntity user) {
+
+        UserEntity targetUser = resolver.getUserEntity((String) referenceId).orElse(null);
+        if (targetUser == null) {
+            return false;
+        }
+        // Only OWNER can toggle; only QUOTA_USER targets are valid (admins always can create)
+        return user.getRole().equals(UserEntity.Role.OWNER)
+                && targetUser.getRole().equals(UserEntity.Role.QUOTA_USER);
+    }
 }

@@ -14,8 +14,10 @@ public class GameServerPolicy {
     @Validates(Operation.GAME_SERVER_CREATE)
     public static boolean canCreateGameServer(
             ResourceResolver resolver, Object referenceId, UserEntity user) {
-        // every user should be able to create a game server
-        return true;
+        if (user.getRole().isAdmin()) {
+            return true;
+        }
+        return user.isCanCreateGameServers();
     }
 
     @Validates(Operation.GAME_SERVER_DELETE)
