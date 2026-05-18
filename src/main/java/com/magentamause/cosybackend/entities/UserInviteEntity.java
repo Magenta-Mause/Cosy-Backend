@@ -56,6 +56,7 @@ public class UserInviteEntity {
                 .inviteByUsername(this.getInvitedBy().getUsername())
                 .role(this.getRole())
                 .dockerHardwareLimits(this.dockerHardwareLimits)
+                .canCreateGameServers(this.canCreateGameServers)
                 .build();
     }
 }
