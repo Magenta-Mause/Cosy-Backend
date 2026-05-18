@@ -9,6 +9,5 @@ import lombok.Data;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class UserCanCreateGameServersDto {
 
-    @NotNull
-    private Boolean canCreateGameServers;
+    @NotNull private Boolean canCreateGameServers;
 }

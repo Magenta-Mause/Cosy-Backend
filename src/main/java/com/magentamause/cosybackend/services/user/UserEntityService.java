@@ -116,7 +116,10 @@ public class UserEntityService {
     }
 
     public UserEntity setCanCreateGameServers(String uuid, boolean canCreateGameServers) {
-        log.info("Setting canCreateGameServers={} for user with UUID: {}", canCreateGameServers, uuid);
+        log.info(
+                "Setting canCreateGameServers={} for user with UUID: {}",
+                canCreateGameServers,
+                uuid);
         UserEntity user = getUserByUuid(uuid);
         user.setCanCreateGameServers(canCreateGameServers);
         return saveUserEntity(user);

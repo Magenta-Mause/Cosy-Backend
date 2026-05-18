@@ -52,8 +52,9 @@ public class UserInviteService {
 
         log.info("Creating Invite for User: {}", userInviteCreationDto);
 
-        boolean canCreate = userInviteCreationDto.getCanCreateGameServers() == null
-                || userInviteCreationDto.getCanCreateGameServers();
+        boolean canCreate =
+                userInviteCreationDto.getCanCreateGameServers() == null
+                        || userInviteCreationDto.getCanCreateGameServers();
 
         UserInviteEntity invite =
                 UserInviteEntity.builder()
