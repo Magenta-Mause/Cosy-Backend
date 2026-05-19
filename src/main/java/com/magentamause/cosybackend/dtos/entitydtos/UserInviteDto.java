@@ -24,4 +24,5 @@ public class UserInviteDto {
     private Instant createdAt;
     private UserEntity.Role role;
     private DockerHardwareLimits dockerHardwareLimits;
+    private boolean canCreateGameServers;
 }

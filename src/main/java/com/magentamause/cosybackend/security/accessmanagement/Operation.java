@@ -16,6 +16,7 @@ public enum Operation {
     USER_CHANGE_ROLE,
     USER_DELETE,
     USER_READ_PERMISSIONS,
+    USER_TOGGLE_CAN_CREATE_GAME_SERVERS,
 
     // Game Server operations
     GAME_SERVER_CREATE,

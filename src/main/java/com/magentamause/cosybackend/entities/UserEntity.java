@@ -40,6 +40,10 @@ public class UserEntity {
 
     @Embedded private DockerHardwareLimits dockerHardwareLimits;
 
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean canCreateGameServers = true;
+
     @Getter
     @RequiredArgsConstructor
     public enum Role {
@@ -56,6 +60,7 @@ public class UserEntity {
                 .username(this.username)
                 .role(this.role)
                 .dockerHardwareLimits(this.dockerHardwareLimits)
+                .canCreateGameServers(this.canCreateGameServers)
                 .build();
     }
 }

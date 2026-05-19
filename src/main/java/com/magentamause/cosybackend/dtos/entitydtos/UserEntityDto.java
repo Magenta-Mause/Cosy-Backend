@@ -17,4 +17,5 @@ public class UserEntityDto {
     private String username;
     private UserEntity.Role role;
     private DockerHardwareLimits dockerHardwareLimits;
+    private boolean canCreateGameServers;
 }

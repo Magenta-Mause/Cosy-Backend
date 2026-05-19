@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.controllers;
 
 import com.magentamause.cosybackend.dtos.actiondtos.user.PasswordUpdateByAdminDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.PasswordUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.user.UserCanCreateGameServersDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.UserDockerLimitsUpdateDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.UserRoleUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
@@ -84,6 +85,16 @@ public class UserEntityController {
     public ResponseEntity<UserEntityDto> changeRole(
             @PathVariable @ResourceId String uuid, @Valid @RequestBody UserRoleUpdateDto request) {
         UserEntity updatedUser = userEntityService.changeRole(uuid, request.getRole());
+        return ResponseEntity.ok(updatedUser.toDto());
+    }
+
+    @PatchMapping("/{uuid}/can-create-game-servers")
+    @NeedsValidation(Operation.USER_TOGGLE_CAN_CREATE_GAME_SERVERS)
+    public ResponseEntity<UserEntityDto> setCanCreateGameServers(
+            @PathVariable @ResourceId String uuid,
+            @Valid @RequestBody UserCanCreateGameServersDto request) {
+        UserEntity updatedUser =
+                userEntityService.setCanCreateGameServers(uuid, request.getCanCreateGameServers());
         return ResponseEntity.ok(updatedUser.toDto());
     }
 

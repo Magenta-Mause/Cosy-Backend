@@ -72,6 +72,9 @@ public class AuthorizationService {
             userClaims.put(
                     "cpu_cores_limit", limits != null ? limits.getDockerMaxCpuCores() : null);
             userClaims.put("memory_limit", limits != null ? limits.getDockerMemoryLimit() : null);
+            userClaims.put(
+                    "can_create_game_servers",
+                    user.getRole().isAdmin() || user.isCanCreateGameServers());
         }
 
         return userClaims;
