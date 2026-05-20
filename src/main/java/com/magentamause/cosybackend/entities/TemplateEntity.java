@@ -66,6 +66,10 @@ public class TemplateEntity {
     @Column(columnDefinition = "jsonb")
     private ResourceLimit resourceLimit;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<String> tags;
+
     public static TemplateEntity ofDto(ExternalTemplateDto externalTemplateDto) {
         return TemplateEntity.builder()
                 .name(externalTemplateDto.name())
@@ -80,6 +84,7 @@ public class TemplateEntity {
                 .fileMounts(externalTemplateDto.fileMounts())
                 .variables(externalTemplateDto.variables())
                 .resourceLimit(externalTemplateDto.resourceLimit().orElse(null))
+                .tags(externalTemplateDto.tags())
                 .build();
     }
 }
