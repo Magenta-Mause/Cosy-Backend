@@ -4,6 +4,7 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.exceptions.gameapi.GameFetchException;
 import com.magentamause.cosybackend.repositories.GameRepository;
+import com.magentamause.cosybackend.repositories.TemplateRepository;
 import com.magentamause.cosybackend.services.external.gamesapi.GamesApiService;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,7 @@ import reactor.core.scheduler.Schedulers;
 public class GamesService {
 
     private final GameRepository gameRepository;
+    private final TemplateRepository templateRepository;
     private final GamesApiService gamesApiService;
 
     public List<GameEntity> getAllGames() {
@@ -47,8 +49,13 @@ public class GamesService {
     }
 
     private List<GameDto> queryLocalGames(String query) {
-        List<GameEntity> games =
-                (query == null) ? gameRepository.findAll() : gameRepository.queryByName(query);
+        List<GameEntity> games;
+        if (query == null) {
+            List<Integer> templateGameIds = templateRepository.findDistinctGameIds();
+            games = gameRepository.findByExternalGameIdIn(templateGameIds);
+        } else {
+            games = gameRepository.queryByName(query);
+        }
         return games.stream().map(GameDto::fromEntity).toList();
     }
 
