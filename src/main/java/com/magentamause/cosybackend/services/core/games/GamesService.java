@@ -54,18 +54,20 @@ public class GamesService {
         if (query == null) {
             games = gameRepository.findByExternalGameIdIn(templateGameIds);
         } else {
-            games = gameRepository.queryByName(query).stream()
-                    .filter(g -> templateGameIds.contains(g.getExternalGameId()))
-                    .toList();
+            games =
+                    gameRepository.queryByName(query).stream()
+                            .filter(g -> templateGameIds.contains(g.getExternalGameId()))
+                            .toList();
         }
         return games.stream().map(GameDto::fromEntity).toList();
     }
 
     private List<GameDto> mergeWithLocalGames(String query, List<GameDto> apiGames) {
         List<Integer> templateGameIds = templateRepository.findDistinctGameIds();
-        List<GameEntity> dbGames = gameRepository.queryByName(query).stream()
-                .filter(g -> templateGameIds.contains(g.getExternalGameId()))
-                .toList();
+        List<GameEntity> dbGames =
+                gameRepository.queryByName(query).stream()
+                        .filter(g -> templateGameIds.contains(g.getExternalGameId()))
+                        .toList();
         List<GameDto> result = new ArrayList<>(dbGames.stream().map(GameDto::fromEntity).toList());
 
         apiGames.stream()
