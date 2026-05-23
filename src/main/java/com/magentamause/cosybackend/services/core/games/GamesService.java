@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.services.external.gamesapi.GamesApiService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -49,10 +50,10 @@ public class GamesService {
     }
 
     private List<GameDto> queryLocalGames(String query) {
-        List<Integer> templateGameIds = templateRepository.findDistinctGameIds();
+        Set<Integer> templateGameIds = templateRepository.findDistinctExternalGameIds();
         List<GameEntity> games;
         if (query == null) {
-            games = gameRepository.findByExternalGameIdIn(templateGameIds);
+            games = gameRepository.findByExternalGameIdIn(new ArrayList<>(templateGameIds));
         } else {
             games =
                     gameRepository.queryByName(query).stream()
@@ -63,22 +64,18 @@ public class GamesService {
     }
 
     private List<GameDto> mergeWithLocalGames(String query, List<GameDto> apiGames) {
-        List<Integer> templateGameIds = templateRepository.findDistinctGameIds();
+        Set<Integer> templateGameIds = templateRepository.findDistinctExternalGameIds();
+        Set<Integer> dbExternalIds = new java.util.HashSet<>();
         List<GameEntity> dbGames =
                 gameRepository.queryByName(query).stream()
                         .filter(g -> templateGameIds.contains(g.getExternalGameId()))
+                        .peek(g -> dbExternalIds.add(g.getExternalGameId()))
                         .toList();
         List<GameDto> result = new ArrayList<>(dbGames.stream().map(GameDto::fromEntity).toList());
 
         apiGames.stream()
                 .filter(apiGame -> templateGameIds.contains(apiGame.getExternalGameId()))
-                .filter(
-                        apiGame ->
-                                dbGames.stream()
-                                        .noneMatch(
-                                                db ->
-                                                        db.getExternalGameId()
-                                                                == apiGame.getExternalGameId()))
+                .filter(apiGame -> !dbExternalIds.contains(apiGame.getExternalGameId()))
                 .forEach(result::add);
 
         return result;
