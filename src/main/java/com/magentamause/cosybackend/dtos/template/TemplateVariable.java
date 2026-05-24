@@ -10,4 +10,5 @@ public record TemplateVariable(
         String regex,
         @JsonProperty("default_value") Object defaultValue,
         List<String> options,
-        String example) {}
+        String example,
+        String description) {}
