@@ -4,10 +4,12 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.exceptions.gameapi.GameFetchException;
 import com.magentamause.cosybackend.repositories.GameRepository;
+import com.magentamause.cosybackend.repositories.TemplateRepository;
 import com.magentamause.cosybackend.services.external.gamesapi.GamesApiService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import reactor.core.scheduler.Schedulers;
 public class GamesService {
 
     private final GameRepository gameRepository;
+    private final TemplateRepository templateRepository;
     private final GamesApiService gamesApiService;
 
     public List<GameEntity> getAllGames() {
@@ -47,23 +50,32 @@ public class GamesService {
     }
 
     private List<GameDto> queryLocalGames(String query) {
-        List<GameEntity> games =
-                (query == null) ? gameRepository.findAll() : gameRepository.queryByName(query);
+        Set<Integer> templateGameIds = templateRepository.findDistinctExternalGameIds();
+        List<GameEntity> games;
+        if (query == null) {
+            games = gameRepository.findByExternalGameIdIn(new ArrayList<>(templateGameIds));
+        } else {
+            games =
+                    gameRepository.queryByName(query).stream()
+                            .filter(g -> templateGameIds.contains(g.getExternalGameId()))
+                            .toList();
+        }
         return games.stream().map(GameDto::fromEntity).toList();
     }
 
     private List<GameDto> mergeWithLocalGames(String query, List<GameDto> apiGames) {
-        List<GameEntity> dbGames = gameRepository.queryByName(query);
+        Set<Integer> templateGameIds = templateRepository.findDistinctExternalGameIds();
+        Set<Integer> dbExternalIds = new java.util.HashSet<>();
+        List<GameEntity> dbGames =
+                gameRepository.queryByName(query).stream()
+                        .filter(g -> templateGameIds.contains(g.getExternalGameId()))
+                        .peek(g -> dbExternalIds.add(g.getExternalGameId()))
+                        .toList();
         List<GameDto> result = new ArrayList<>(dbGames.stream().map(GameDto::fromEntity).toList());
 
         apiGames.stream()
-                .filter(
-                        apiGame ->
-                                dbGames.stream()
-                                        .noneMatch(
-                                                db ->
-                                                        db.getExternalGameId()
-                                                                == apiGame.getExternalGameId()))
+                .filter(apiGame -> templateGameIds.contains(apiGame.getExternalGameId()))
+                .filter(apiGame -> !dbExternalIds.contains(apiGame.getExternalGameId()))
                 .forEach(result::add);
 
         return result;

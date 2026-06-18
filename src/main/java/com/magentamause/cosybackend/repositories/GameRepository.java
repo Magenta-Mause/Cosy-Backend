@@ -14,6 +14,8 @@ public interface GameRepository extends JpaRepository<GameEntity, String> {
 
     Optional<GameEntity> findByExternalGameId(int externalGameId);
 
+    List<GameEntity> findByExternalGameIdIn(List<Integer> externalGameIds);
+
     default GameEntity saveIfNotPresent(GameEntity entity) {
         return findByExternalGameId(entity.getExternalGameId()).orElseGet(() -> save(entity));
     }
