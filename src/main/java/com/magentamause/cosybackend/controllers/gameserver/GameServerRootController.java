@@ -77,9 +77,11 @@ public class GameServerRootController {
             @PathVariable @ResourceId String uuid,
             @Valid @RequestBody GameServerUpdateDto updateDto) {
         log.info("Updating game server {} with {}", uuid, updateDto);
+        UserEntity user = securityContextService.getUser();
 
-        GameServerEntity updated = gameServerService.updateGameServerConfiguration(uuid, updateDto);
-        return ResponseEntity.ok(updated.toDto(securityContextService.getUser()));
+        GameServerEntity updated =
+                gameServerService.updateGameServerConfiguration(user, uuid, updateDto);
+        return ResponseEntity.ok(updated.toDto(user));
     }
 
     @GetMapping("/{uuid}/status")

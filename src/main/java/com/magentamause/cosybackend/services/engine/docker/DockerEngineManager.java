@@ -25,7 +25,9 @@ import jakarta.annotation.PreDestroy;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -53,6 +55,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
     private final DockerCommandSender commandSender;
     private final DockerHostConfigFactory hostConfigFactory;
     private final DockerContainerNameResolver containerNameResolver;
+
+    private static final String RESERVED_LABEL_PREFIX = "cosy.";
 
     @Value("${cosy.custom-metrics.base-url}")
     private String COSY_METRICS_BASE_URL;
@@ -127,6 +131,8 @@ public class DockerEngineManager implements EngineManager, Closeable {
 
         addUtilEnvVars(env, serverConfig);
 
+        Map<String, String> labels = buildLabels(serverConfig);
+
         log.info("Starting container {} with env {}", containerName, env);
 
         CreateContainerResponse response =
@@ -135,6 +141,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         .withCmd(cmd)
                         .withEnv(env)
                         .withExposedPorts(exposedPorts)
+                        .withLabels(labels)
                         .withHostConfig(hostConfigFactory.buildHostConfig(serverConfig))
                         .withTty(true)
                         .withStdinOpen(true)
@@ -149,6 +156,34 @@ public class DockerEngineManager implements EngineManager, Closeable {
             client.removeContainerCmd(response.getId()).withForce(true).exec();
             throw new InternalServiceStartException(e);
         }
+    }
+
+    /**
+     * Builds the Docker label map from the server's user-configurable annotations. Any key starting
+     * with the reserved {@code cosy.} prefix (case-insensitive) is stripped/rejected so that future
+     * Cosy-managed labels cannot be spoofed by user input.
+     */
+    private Map<String, String> buildLabels(GameServerEntity serverConfig) {
+        Map<String, String> labels = new HashMap<>();
+        Map<String, String> annotations = serverConfig.getAnnotations();
+        if (annotations == null) {
+            return labels;
+        }
+        for (Map.Entry<String, String> entry : annotations.entrySet()) {
+            String key = entry.getKey();
+            if (key == null) {
+                continue;
+            }
+            if (key.toLowerCase().startsWith(RESERVED_LABEL_PREFIX)) {
+                log.warn(
+                        "Stripping reserved annotation key '{}' for server {}",
+                        key,
+                        serverConfig.getUuid());
+                continue;
+            }
+            labels.put(key, entry.getValue());
+        }
+        return labels;
     }
 
     private void addUtilEnvVars(List<String> env, GameServerEntity serverConfig) {

@@ -10,11 +10,13 @@ import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.gameserver.utility.EnvironmentVariableConfiguration;
 import com.magentamause.cosybackend.entities.gameserver.utility.GameServerDesign;
+import com.magentamause.cosybackend.entities.gameserver.utility.HostVolumeMountConfiguration;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,6 +54,14 @@ public class GameServerCreationDto {
     @Valid
     private List<VolumeMountConfigurationDto> volumeMounts;
 
+    @UniqueElementsBy(
+            fieldNames = {"containerPath"},
+            message = "duplicate host volume mounts")
+    @Valid
+    private List<HostVolumeMountConfigurationDto> hostVolumeMounts;
+
+    private Map<String, String> annotations;
+
     public GameServerEntity toEntity(UserEntity user, Function<Integer, GameEntity> gameProvider) {
 
         return GameServerEntity.builder()
@@ -70,6 +80,13 @@ public class GameServerCreationDto {
                                         .map(VolumeMountConfiguration::fromDto)
                                         .toList()
                                 : List.of())
+                .hostVolumeMounts(
+                        this.getHostVolumeMounts() != null
+                                ? this.getHostVolumeMounts().stream()
+                                        .map(HostVolumeMountConfiguration::fromDto)
+                                        .toList()
+                                : List.of())
+                .annotations(this.getAnnotations())
                 .portMappings(this.getPortMappings() != null ? this.getPortMappings() : List.of())
                 .build();
     }

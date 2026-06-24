@@ -7,6 +7,7 @@ import com.magentamause.cosybackend.repositories.TemplateRepository;
 import com.magentamause.cosybackend.services.core.games.GamesService;
 import com.magentamause.cosybackend.services.external.templates.CosyTemplateApiService;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,9 @@ public class TemplateService {
     public List<TemplateEntity> refreshTemplates() {
         log.info("Refreshing templates...");
         try {
+            // Refresh the games cache first so template game_id resolution sees the latest index.
+            gamesService.refreshGames();
+
             List<ExternalTemplateDto> templates =
                     cosyTemplateApiService.queryCosyTemplateApi().block();
             if (templates == null || templates.isEmpty()) {
@@ -36,9 +40,20 @@ public class TemplateService {
             templateRepository.deleteAll();
             for (ExternalTemplateDto template : templates) {
                 log.info("Found template: {}", template.name());
-                log.info("Fetching Game with external id: {}", template.gameId());
-                GameEntity game = gamesService.getGameEntityByExternalId(template.gameId(), true);
-                log.info("Fetched Game: {}", game.getName());
+                // game_id is a slug or numeric-as-string; resolve with numeric fallback.
+                Optional<GameEntity> game = gamesService.resolveGameForTemplate(template.gameId());
+                if (game.isPresent()) {
+                    log.info(
+                            "Resolved template '{}' game_id '{}' -> {}",
+                            template.name(),
+                            template.gameId(),
+                            game.get().getName());
+                } else {
+                    log.warn(
+                            "Could not resolve game for template '{}' (game_id '{}')",
+                            template.name(),
+                            template.gameId());
+                }
             }
             List<TemplateEntity> saved =
                     templateRepository.saveAll(

@@ -3,11 +3,13 @@ package com.magentamause.cosybackend.services.core.gameserver;
 import com.magentamause.cosybackend.dtos.actiondtos.TransferOwnershipDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerUpdateDto;
+import com.magentamause.cosybackend.dtos.actiondtos.gameserver.HostVolumeMountConfigurationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.dtos.entitydtos.StartEventDto;
 import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.entities.gameserver.utility.HostVolumeMountConfiguration;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
@@ -161,6 +163,13 @@ public class GameServerService {
     }
 
     public GameServerEntity createGameServer(UserEntity user, GameServerCreationDto gameServerDto) {
+        if (gameServerDto.getHostVolumeMounts() != null
+                && !gameServerDto.getHostVolumeMounts().isEmpty()
+                && !user.getRole().isAdmin()) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only administrators may configure host volume mounts");
+        }
+
         Function<Integer, GameEntity> gameResolver =
                 (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
 
@@ -204,11 +213,17 @@ public class GameServerService {
     }
 
     public GameServerEntity updateGameServerConfiguration(
-            String uuid, GameServerUpdateDto updateDto) {
+            UserEntity user, String uuid, GameServerUpdateDto updateDto) {
         GameServerEntity gameServer = getOrThrow(uuid);
         if (!gameServer.getStatus().isStopped()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST, "Cannot update server while it is running");
+        }
+
+        boolean isAdmin = user != null && user.getRole().isAdmin();
+        if (!isAdmin && hostMountsChanged(gameServer, updateDto)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only administrators may configure host volume mounts");
         }
 
         Set<String> oldVolumeUuids =
@@ -222,7 +237,9 @@ public class GameServerService {
         Function<Integer, GameEntity> gameResolver =
                 (externalGameId) -> gamesService.getGameEntityByExternalId(externalGameId, true);
 
-        updateDto.applyToEntity(gameServer, gameResolver);
+        // Admins/owners fully CRUD host mounts; for non-admins the existing host mounts are
+        // preserved untouched (applyHostMounts = false).
+        updateDto.applyToEntity(gameServer, gameResolver, isAdmin);
 
         GameServerEntity saved = saveGameServerConfiguration(gameServer, false);
 
@@ -510,6 +527,37 @@ public class GameServerService {
                 oldOwner.getUsername(),
                 gameServer.getOwner().getUsername());
         return saveGameServerConfiguration(gameServer, false);
+    }
+
+    /**
+     * Determines whether a non-admin update would alter the server's host volume mounts. A {@code
+     * null} {@code hostVolumeMounts} field means "leave unchanged" and is never a change. Otherwise
+     * the requested set is compared (order-insensitive) against the persisted mounts.
+     */
+    private boolean hostMountsChanged(GameServerEntity gameServer, GameServerUpdateDto updateDto) {
+        List<HostVolumeMountConfigurationDto> requested = updateDto.getHostVolumeMounts();
+        if (requested == null) {
+            return false;
+        }
+        List<HostVolumeMountConfiguration> existing =
+                gameServer.getHostVolumeMounts() != null
+                        ? gameServer.getHostVolumeMounts()
+                        : List.of();
+
+        Set<String> existingKeys =
+                existing.stream().map(this::hostMountKey).collect(Collectors.toSet());
+        Set<String> requestedKeys =
+                requested.stream().map(this::hostMountKey).collect(Collectors.toSet());
+        return !existingKeys.equals(requestedKeys);
+    }
+
+    private String hostMountKey(HostVolumeMountConfiguration mount) {
+        return mount.getHostPath() + "|" + mount.getContainerPath() + "|" + mount.isReadOnly();
+    }
+
+    private String hostMountKey(HostVolumeMountConfigurationDto mount) {
+        boolean readOnly = mount.getReadOnly() == null || mount.getReadOnly();
+        return mount.getHostPath() + "|" + mount.getContainerPath() + "|" + readOnly;
     }
 
     private boolean isCustomMetricEntryValid(Object entry) {

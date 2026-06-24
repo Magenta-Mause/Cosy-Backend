@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,15 +17,10 @@ public class GamesController {
     private final GamesService gamesService;
 
     @GetMapping
-    public Mono<ResponseEntity<List<GameDto>>> queryGames(
-            @RequestParam(required = false) String query) {
-        return gamesService
-                .query(query)
-                .map(
-                        response ->
-                                ResponseEntity.status(HttpStatus.OK)
-                                        .header(HttpHeaders.EXPIRES, "0")
-                                        .body(response));
+    public ResponseEntity<List<GameDto>> queryGames(@RequestParam(required = false) String query) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.EXPIRES, "0")
+                .body(gamesService.query(query));
     }
 
     @GetMapping("/external/{id}")

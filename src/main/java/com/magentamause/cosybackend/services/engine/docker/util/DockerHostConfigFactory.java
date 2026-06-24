@@ -9,6 +9,7 @@ import com.github.dockerjava.api.model.Volume;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.services.engine.docker.DockerVolumePathResolver;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,22 +53,48 @@ public class DockerHostConfigFactory {
     }
 
     private void applyVolumeBinds(HostConfig hostConfig, GameServerEntity serverConfig) {
+        List<Bind> binds = new ArrayList<>();
+
         if (serverConfig.getVolumeMounts() != null && !serverConfig.getVolumeMounts().isEmpty()) {
-            List<Bind> binds =
-                    serverConfig.getVolumeMounts().stream()
-                            .map(
-                                    v -> {
-                                        String hostPath =
-                                                volumePathResolver.resolveAndEnsureVolumeHostPath(
-                                                        v);
-                                        return new Bind(
+            serverConfig
+                    .getVolumeMounts()
+                    .forEach(
+                            v -> {
+                                String hostPath =
+                                        volumePathResolver.resolveAndEnsureVolumeHostPath(v);
+                                binds.add(
+                                        new Bind(
                                                 hostPath,
                                                 new Volume(v.getContainerPath()),
-                                                AccessMode.rw);
-                                    })
-                            .toList();
+                                                AccessMode.rw));
+                            });
+        }
+
+        applyHostVolumeBinds(binds, serverConfig);
+
+        if (!binds.isEmpty()) {
             hostConfig.withBinds(binds);
         }
+    }
+
+    /**
+     * Appends explicit host volume binds (admin-configured) to the shared binds list. The host path
+     * is literal and is NOT routed through {@link DockerVolumePathResolver} (no path resolution).
+     */
+    private void applyHostVolumeBinds(List<Bind> binds, GameServerEntity serverConfig) {
+        if (serverConfig.getHostVolumeMounts() == null
+                || serverConfig.getHostVolumeMounts().isEmpty()) {
+            return;
+        }
+        serverConfig
+                .getHostVolumeMounts()
+                .forEach(
+                        v ->
+                                binds.add(
+                                        new Bind(
+                                                v.getHostPath(),
+                                                new Volume(v.getContainerPath()),
+                                                v.isReadOnly() ? AccessMode.ro : AccessMode.rw)));
     }
 
     private void applyHardwareLimits(HostConfig hostConfig, GameServerEntity serverConfig) {
