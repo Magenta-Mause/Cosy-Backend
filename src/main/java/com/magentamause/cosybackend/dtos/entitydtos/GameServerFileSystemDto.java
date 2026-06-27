@@ -39,6 +39,7 @@ public class GameServerFileSystemDto {
         private FileType type;
 
         private Optional<Integer> permissions;
+        private Optional<Integer> uid;
         private Optional<Long> size;
 
         @Valid

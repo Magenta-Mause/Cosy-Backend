@@ -33,6 +33,7 @@ import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -45,7 +46,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import java.nio.file.attribute.PosixFilePermissions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -1038,8 +1038,7 @@ public class GameServerMountService {
                     }
 
                     if (!resolved.isRootRequest()) {
-                        requireRealPathInsideRoot(
-                                volumeRoot, targetDir, resolved.innerRelative());
+                        requireRealPathInsideRoot(volumeRoot, targetDir, resolved.innerRelative());
                     }
 
                     if (clearFirst && Files.isDirectory(targetDir)) {
@@ -1075,8 +1074,7 @@ public class GameServerMountService {
                                 String entryName = entry.getName().replace("\\", "/");
 
                                 // Zip-slip guard
-                                Path entryPath =
-                                        targetDir.resolve(entryName).normalize();
+                                Path entryPath = targetDir.resolve(entryName).normalize();
                                 if (!entryPath.startsWith(targetDir.normalize())
                                         || !entryPath.startsWith(volumeRoot)) {
                                     log.warn("Skipping unsafe zip entry: {}", entryName);
@@ -1157,8 +1155,7 @@ public class GameServerMountService {
                             }
                         }
 
-                        log.info(
-                                "Extracted {} files from archive to {}", extracted, requestedPath);
+                        log.info("Extracted {} files from archive to {}", extracted, requestedPath);
                     } catch (IOException e) {
                         throw new ResponseStatusException(
                                 HttpStatus.BAD_REQUEST,
@@ -1175,6 +1172,53 @@ public class GameServerMountService {
         } catch (UnsupportedOperationException | IOException e) {
             log.debug("Could not chown {} to 1000:1000: {}", path, e.getMessage());
         }
+    }
+
+    public void setFilePermissions(String serverUuid, String requestedPath, int mode, Integer uid) {
+        withWriteLock(
+                serverUuid,
+                () -> {
+                    ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
+                    Path target = resolved.requested();
+                    if (!resolved.isRootRequest()) {
+                        requireRealPathInsideRoot(
+                                resolved.volumeRoot(), target, resolved.innerRelative());
+                    }
+                    try {
+                        Files.setPosixFilePermissions(target, fromUnixMode(mode & 0777));
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Failed to set permissions on " + requestedPath,
+                                e);
+                    }
+                    if (uid != null) {
+                        try {
+                            Files.setAttribute(target, "unix:uid", uid, LinkOption.NOFOLLOW_LINKS);
+                            Files.setAttribute(target, "unix:gid", uid, LinkOption.NOFOLLOW_LINKS);
+                        } catch (UnsupportedOperationException | IOException e) {
+                            log.warn(
+                                    "Could not chown {} to uid {}: {}",
+                                    target,
+                                    uid,
+                                    e.getMessage());
+                        }
+                    }
+                });
+    }
+
+    private Set<PosixFilePermission> fromUnixMode(int mode) {
+        Set<PosixFilePermission> p = new java.util.HashSet<>();
+        if ((mode & 0400) != 0) p.add(PosixFilePermission.OWNER_READ);
+        if ((mode & 0200) != 0) p.add(PosixFilePermission.OWNER_WRITE);
+        if ((mode & 0100) != 0) p.add(PosixFilePermission.OWNER_EXECUTE);
+        if ((mode & 0040) != 0) p.add(PosixFilePermission.GROUP_READ);
+        if ((mode & 0020) != 0) p.add(PosixFilePermission.GROUP_WRITE);
+        if ((mode & 0010) != 0) p.add(PosixFilePermission.GROUP_EXECUTE);
+        if ((mode & 0004) != 0) p.add(PosixFilePermission.OTHERS_READ);
+        if ((mode & 0002) != 0) p.add(PosixFilePermission.OTHERS_WRITE);
+        if ((mode & 0001) != 0) p.add(PosixFilePermission.OTHERS_EXECUTE);
+        return p;
     }
 
     public DirectorySizeDto getDirectorySize(String serverUuid, String requestedPath) {
@@ -1548,6 +1592,7 @@ public class GameServerMountService {
     private GameServerFileSystemDto.FileSystemObjectDto toNode(Path p, int fetchDepth) {
         boolean isDir = Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS);
         Optional<Integer> perms = tryReadPermissions(p);
+        Optional<Integer> uid = tryReadUid(p);
         Optional<Long> size = tryReadSize(p);
 
         return GameServerFileSystemDto.FileSystemObjectDto.builder()
@@ -1558,9 +1603,20 @@ public class GameServerMountService {
                                 ? GameServerFileSystemDto.FileType.DIRECTORY
                                 : GameServerFileSystemDto.FileType.FILE)
                 .permissions(perms)
+                .uid(uid)
                 .size(size)
                 .children(new ArrayList<>())
                 .build();
+    }
+
+    private Optional<Integer> tryReadUid(Path p) {
+        try {
+            Object val = Files.getAttribute(p, "unix:uid", LinkOption.NOFOLLOW_LINKS);
+            if (val instanceof Integer i) return Optional.of(i);
+            return Optional.empty();
+        } catch (UnsupportedOperationException | IOException ignored) {
+            return Optional.empty();
+        }
     }
 
     private Optional<Integer> tryReadPermissions(Path p) {

@@ -101,4 +101,12 @@ public class GameServerFileController implements GameServerFileApi {
     public ResponseEntity<DirectorySizeDto> getDirectorySize(@ResourceId String uuid, String path) {
         return ResponseEntity.ok(gameServerMountService.getDirectorySize(uuid, path));
     }
+
+    @Override
+    @NeedsValidation(Operation.GAME_SERVER_FILES_UPDATE)
+    public ResponseEntity<Void> setPermissions(
+            @ResourceId String uuid, String path, int mode, Integer uid) {
+        gameServerMountService.setFilePermissions(uuid, path, mode, uid);
+        return ResponseEntity.ok().build();
+    }
 }

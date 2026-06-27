@@ -159,4 +159,14 @@ public interface GameServerFileApi {
     ResponseEntity<DirectorySizeDto> getDirectorySize(
             @Parameter(description = "Game server UUID") @PathVariable String uuid,
             @RequestParam("path") @NotBlank String path);
+
+    @Operation(
+            summary = "Set file or directory permissions (chmod) and optionally ownership (chown)")
+    @ApiResponse(responseCode = "200", description = "Permissions updated")
+    @PostMapping("/set-permissions")
+    ResponseEntity<Void> setPermissions(
+            @Parameter(description = "Game server UUID") @PathVariable String uuid,
+            @RequestParam("path") @NotBlank String path,
+            @RequestParam("mode") int mode,
+            @RequestParam(value = "uid", required = false) Integer uid);
 }
