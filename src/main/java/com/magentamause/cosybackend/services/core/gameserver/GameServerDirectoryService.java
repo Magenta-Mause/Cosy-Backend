@@ -264,8 +264,8 @@ class GameServerDirectoryService {
         }
     }
 
-    private void renameSecureSameMount(
-            SecureDirectoryStream<Path> root, Path oldRel, Path newRel) throws IOException {
+    private void renameSecureSameMount(SecureDirectoryStream<Path> root, Path oldRel, Path newRel)
+            throws IOException {
 
         SecureTarget src = resolver.resolveSecureNoSymlink(root, oldRel, "oldPath");
         SecureTarget dst = resolver.resolveSecureNoSymlink(root, newRel, "newPath");
@@ -344,12 +344,12 @@ class GameServerDirectoryService {
                     resolver.requireExists(requested, rel.toString());
                     if (Files.isSymbolicLink(requested)) {
                         throw new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST,
-                                "Deleting symlinks is not allowed: " + rel);
+                                HttpStatus.BAD_REQUEST, "Deleting symlinks is not allowed: " + rel);
                     }
 
                     Path parent =
-                            GameServerMountResolver.requireParent(requested, "Invalid path: " + rel);
+                            GameServerMountResolver.requireParent(
+                                    requested, "Invalid path: " + rel);
                     resolver.requireRealPathInsideRoot(volumeRoot, requested, rel.toString());
                     resolver.requireRealPathInsideRoot(volumeRoot, parent, rel.toString());
                     resolver.requireWritable(parent, "No permission to delete from: " + parent);

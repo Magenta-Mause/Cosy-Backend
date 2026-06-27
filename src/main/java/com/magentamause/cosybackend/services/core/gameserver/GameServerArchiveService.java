@@ -32,8 +32,8 @@ class GameServerArchiveService {
     private final GameServerMountResolver resolver;
     private final GameServerNativeOps nativeOps;
 
-    void streamDirectoryAsZip(
-            String serverUuid, String requestedPath, OutputStream outputStream) throws IOException {
+    void streamDirectoryAsZip(String serverUuid, String requestedPath, OutputStream outputStream)
+            throws IOException {
         // Resolve and validate under the read lock, then release before doing any I/O.
         // Holding the lock across the transfer would block writes for the full download duration.
         final Path volumeRoot;
@@ -48,8 +48,7 @@ class GameServerArchiveService {
 
             if (!resolved.isRootRequest()) {
                 resolver.requireExists(startPath, resolved.innerRelative());
-                resolver.requireRealPathInsideRoot(
-                        volumeRoot, startPath, resolved.innerRelative());
+                resolver.requireRealPathInsideRoot(volumeRoot, startPath, resolved.innerRelative());
             }
         } finally {
             l.unlock();
@@ -240,8 +239,7 @@ class GameServerArchiveService {
                             }
                         }
 
-                        log.info(
-                                "Extracted {} files from archive to {}", extracted, requestedPath);
+                        log.info("Extracted {} files from archive to {}", extracted, requestedPath);
                     } catch (IOException e) {
                         throw new ResponseStatusException(
                                 HttpStatus.BAD_REQUEST,
@@ -266,8 +264,7 @@ class GameServerArchiveService {
         }
     }
 
-    private void addFileToZip(ZipOutputStream zos, Path file, String entryName)
-            throws IOException {
+    private void addFileToZip(ZipOutputStream zos, Path file, String entryName) throws IOException {
         zos.putNextEntry(new ZipEntry(entryName));
         try {
             Files.copy(file, zos);

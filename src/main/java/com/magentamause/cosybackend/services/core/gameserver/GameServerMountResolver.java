@@ -4,11 +4,9 @@ import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SecureDirectoryStream;
@@ -330,8 +328,8 @@ class GameServerMountResolver {
         }
     }
 
-    SecureTarget resolveSecureNoSymlink(
-            SecureDirectoryStream<Path> root, Path rel, String label) throws IOException {
+    SecureTarget resolveSecureNoSymlink(SecureDirectoryStream<Path> root, Path rel, String label)
+            throws IOException {
 
         int n = rel.getNameCount();
         if (n == 0) {

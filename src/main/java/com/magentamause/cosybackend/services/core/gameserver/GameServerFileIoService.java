@@ -91,9 +91,7 @@ class GameServerFileIoService {
                         return Files.readAllBytes(requested);
                     } catch (IOException e) {
                         throw new ResponseStatusException(
-                                HttpStatus.INTERNAL_SERVER_ERROR,
-                                "Failed to read file: " + rel,
-                                e);
+                                HttpStatus.INTERNAL_SERVER_ERROR, "Failed to read file: " + rel, e);
                     }
                 });
     }
@@ -145,8 +143,7 @@ class GameServerFileIoService {
         }
     }
 
-    void uploadFileToBindMountVolume(
-            String serverUuid, String requestedPath, byte[] fileContent) {
+    void uploadFileToBindMountVolume(String serverUuid, String requestedPath, byte[] fileContent) {
         locks.withWriteLock(
                 serverUuid,
                 () -> {
@@ -191,17 +188,14 @@ class GameServerFileIoService {
                     Path requested = volumeRoot.resolve(rel).normalize();
                     Path parent =
                             resolver.requireParentExistsAndDirectory(
-                                    requested,
-                                    rel.toString(),
-                                    "Parent directory does not exist: ");
+                                    requested, rel.toString(), "Parent directory does not exist: ");
                     resolver.requireRealPathInsideRoot(volumeRoot, parent, rel.toString());
                     resolver.requireWritable(
                             parent, "No write permission for directory: " + parent);
 
                     if (Files.exists(requested, LinkOption.NOFOLLOW_LINKS)) {
                         resolver.requireNotDirectory(requested, rel.toString());
-                        resolver.requireWritable(
-                                requested, "No write permission for file: " + rel);
+                        resolver.requireWritable(requested, "No write permission for file: " + rel);
                     }
 
                     Path tempFile = null;
@@ -241,8 +235,8 @@ class GameServerFileIoService {
                 });
     }
 
-    private void uploadFileSecure(
-            SecureDirectoryStream<Path> root, Path rel, byte[] fileContent) throws IOException {
+    private void uploadFileSecure(SecureDirectoryStream<Path> root, Path rel, byte[] fileContent)
+            throws IOException {
 
         SecureTarget t = resolver.resolveSecureNoSymlink(root, rel, "File path");
         try {

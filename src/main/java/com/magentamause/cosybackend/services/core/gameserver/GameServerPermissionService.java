@@ -42,10 +42,8 @@ class GameServerPermissionService {
                     }
                     if (uid != null) {
                         try {
-                            Files.setAttribute(
-                                    target, "unix:uid", uid, LinkOption.NOFOLLOW_LINKS);
-                            Files.setAttribute(
-                                    target, "unix:gid", uid, LinkOption.NOFOLLOW_LINKS);
+                            Files.setAttribute(target, "unix:uid", uid, LinkOption.NOFOLLOW_LINKS);
+                            Files.setAttribute(target, "unix:gid", uid, LinkOption.NOFOLLOW_LINKS);
                         } catch (UnsupportedOperationException | IOException e) {
                             log.warn(
                                     "Could not chown {} to uid {}: {}",
