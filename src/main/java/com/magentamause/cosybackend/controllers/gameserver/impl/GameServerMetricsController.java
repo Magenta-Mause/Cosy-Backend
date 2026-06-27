@@ -1,5 +1,6 @@
-package com.magentamause.cosybackend.controllers.gameserver;
+package com.magentamause.cosybackend.controllers.gameserver.impl;
 
+import com.magentamause.cosybackend.controllers.gameserver.api.GameServerMetricsApi;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
@@ -13,24 +14,23 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestController
-@RequestMapping("/game-server/{gameServerUuid}/metrics")
 @RequiredArgsConstructor
-public class GameServerMetricsController {
+public class GameServerMetricsController implements GameServerMetricsApi {
     private final MetricsService metricsService;
     private final GameServerService gameServerService;
 
-    @GetMapping
+    @Override
     @NeedsValidation(value = Operation.GAME_SERVER_METRIC_READ)
     public ResponseEntity<List<MetricPointDto>> getMetrics(
-            @ResourceId @PathVariable String gameServerUuid,
-            @RequestParam(required = false) Instant end,
-            @RequestParam(required = false) Instant start,
-            @RequestParam(defaultValue = "100") int pointCount) {
+            @ResourceId String gameServerUuid,
+            Instant end,
+            Instant start,
+            int pointCount) {
         TimeRange range = resolveAndValidateTimeRange(start, end);
 
         return ResponseEntity.ok(
@@ -38,13 +38,13 @@ public class GameServerMetricsController {
                         gameServerUuid, range.start(), range.end(), pointCount));
     }
 
-    @GetMapping("/public")
+    @Override
     @NeedsValidation(value = Operation.GAME_SERVER_METRIC_READ_PUBLIC, allowUnauthorized = true)
     public ResponseEntity<List<MetricPointDto>> getPublicEvaluableMetrics(
-            @ResourceId @PathVariable String gameServerUuid,
-            @RequestParam(required = false) Instant end,
-            @RequestParam(required = false) Instant start,
-            @RequestParam(defaultValue = "100") int pointCount) {
+            @ResourceId String gameServerUuid,
+            Instant end,
+            Instant start,
+            int pointCount) {
         TimeRange range = resolveAndValidateTimeRange(start, end);
 
         if (!gameServerService.isGameServerPubliclyEvaluable(gameServerUuid)) {

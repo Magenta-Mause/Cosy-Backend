@@ -1,5 +1,6 @@
-package com.magentamause.cosybackend.controllers.gameserver.configurations;
+package com.magentamause.cosybackend.controllers.gameserver.impl;
 
+import com.magentamause.cosybackend.controllers.gameserver.api.GameServerDesignApi;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerDesignUpdateDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
@@ -8,23 +9,21 @@ import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerConfigurationService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/game-server")
-public class GameServerDesignController {
+public class GameServerDesignController implements GameServerDesignApi {
     private final GameServerConfigurationService gameServerConfigurationService;
     private final SecurityContextService securityContextService;
 
-    @PatchMapping("/{uuid}/design")
+    @Override
     @NeedsValidation(Operation.GAME_SERVER_UPDATE)
     public ResponseEntity<GameServerDto> updateDesign(
-            @PathVariable @ResourceId String uuid,
-            @RequestBody @Valid GameServerDesignUpdateDto updateDto) {
+            @ResourceId String uuid,
+            GameServerDesignUpdateDto updateDto) {
         GameServerEntity gameServer =
                 gameServerConfigurationService.updateDesign(uuid, updateDto.getDesign());
         return ResponseEntity.ok(gameServer.toDto(securityContextService.getUser()));

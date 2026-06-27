@@ -22,6 +22,8 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   jackson:
     property-naming-strategy: SNAKE_CASE
+  profiles:
+    default: local
 jwt:
   secret-key: ${COSY_JWT_SECRET_KEY:e8996bf24977ce5615015c717447911799207025d1998a01256b7b7717bac18e} #change in prod
   identity-token-expiration-time: 3600000 #1 hour

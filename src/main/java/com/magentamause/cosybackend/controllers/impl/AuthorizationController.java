@@ -1,11 +1,12 @@
-package com.magentamause.cosybackend.controllers;
+package com.magentamause.cosybackend.controllers.impl;
 
+import com.magentamause.cosybackend.controllers.TokenMode;
+import com.magentamause.cosybackend.controllers.api.AuthorizationApi;
 import com.magentamause.cosybackend.dtos.actiondtos.user.LoginDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.LoginResponseDto;
 import com.magentamause.cosybackend.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosybackend.security.jwtfilter.JwtUtils;
 import com.magentamause.cosybackend.services.auth.AuthorizationService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
@@ -13,12 +14,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/auth")
 @RequiredArgsConstructor
-public class AuthorizationController {
+public class AuthorizationController implements AuthorizationApi {
     private static final int MILLISECONDS_IN_SECOND = 1000;
 
     private final AuthorizationService authorizationService;
@@ -27,10 +27,10 @@ public class AuthorizationController {
     @Value("${server.servlet.context-path}")
     private String basePath;
 
-    @PostMapping("/login")
+    @Override
     public ResponseEntity<LoginResponseDto> login(
-            @Valid @RequestBody LoginDto loginDto,
-            @RequestParam(value = "tokenMode", defaultValue = "COOKIE") TokenMode tokenMode) {
+            LoginDto loginDto,
+            TokenMode tokenMode) {
         String refreshToken =
                 authorizationService.loginUser(loginDto.getUsername(), loginDto.getPassword());
 
@@ -57,14 +57,14 @@ public class AuthorizationController {
                 .<LoginResponseDto>build();
     }
 
-    @GetMapping("/token")
+    @Override
     public ResponseEntity<String> fetchToken(
-            @CookieValue(value = "refreshToken") String refreshToken) {
+            String refreshToken) {
         return ResponseEntity.ok(
                 authorizationService.fetchIdentityTokenFromRefreshToken(refreshToken));
     }
 
-    @PostMapping("/logout")
+    @Override
     public ResponseEntity<Void> logout() {
         ResponseCookie deleteCookie =
                 ResponseCookie.from("refreshToken", "")

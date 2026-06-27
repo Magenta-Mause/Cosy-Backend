@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.dtos.template;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
@@ -13,8 +14,8 @@ public record TemplateVariable(
         String type,
         String placeholder,
         String regex,
-        @JsonProperty("default") Object defaultValue,
+        @JsonProperty("default") @JsonAlias("default_value") Object defaultValue,
         List<String> options,
-        boolean required,
+        Boolean required,
         Object example,
         String description) {}

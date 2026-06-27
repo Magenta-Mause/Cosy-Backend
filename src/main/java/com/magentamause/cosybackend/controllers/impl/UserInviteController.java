@@ -1,5 +1,6 @@
-package com.magentamause.cosybackend.controllers;
+package com.magentamause.cosybackend.controllers.impl;
 
+import com.magentamause.cosybackend.controllers.api.UserInviteApi;
 import com.magentamause.cosybackend.dtos.actiondtos.user.UserCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.user.UserInviteCreationDto;
 import com.magentamause.cosybackend.dtos.entitydtos.UserEntityDto;
@@ -10,25 +11,23 @@ import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.user.UserInviteService;
-import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/user-invites")
 @Slf4j
-public class UserInviteController {
+public class UserInviteController implements UserInviteApi {
 
     private final UserInviteService userInviteService;
     private final SecurityContextService securityContextService;
 
-    @GetMapping
+    @Override
     @NeedsValidation(Operation.USER_INVITE_READ)
     public ResponseEntity<List<UserInviteDto>> getAllUserInvites() {
         return ResponseEntity.ok(
@@ -37,16 +36,16 @@ public class UserInviteController {
                         .collect(Collectors.toList()));
     }
 
-    @GetMapping("/{secretKey}")
-    public ResponseEntity<UserInviteDto> getUserInvite(@PathVariable String secretKey) {
+    @Override
+    public ResponseEntity<UserInviteDto> getUserInvite(String secretKey) {
         return ResponseEntity.ok(
                 userInviteService.getInviteBySecretKeyOrElseThrow(secretKey).convertToDto());
     }
 
-    @PostMapping
+    @Override
     @NeedsValidation(Operation.USER_INVITE_CREATE)
     public ResponseEntity<UserInviteDto> createInvite(
-            @Valid @RequestBody UserInviteCreationDto userInviteCreationDto) {
+            UserInviteCreationDto userInviteCreationDto) {
         log.info("Creating invite for {}", userInviteCreationDto);
         String inviterUuid = securityContextService.getUserId();
         UserInviteEntity userInvite =
@@ -54,17 +53,17 @@ public class UserInviteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userInvite.convertToDto());
     }
 
-    @PostMapping("/use/{secretKey}")
+    @Override
     public ResponseEntity<UserEntityDto> useInvite(
-            @PathVariable String secretKey, @Valid @RequestBody UserCreationDto user) {
+            String secretKey, UserCreationDto user) {
         UserEntity createdUser =
                 userInviteService.useInvite(secretKey, user.getUsername(), user.getPassword());
         return ResponseEntity.ok(createdUser.toDto());
     }
 
-    @DeleteMapping("/{uuid}")
+    @Override
     @NeedsValidation(Operation.USER_INVITE_DELETE)
-    public ResponseEntity<Void> revokeInvite(@PathVariable String uuid) {
+    public ResponseEntity<Void> revokeInvite(String uuid) {
         userInviteService.revokeInvite(uuid);
         return ResponseEntity.noContent().build();
     }

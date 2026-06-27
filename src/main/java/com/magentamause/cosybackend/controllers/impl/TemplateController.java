@@ -1,20 +1,20 @@
-package com.magentamause.cosybackend.controllers;
+package com.magentamause.cosybackend.controllers.impl;
 
+import com.magentamause.cosybackend.controllers.api.TemplateApi;
 import com.magentamause.cosybackend.entities.TemplateEntity;
 import com.magentamause.cosybackend.services.core.templates.TemplateService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class TemplateController {
+public class TemplateController implements TemplateApi {
 
     private final TemplateService templateService;
 
-    @GetMapping("/templates")
+    @Override
     public ResponseEntity<List<TemplateEntity>> getAllTemplates() {
         return ResponseEntity.ok(templateService.getAllTemplates());
     }

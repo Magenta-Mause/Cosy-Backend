@@ -1,13 +1,13 @@
-package com.magentamause.cosybackend.controllers;
+package com.magentamause.cosybackend.controllers.impl;
 
+import com.magentamause.cosybackend.controllers.api.RootApi;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class RootController {
+public class RootController implements RootApi {
 
-    @GetMapping
+    @Override
     public ResponseEntity<String> root() {
         return ResponseEntity.ok("Hello World!");
     }

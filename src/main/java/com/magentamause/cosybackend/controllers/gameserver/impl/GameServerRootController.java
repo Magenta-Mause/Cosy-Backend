@@ -1,5 +1,6 @@
-package com.magentamause.cosybackend.controllers.gameserver;
+package com.magentamause.cosybackend.controllers.gameserver.impl;
 
+import com.magentamause.cosybackend.controllers.gameserver.api.GameServerRootApi;
 import com.magentamause.cosybackend.dtos.actiondtos.TransferOwnershipDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerUpdateDto;
@@ -12,23 +13,21 @@ import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
-import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/game-server")
-public class GameServerRootController {
+public class GameServerRootController implements GameServerRootApi {
 
     private final GameServerService gameServerService;
     private final SecurityContextService securityContextService;
 
-    @GetMapping
+    @Override
     public ResponseEntity<List<GameServerDto>> getAllGameServers() {
         UserEntity user = securityContextService.getUser();
         if (user == null) {
@@ -46,24 +45,24 @@ public class GameServerRootController {
         return ResponseEntity.ok(dtos);
     }
 
-    @GetMapping("/{uuid}")
+    @Override
     @NeedsValidation(Operation.GAME_SERVER_GET)
-    public ResponseEntity<GameServerDto> getGameServerById(@PathVariable @ResourceId String uuid) {
+    public ResponseEntity<GameServerDto> getGameServerById(@ResourceId String uuid) {
         GameServerEntity entity = gameServerService.getOrThrow(uuid);
         return ResponseEntity.ok(entity.toDto(securityContextService.getUser()));
     }
 
-    @DeleteMapping("/{uuid}")
+    @Override
     @NeedsValidation(Operation.GAME_SERVER_DELETE)
-    public ResponseEntity<Void> deleteGameServerById(@PathVariable @ResourceId String uuid) {
+    public ResponseEntity<Void> deleteGameServerById(@ResourceId String uuid) {
         gameServerService.deleteGameServerById(uuid);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping
+    @Override
     @NeedsValidation(Operation.GAME_SERVER_CREATE)
     public ResponseEntity<GameServerDto> createGameServer(
-            @Valid @RequestBody GameServerCreationDto gameServer) {
+            GameServerCreationDto gameServer) {
         log.info("Creating game server {}", gameServer);
         UserEntity user = securityContextService.getUser();
 
@@ -71,11 +70,11 @@ public class GameServerRootController {
         return ResponseEntity.status(201).body(createdGameServer.toDto(user));
     }
 
-    @PutMapping("/{uuid}")
+    @Override
     @NeedsValidation(Operation.GAME_SERVER_UPDATE)
     public ResponseEntity<GameServerDto> updateGameServer(
-            @PathVariable @ResourceId String uuid,
-            @Valid @RequestBody GameServerUpdateDto updateDto) {
+            @ResourceId String uuid,
+            GameServerUpdateDto updateDto) {
         log.info("Updating game server {} with {}", uuid, updateDto);
         UserEntity user = securityContextService.getUser();
 
@@ -84,40 +83,40 @@ public class GameServerRootController {
         return ResponseEntity.ok(updated.toDto(user));
     }
 
-    @GetMapping("/{uuid}/status")
+    @Override
     @NeedsValidation(Operation.GAME_SERVER_GET)
     public ResponseEntity<GameServerDto.GameServerStatus> getServiceInfo(
-            @PathVariable @ResourceId String uuid) {
+            @ResourceId String uuid) {
         return ResponseEntity.ok(gameServerService.getStatus(uuid));
     }
 
-    @PostMapping(value = "/{uuid}/start")
+    @Override
     @NeedsValidation(Operation.GAME_SERVER_START_STOP)
-    public ResponseEntity<Void> startService(@PathVariable @ResourceId String uuid) {
+    public ResponseEntity<Void> startService(@ResourceId String uuid) {
         gameServerService.startServer(uuid);
         return ResponseEntity.accepted().build();
     }
 
-    @PostMapping("/{uuid}/stop")
+    @Override
     @NeedsValidation(Operation.GAME_SERVER_START_STOP)
-    public ResponseEntity<Void> stopService(@PathVariable @ResourceId String uuid) {
+    public ResponseEntity<Void> stopService(@ResourceId String uuid) {
         gameServerService.stopServer(uuid);
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{uuid}/send-command")
+    @Override
     @NeedsValidation(Operation.GAME_SERVER_SEND_COMMAND)
     public ResponseEntity<Void> sendCommand(
-            @PathVariable @ResourceId String uuid, @RequestBody SendCommandDto command) {
+            @ResourceId String uuid, SendCommandDto command) {
         gameServerService.sendCommand(uuid, command.getCommand());
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{uuid}/transfer-ownership")
+    @Override
     @NeedsValidation(Operation.GAME_SERVER_TRANSFER_OWNERSHIP)
     public ResponseEntity<GameServerDto> transferOwnership(
-            @PathVariable @ResourceId String uuid,
-            @Valid @RequestBody TransferOwnershipDto transferOwnershipDto) {
+            @ResourceId String uuid,
+            TransferOwnershipDto transferOwnershipDto) {
         GameServerEntity updated =
                 gameServerService.transferGameServerOwnership(uuid, transferOwnershipDto);
         return ResponseEntity.ok(updated.toDto(securityContextService.getUser()));
