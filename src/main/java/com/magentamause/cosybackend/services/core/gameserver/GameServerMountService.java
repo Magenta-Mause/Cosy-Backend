@@ -460,7 +460,7 @@ public class GameServerMountService {
                     requireNotExists(requested, rel.toString(), "Directory already exists: ");
 
                     try {
-                        Files.createDirectory(requested); // lgtm[java/path-injection]
+                        Files.createDirectory(requested);
                     } catch (AccessDeniedException e) {
                         throw new ResponseStatusException(
                                 HttpStatus.FORBIDDEN, "Access denied while creating directory", e);
@@ -524,8 +524,7 @@ public class GameServerMountService {
 
                     requireWritable(parent, "No write permission for directory: " + parent);
 
-                    if (Files.exists(
-                            requested, LinkOption.NOFOLLOW_LINKS)) { // lgtm[java/path-injection]
+                    if (Files.exists(requested, LinkOption.NOFOLLOW_LINKS)) {
                         requireNotDirectory(requested, rel.toString());
                         requireWritable(requested, "No write permission for file: " + rel);
                     }
@@ -538,17 +537,14 @@ public class GameServerMountService {
                         Files.write(tempFile, fileContent);
 
                         try {
-                            Files.move( // lgtm[java/path-injection]
+                            Files.move(
                                     tempFile,
                                     requested,
                                     StandardCopyOption.REPLACE_EXISTING,
                                     StandardCopyOption.ATOMIC_MOVE);
                             tempFile = null;
                         } catch (AtomicMoveNotSupportedException e) {
-                            Files.move(
-                                    tempFile,
-                                    requested, // lgtm[java/path-injection]
-                                    StandardCopyOption.REPLACE_EXISTING);
+                            Files.move(tempFile, requested, StandardCopyOption.REPLACE_EXISTING);
                             tempFile = null;
                         }
                     } catch (AccessDeniedException e) {
@@ -1395,13 +1391,13 @@ public class GameServerMountService {
     }
 
     private void requireExists(Path p, String cleaned, String messagePrefix) {
-        if (!Files.exists(p, LinkOption.NOFOLLOW_LINKS)) { // lgtm[java/path-injection]
+        if (!Files.exists(p, LinkOption.NOFOLLOW_LINKS)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, messagePrefix + cleaned);
         }
     }
 
     private void requireNotExists(Path p, String cleaned, String messagePrefix) {
-        if (Files.exists(p, LinkOption.NOFOLLOW_LINKS)) { // lgtm[java/path-injection]
+        if (Files.exists(p, LinkOption.NOFOLLOW_LINKS)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, messagePrefix + cleaned);
         }
     }
@@ -1449,8 +1445,7 @@ public class GameServerMountService {
     private Path requireParentExistsAndDirectory(
             Path requested, String cleaned, String notFoundPrefix) {
         Path parent = requested.getParent();
-        if (parent == null
-                || !Files.exists(parent, LinkOption.NOFOLLOW_LINKS)) { // lgtm[java/path-injection]
+        if (parent == null || !Files.exists(parent, LinkOption.NOFOLLOW_LINKS)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, notFoundPrefix + cleaned);
         }
         if (!Files.isDirectory(parent, LinkOption.NOFOLLOW_LINKS)) {
