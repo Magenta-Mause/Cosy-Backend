@@ -23,8 +23,7 @@ public class GameServerWebhookController implements GameServerWebhookApi {
 
     @Override
     @NeedsValidation(Operation.GAME_SERVER_WEBHOOK_READ)
-    public ResponseEntity<List<WebhookDto>> getAllWebhooks(
-            @ResourceId String gameserverUuid) {
+    public ResponseEntity<List<WebhookDto>> getAllWebhooks(@ResourceId String gameserverUuid) {
         List<WebhookDto> webhooks = webhookService.getAllWebhooks(gameserverUuid);
         return ResponseEntity.ok(webhooks);
     }
@@ -32,8 +31,7 @@ public class GameServerWebhookController implements GameServerWebhookApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_WEBHOOK_CREATE)
     public ResponseEntity<WebhookDto> createWebhook(
-            @ResourceId String gameserverUuid,
-            WebhookCreationDto creationDto) {
+            @ResourceId String gameserverUuid, WebhookCreationDto creationDto) {
         WebhookDto created = webhookService.createWebhook(gameserverUuid, creationDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -41,9 +39,7 @@ public class GameServerWebhookController implements GameServerWebhookApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_WEBHOOK_UPDATE)
     public ResponseEntity<WebhookDto> updateWebhook(
-            @ResourceId String gameserverUuid,
-            String webhookUuid,
-            WebhookUpdateDto updateDto) {
+            @ResourceId String gameserverUuid, String webhookUuid, WebhookUpdateDto updateDto) {
         WebhookDto updated = webhookService.updateWebhook(gameserverUuid, webhookUuid, updateDto);
         return ResponseEntity.ok(updated);
     }

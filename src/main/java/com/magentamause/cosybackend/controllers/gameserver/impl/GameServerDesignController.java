@@ -22,8 +22,7 @@ public class GameServerDesignController implements GameServerDesignApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_UPDATE)
     public ResponseEntity<GameServerDto> updateDesign(
-            @ResourceId String uuid,
-            GameServerDesignUpdateDto updateDto) {
+            @ResourceId String uuid, GameServerDesignUpdateDto updateDto) {
         GameServerEntity gameServer =
                 gameServerConfigurationService.updateDesign(uuid, updateDto.getDesign());
         return ResponseEntity.ok(gameServer.toDto(securityContextService.getUser()));

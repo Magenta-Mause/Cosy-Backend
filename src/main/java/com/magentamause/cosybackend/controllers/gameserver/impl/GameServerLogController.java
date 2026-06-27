@@ -21,9 +21,7 @@ public class GameServerLogController implements GameServerLogApi {
     @Override
     @NeedsValidation(value = Operation.GAME_SERVER_LOG_READ, allowUnauthorized = true)
     public ResponseEntity<List<GameServerLogMessageEntity>> getLogs(
-            @ResourceId String gameServerUuid,
-            int limit,
-            int sinceHours) {
+            @ResourceId String gameServerUuid, int limit, int sinceHours) {
         return ResponseEntity.ok()
                 .body(
                         gameServerLogService.getLogsForServer(

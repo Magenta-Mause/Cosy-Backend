@@ -27,10 +27,7 @@ public class GameServerMetricsController implements GameServerMetricsApi {
     @Override
     @NeedsValidation(value = Operation.GAME_SERVER_METRIC_READ)
     public ResponseEntity<List<MetricPointDto>> getMetrics(
-            @ResourceId String gameServerUuid,
-            Instant end,
-            Instant start,
-            int pointCount) {
+            @ResourceId String gameServerUuid, Instant end, Instant start, int pointCount) {
         TimeRange range = resolveAndValidateTimeRange(start, end);
 
         return ResponseEntity.ok(
@@ -41,10 +38,7 @@ public class GameServerMetricsController implements GameServerMetricsApi {
     @Override
     @NeedsValidation(value = Operation.GAME_SERVER_METRIC_READ_PUBLIC, allowUnauthorized = true)
     public ResponseEntity<List<MetricPointDto>> getPublicEvaluableMetrics(
-            @ResourceId String gameServerUuid,
-            Instant end,
-            Instant start,
-            int pointCount) {
+            @ResourceId String gameServerUuid, Instant end, Instant start, int pointCount) {
         TimeRange range = resolveAndValidateTimeRange(start, end);
 
         if (!gameServerService.isGameServerPubliclyEvaluable(gameServerUuid)) {

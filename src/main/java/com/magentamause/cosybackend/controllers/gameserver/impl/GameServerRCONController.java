@@ -22,8 +22,7 @@ public class GameServerRCONController implements GameServerRCONApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_RCON_CONFIG_CHANGE)
     public ResponseEntity<GameServerDto> updateRconConfiguration(
-            @ResourceId String uuid,
-            RCONConfiguration updateDto) {
+            @ResourceId String uuid, RCONConfiguration updateDto) {
         GameServerEntity gameServer =
                 gameServerConfigurationService.updateRconConfig(uuid, updateDto);
         return ResponseEntity.ok(gameServer.toDto(securityContextService.getUser()));

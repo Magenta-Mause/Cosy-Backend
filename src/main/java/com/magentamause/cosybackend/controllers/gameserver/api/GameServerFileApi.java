@@ -21,7 +21,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-@Tag(name = "Game Server File System", description = "File system operations on game server bind mounts")
+@Tag(
+        name = "Game Server File System",
+        description = "File system operations on game server bind mounts")
 @RequestMapping("/game-server/{uuid}/file-system")
 public interface GameServerFileApi {
 
@@ -48,7 +50,10 @@ public interface GameServerFileApi {
                                                         format = "binary",
                                                         description = "Raw file bytes")))
             })
-    @RequestMapping(value = "/file", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(
+            value = "/file",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     ResponseEntity<byte[]> readFileFromVolume(
             @Parameter(description = "Game server UUID") @PathVariable String uuid,
             @RequestParam("path") @NotBlank String path);
@@ -65,11 +70,15 @@ public interface GameServerFileApi {
                                                     @Schema(
                                                             type = "string",
                                                             format = "binary",
-                                                            description = "Raw file bytes to upload"))),
+                                                            description =
+                                                                    "Raw file bytes to upload"))),
             responses = {
                 @ApiResponse(responseCode = "200", description = "File uploaded successfully")
             })
-    @RequestMapping(value = "/upload", method = RequestMethod.POST, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @RequestMapping(
+            value = "/upload",
+            method = RequestMethod.POST,
+            consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     ResponseEntity<Void> uploadFileToVolume(
             @Parameter(description = "Game server UUID") @PathVariable String uuid,
             @RequestParam("path") @NotBlank String path,

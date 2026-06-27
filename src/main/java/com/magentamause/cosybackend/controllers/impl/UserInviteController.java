@@ -44,8 +44,7 @@ public class UserInviteController implements UserInviteApi {
 
     @Override
     @NeedsValidation(Operation.USER_INVITE_CREATE)
-    public ResponseEntity<UserInviteDto> createInvite(
-            UserInviteCreationDto userInviteCreationDto) {
+    public ResponseEntity<UserInviteDto> createInvite(UserInviteCreationDto userInviteCreationDto) {
         log.info("Creating invite for {}", userInviteCreationDto);
         String inviterUuid = securityContextService.getUserId();
         UserInviteEntity userInvite =
@@ -54,8 +53,7 @@ public class UserInviteController implements UserInviteApi {
     }
 
     @Override
-    public ResponseEntity<UserEntityDto> useInvite(
-            String secretKey, UserCreationDto user) {
+    public ResponseEntity<UserEntityDto> useInvite(String secretKey, UserCreationDto user) {
         UserEntity createdUser =
                 userInviteService.useInvite(secretKey, user.getUsername(), user.getPassword());
         return ResponseEntity.ok(createdUser.toDto());

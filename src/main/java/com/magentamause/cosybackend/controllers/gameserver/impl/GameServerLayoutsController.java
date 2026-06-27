@@ -21,8 +21,7 @@ public class GameServerLayoutsController implements GameServerLayoutsApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_METRIC_CONFIG_CHANGE)
     public ResponseEntity<Void> updateMetricLayout(
-            @ResourceId String uuid,
-            List<MetricLayout> metricLayout) {
+            @ResourceId String uuid, List<MetricLayout> metricLayout) {
         gameServerConfigurationService.updateMetricLayout(uuid, metricLayout);
         return ResponseEntity.ok().build();
     }
@@ -30,8 +29,7 @@ public class GameServerLayoutsController implements GameServerLayoutsApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_PRIVATE_DASHBOARD_CONFIG_CHANGE)
     public ResponseEntity<Void> updatePrivateDashboard(
-            @ResourceId String uuid,
-            List<PrivateDashboardLayout> privateDashboardLayout) {
+            @ResourceId String uuid, List<PrivateDashboardLayout> privateDashboardLayout) {
         gameServerConfigurationService.updatePrivateDashboardLayout(uuid, privateDashboardLayout);
         return ResponseEntity.ok().build();
     }
@@ -39,8 +37,7 @@ public class GameServerLayoutsController implements GameServerLayoutsApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_PUBLIC_DASHBOARD_CONFIG_CHANGE)
     public ResponseEntity<Void> updatePublicDashboardLayout(
-            @ResourceId String uuid,
-            PublicDashboardUpdateDto updateDto) {
+            @ResourceId String uuid, PublicDashboardUpdateDto updateDto) {
         gameServerConfigurationService.updatePublicDashboardLayout(uuid, updateDto);
         return ResponseEntity.ok().build();
     }

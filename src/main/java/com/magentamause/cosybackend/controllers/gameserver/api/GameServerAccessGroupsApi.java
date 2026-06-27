@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-@Tag(name = "Game Server Access Groups", description = "Access group configuration for game servers")
+@Tag(
+        name = "Game Server Access Groups",
+        description = "Access group configuration for game servers")
 @RequestMapping("/game-server")
 public interface GameServerAccessGroupsApi {
 

@@ -28,9 +28,7 @@ public class AuthorizationController implements AuthorizationApi {
     private String basePath;
 
     @Override
-    public ResponseEntity<LoginResponseDto> login(
-            LoginDto loginDto,
-            TokenMode tokenMode) {
+    public ResponseEntity<LoginResponseDto> login(LoginDto loginDto, TokenMode tokenMode) {
         String refreshToken =
                 authorizationService.loginUser(loginDto.getUsername(), loginDto.getPassword());
 
@@ -58,8 +56,7 @@ public class AuthorizationController implements AuthorizationApi {
     }
 
     @Override
-    public ResponseEntity<String> fetchToken(
-            String refreshToken) {
+    public ResponseEntity<String> fetchToken(String refreshToken) {
         return ResponseEntity.ok(
                 authorizationService.fetchIdentityTokenFromRefreshToken(refreshToken));
     }

@@ -17,8 +17,7 @@ public class GameServerPermissionsController implements GameServerPermissionsApi
     private final SecurityContextService securityContextService;
 
     @Override
-    public ResponseEntity<List<GameServerAccessPermission>> getUserPermissions(
-            String uuid) {
+    public ResponseEntity<List<GameServerAccessPermission>> getUserPermissions(String uuid) {
         String currentUserUuid = securityContextService.getUserId();
         return ResponseEntity.ok(
                 gameServerAccessGroupService.getUserPermissions(uuid, currentUserUuid));

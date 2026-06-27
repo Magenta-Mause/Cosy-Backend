@@ -97,7 +97,10 @@ public class DockerHostConfigFactory {
                                                 v.isReadOnly() ? AccessMode.ro : AccessMode.rw)));
     }
 
-    /** Converts Git Bash-style paths like {@code /C:/foo} to {@code C:/foo} so Docker doesn't see too many colons in the bind string. */
+    /**
+     * Converts Git Bash-style paths like {@code /C:/foo} to {@code C:/foo} so Docker doesn't see
+     * too many colons in the bind string.
+     */
     private static String normalizeHostPath(String hostPath) {
         if (hostPath != null && hostPath.matches("^/[A-Za-z]:/.*")) {
             return hostPath.substring(1);

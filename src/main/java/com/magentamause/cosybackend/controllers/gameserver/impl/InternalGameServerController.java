@@ -17,15 +17,12 @@ public class InternalGameServerController implements InternalGameServerApi {
 
     @Override
     public ResponseEntity<Map<String, Object>> updateCustomMetric(
-            String uuid,
-            String secret,
-            Map<String, Object> value) {
+            String uuid, String secret, Map<String, Object> value) {
         return ResponseEntity.ok(gameServerService.updateCustomMetric(uuid, secret, value));
     }
 
     @Override
-    public ResponseEntity<Boolean> checkConnection(
-            String uuid, String secret) {
+    public ResponseEntity<Boolean> checkConnection(String uuid, String secret) {
         return ResponseEntity.ok(gameServerService.checkGameServerConnection(uuid, secret));
     }
 }

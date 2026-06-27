@@ -61,8 +61,7 @@ public class GameServerRootController implements GameServerRootApi {
 
     @Override
     @NeedsValidation(Operation.GAME_SERVER_CREATE)
-    public ResponseEntity<GameServerDto> createGameServer(
-            GameServerCreationDto gameServer) {
+    public ResponseEntity<GameServerDto> createGameServer(GameServerCreationDto gameServer) {
         log.info("Creating game server {}", gameServer);
         UserEntity user = securityContextService.getUser();
 
@@ -73,8 +72,7 @@ public class GameServerRootController implements GameServerRootApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_UPDATE)
     public ResponseEntity<GameServerDto> updateGameServer(
-            @ResourceId String uuid,
-            GameServerUpdateDto updateDto) {
+            @ResourceId String uuid, GameServerUpdateDto updateDto) {
         log.info("Updating game server {} with {}", uuid, updateDto);
         UserEntity user = securityContextService.getUser();
 
@@ -85,8 +83,7 @@ public class GameServerRootController implements GameServerRootApi {
 
     @Override
     @NeedsValidation(Operation.GAME_SERVER_GET)
-    public ResponseEntity<GameServerDto.GameServerStatus> getServiceInfo(
-            @ResourceId String uuid) {
+    public ResponseEntity<GameServerDto.GameServerStatus> getServiceInfo(@ResourceId String uuid) {
         return ResponseEntity.ok(gameServerService.getStatus(uuid));
     }
 
@@ -106,8 +103,7 @@ public class GameServerRootController implements GameServerRootApi {
 
     @Override
     @NeedsValidation(Operation.GAME_SERVER_SEND_COMMAND)
-    public ResponseEntity<Void> sendCommand(
-            @ResourceId String uuid, SendCommandDto command) {
+    public ResponseEntity<Void> sendCommand(@ResourceId String uuid, SendCommandDto command) {
         gameServerService.sendCommand(uuid, command.getCommand());
         return ResponseEntity.noContent().build();
     }
@@ -115,8 +111,7 @@ public class GameServerRootController implements GameServerRootApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_TRANSFER_OWNERSHIP)
     public ResponseEntity<GameServerDto> transferOwnership(
-            @ResourceId String uuid,
-            TransferOwnershipDto transferOwnershipDto) {
+            @ResourceId String uuid, TransferOwnershipDto transferOwnershipDto) {
         GameServerEntity updated =
                 gameServerService.transferGameServerOwnership(uuid, transferOwnershipDto);
         return ResponseEntity.ok(updated.toDto(securityContextService.getUser()));

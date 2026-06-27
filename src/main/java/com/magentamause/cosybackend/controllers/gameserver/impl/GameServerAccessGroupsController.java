@@ -22,8 +22,7 @@ public class GameServerAccessGroupsController implements GameServerAccessGroupsA
     @Override
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
     public ResponseEntity<GameServerAccessGroupDto> createGameServerAccessGroup(
-            @ResourceId String uuid,
-            AccessGroupCreationDto creationDto) {
+            @ResourceId String uuid, AccessGroupCreationDto creationDto) {
         return ResponseEntity.ok(
                 gameServerAccessGroupService.createAccessGroup(uuid, creationDto).toDto());
     }
@@ -31,8 +30,7 @@ public class GameServerAccessGroupsController implements GameServerAccessGroupsA
     @Override
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
     public ResponseEntity<Void> deleteGameServerAccessGroup(
-            @ResourceId String uuid,
-            String accessGroupUuid) {
+            @ResourceId String uuid, String accessGroupUuid) {
         gameServerAccessGroupService.deleteAccessGroup(uuid, accessGroupUuid);
         return ResponseEntity.noContent().build();
     }
@@ -40,9 +38,7 @@ public class GameServerAccessGroupsController implements GameServerAccessGroupsA
     @Override
     @NeedsValidation(Operation.GAME_SERVER_PERMISSIONS_CONFIG_CHANGE)
     public ResponseEntity<List<GameServerAccessGroupDto>> updateGameServerAccessGroups(
-            @ResourceId String uuid,
-            String accessGroupUuid,
-            AccessGroupUpdateDto updateDto) {
+            @ResourceId String uuid, String accessGroupUuid, AccessGroupUpdateDto updateDto) {
         return ResponseEntity.ok(
                 gameServerAccessGroupService
                         .updateAccessGroup(uuid, accessGroupUuid, updateDto)

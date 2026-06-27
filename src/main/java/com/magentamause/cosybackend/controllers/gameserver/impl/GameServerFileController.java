@@ -11,10 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -27,10 +23,8 @@ public class GameServerFileController implements GameServerFileApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_FILES_READ)
     public ResponseEntity<GameServerFileSystemDto> getFileSystemForVolume(
-            @ResourceId String uuid,
-            String path,
-            
-                    int fetchDepth) {
+            @ResourceId String uuid, String path, int fetchDepth) {
+
         GameServerFileSystemDto dto =
                 gameServerMountService.readBindMountFileSystem(uuid, path, fetchDepth);
         return ResponseEntity.ok(dto);
@@ -39,8 +33,7 @@ public class GameServerFileController implements GameServerFileApi {
     // TODO: consider adding limit / pagination support later
     @Override
     @NeedsValidation(Operation.GAME_SERVER_FILES_READ)
-    public ResponseEntity<byte[]> readFileFromVolume(
-            @ResourceId String uuid, String path) {
+    public ResponseEntity<byte[]> readFileFromVolume(@ResourceId String uuid, String path) {
         byte[] content = gameServerMountService.readFileFromBindMountVolume(uuid, path);
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(content);
     }
@@ -48,9 +41,7 @@ public class GameServerFileController implements GameServerFileApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_FILES_UPDATE)
     public ResponseEntity<Void> uploadFileToVolume(
-            @ResourceId String uuid,
-            String path,
-            byte[] fileContent) {
+            @ResourceId String uuid, String path, byte[] fileContent) {
 
         gameServerMountService.uploadFileToBindMountVolume(uuid, path, fileContent);
         return ResponseEntity.ok().build();
@@ -76,8 +67,7 @@ public class GameServerFileController implements GameServerFileApi {
 
     @Override
     @NeedsValidation(Operation.GAME_SERVER_FILES_UPDATE)
-    public ResponseEntity<Void> createDirectoryInVolume(
-            @ResourceId String uuid, String path) {
+    public ResponseEntity<Void> createDirectoryInVolume(@ResourceId String uuid, String path) {
         gameServerMountService.createDirectoryInBindMountVolume(uuid, path);
         return ResponseEntity.status(201).build();
     }
@@ -85,17 +75,14 @@ public class GameServerFileController implements GameServerFileApi {
     @Override
     @NeedsValidation(Operation.GAME_SERVER_FILES_UPDATE)
     public ResponseEntity<Void> renameInVolume(
-            @ResourceId String uuid,
-            String oldPath,
-            String newPath) {
+            @ResourceId String uuid, String oldPath, String newPath) {
         gameServerMountService.renameInBindMountVolume(uuid, oldPath, newPath);
         return ResponseEntity.ok().build();
     }
 
     @Override
     @NeedsValidation(Operation.GAME_SERVER_FILES_UPDATE)
-    public ResponseEntity<Void> deleteInVolume(
-            @ResourceId String uuid, String path) {
+    public ResponseEntity<Void> deleteInVolume(@ResourceId String uuid, String path) {
         gameServerMountService.deleteInBindMountVolume(uuid, path);
         return ResponseEntity.ok().build();
     }

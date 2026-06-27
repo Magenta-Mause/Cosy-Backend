@@ -62,8 +62,7 @@ public class UserEntityController implements UserEntityApi {
     @Override
     @NeedsValidation(Operation.USER_CHANGE_PASSWORD_BY_ADMIN)
     public ResponseEntity<UserEntityDto> changePasswordByAdmin(
-            @ResourceId String uuid,
-            PasswordUpdateByAdminDto request) {
+            @ResourceId String uuid, PasswordUpdateByAdminDto request) {
         UserEntity userWithChangedPassword =
                 userEntityService.changePasswordByAdmin(uuid, request.getNewPassword());
         return ResponseEntity.ok(userWithChangedPassword.toDto());
@@ -72,8 +71,7 @@ public class UserEntityController implements UserEntityApi {
     @Override
     @NeedsValidation(Operation.USER_UPDATE_DOCKER_LIMITS)
     public ResponseEntity<UserEntityDto> updateDockerLimits(
-            @ResourceId String uuid,
-            UserDockerLimitsUpdateDto request) {
+            @ResourceId String uuid, UserDockerLimitsUpdateDto request) {
         UserEntity updatedUser =
                 userEntityService.updateDockerLimits(uuid, request.getDockerHardwareLimits());
         return ResponseEntity.ok(updatedUser.toDto());
@@ -90,8 +88,7 @@ public class UserEntityController implements UserEntityApi {
     @Override
     @NeedsValidation(Operation.USER_TOGGLE_CAN_CREATE_GAME_SERVERS)
     public ResponseEntity<UserEntityDto> setCanCreateGameServers(
-            @ResourceId String uuid,
-            UserCanCreateGameServersDto request) {
+            @ResourceId String uuid, UserCanCreateGameServersDto request) {
         UserEntity updatedUser =
                 userEntityService.setCanCreateGameServers(uuid, request.getCanCreateGameServers());
         return ResponseEntity.ok(updatedUser.toDto());
