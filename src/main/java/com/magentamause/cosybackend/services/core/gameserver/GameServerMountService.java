@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
 import com.magentamause.cosybackend.configs.properties.EngineProperties;
+import com.magentamause.cosybackend.dtos.entitydtos.DirectorySizeDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerFileSystemDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
@@ -11,6 +12,7 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.LongByReference;
 import com.sun.jna.ptr.PointerByReference;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -41,7 +43,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import java.nio.file.attribute.PosixFilePermissions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -1013,6 +1017,219 @@ public class GameServerMountService {
                 }
             }
         }
+    }
+
+    public void extractArchiveToBindMount(
+            String serverUuid, String requestedPath, byte[] zipBytes, boolean clearFirst) {
+        withWriteLock(
+                serverUuid,
+                () -> {
+                    ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
+                    Path volumeRoot = resolved.volumeRoot();
+                    Path targetDir = resolved.requested();
+
+                    try {
+                        Files.createDirectories(targetDir);
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Failed to create extraction target directory",
+                                e);
+                    }
+
+                    if (!resolved.isRootRequest()) {
+                        requireRealPathInsideRoot(
+                                volumeRoot, targetDir, resolved.innerRelative());
+                    }
+
+                    if (clearFirst && Files.isDirectory(targetDir)) {
+                        try (java.util.stream.Stream<Path> walk = Files.walk(targetDir)) {
+                            walk.sorted(Comparator.reverseOrder())
+                                    .filter(p -> !p.equals(targetDir))
+                                    .forEach(
+                                            p -> {
+                                                try {
+                                                    Files.delete(p);
+                                                } catch (IOException e) {
+                                                    log.warn(
+                                                            "Could not delete {} during clear: {}",
+                                                            p,
+                                                            e.getMessage());
+                                                }
+                                            });
+                        } catch (IOException e) {
+                            throw new ResponseStatusException(
+                                    HttpStatus.INTERNAL_SERVER_ERROR,
+                                    "Failed to clear target directory",
+                                    e);
+                        }
+                    }
+
+                    try (ZipInputStream zis =
+                            new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+                        ZipEntry entry;
+                        int extracted = 0;
+
+                        while ((entry = zis.getNextEntry()) != null) {
+                            try {
+                                String entryName = entry.getName().replace("\\", "/");
+
+                                // Zip-slip guard
+                                Path entryPath =
+                                        targetDir.resolve(entryName).normalize();
+                                if (!entryPath.startsWith(targetDir.normalize())
+                                        || !entryPath.startsWith(volumeRoot)) {
+                                    log.warn("Skipping unsafe zip entry: {}", entryName);
+                                    continue;
+                                }
+
+                                if (entry.isDirectory()) {
+                                    Files.createDirectories(entryPath);
+                                    continue;
+                                }
+
+                                Path parent = entryPath.getParent();
+                                if (parent != null) {
+                                    Files.createDirectories(parent);
+                                }
+
+                                byte[] content = zis.readAllBytes();
+                                Path relToRoot = volumeRoot.relativize(entryPath);
+
+                                // Native lib first (sets mode 0664)
+                                if (tryWriteFileNative(volumeRoot, relToRoot, content, 0664)) {
+                                    applyOwnership(entryPath);
+                                    extracted++;
+                                    continue;
+                                }
+
+                                // NIO fallback: temp file + atomic move
+                                Path tempFile =
+                                        Files.createTempFile(
+                                                parent,
+                                                entryPath.getFileName().toString(),
+                                                ".extract");
+                                try {
+                                    Files.write(tempFile, content);
+                                    try {
+                                        Files.move(
+                                                tempFile,
+                                                entryPath,
+                                                StandardCopyOption.REPLACE_EXISTING,
+                                                StandardCopyOption.ATOMIC_MOVE);
+                                        tempFile = null;
+                                    } catch (AtomicMoveNotSupportedException e) {
+                                        Files.move(
+                                                tempFile,
+                                                entryPath,
+                                                StandardCopyOption.REPLACE_EXISTING);
+                                        tempFile = null;
+                                    }
+                                } finally {
+                                    if (tempFile != null) {
+                                        try {
+                                            Files.deleteIfExists(tempFile);
+                                        } catch (IOException ignored) {
+                                        }
+                                    }
+                                }
+
+                                try {
+                                    Files.setPosixFilePermissions(
+                                            entryPath,
+                                            PosixFilePermissions.fromString("rw-rw-r--"));
+                                } catch (UnsupportedOperationException | IOException e) {
+                                    log.debug(
+                                            "Could not set permissions on {}: {}",
+                                            entryPath,
+                                            e.getMessage());
+                                }
+                                applyOwnership(entryPath);
+                                extracted++;
+
+                            } catch (IOException e) {
+                                log.warn(
+                                        "Failed to extract entry {}: {}",
+                                        entry.getName(),
+                                        e.getMessage());
+                            } finally {
+                                zis.closeEntry();
+                            }
+                        }
+
+                        log.info(
+                                "Extracted {} files from archive to {}", extracted, requestedPath);
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Failed to read zip archive: " + e.getMessage(),
+                                e);
+                    }
+                });
+    }
+
+    private void applyOwnership(Path path) {
+        try {
+            Files.setAttribute(path, "unix:uid", 1000);
+            Files.setAttribute(path, "unix:gid", 1000);
+        } catch (UnsupportedOperationException | IOException e) {
+            log.debug("Could not chown {} to 1000:1000: {}", path, e.getMessage());
+        }
+    }
+
+    public DirectorySizeDto getDirectorySize(String serverUuid, String requestedPath) {
+        return withReadLock(
+                serverUuid,
+                () -> {
+                    ResolvedBindMount resolved = resolveBindMount(serverUuid, requestedPath);
+                    Path startPath = resolved.requested();
+
+                    if (!resolved.isRootRequest()) {
+                        requireExists(startPath, resolved.innerRelative());
+                        requireRealPathInsideRoot(
+                                resolved.volumeRoot(), startPath, resolved.innerRelative());
+                    }
+
+                    if (!Files.isDirectory(startPath, LinkOption.NOFOLLOW_LINKS)) {
+                        try {
+                            return new DirectorySizeDto(Files.size(startPath));
+                        } catch (IOException e) {
+                            return new DirectorySizeDto(0L);
+                        }
+                    }
+
+                    long[] total = {0L};
+                    try (java.util.stream.Stream<Path> walk = Files.walk(startPath)) {
+                        walk.sorted()
+                                .forEach(
+                                        entry -> {
+                                            try {
+                                                BasicFileAttributes attrs =
+                                                        Files.readAttributes(
+                                                                entry,
+                                                                BasicFileAttributes.class,
+                                                                LinkOption.NOFOLLOW_LINKS);
+                                                if (attrs.isRegularFile()) {
+                                                    total[0] += attrs.size();
+                                                }
+                                            } catch (NoSuchFileException e) {
+                                                // skip deleted
+                                            } catch (IOException e) {
+                                                log.debug(
+                                                        "Could not read size of {}: {}",
+                                                        entry,
+                                                        e.getMessage());
+                                            }
+                                        });
+                    } catch (IOException e) {
+                        throw new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Failed to calculate directory size",
+                                e);
+                    }
+
+                    return new DirectorySizeDto(total[0]);
+                });
     }
 
     private void addFileToZip(ZipOutputStream zos, Path file, String entryName) throws IOException {

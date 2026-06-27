@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.controllers.gameserver.api;
 
+import com.magentamause.cosybackend.dtos.entitydtos.DirectorySizeDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerFileSystemDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -123,6 +124,39 @@ public interface GameServerFileApi {
     @ApiResponse(responseCode = "200", description = "Deleted successfully")
     @PostMapping("/delete")
     ResponseEntity<Void> deleteInVolume(
+            @Parameter(description = "Game server UUID") @PathVariable String uuid,
+            @RequestParam("path") @NotBlank String path);
+
+    @Operation(
+            summary = "Upload and extract a zip archive into a bind mount volume",
+            requestBody =
+                    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                            required = true,
+                            content =
+                                    @Content(
+                                            mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+                                            schema =
+                                                    @Schema(
+                                                            type = "string",
+                                                            format = "binary",
+                                                            description = "Raw zip bytes"))),
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Archive extracted successfully")
+            })
+    @RequestMapping(
+            value = "/upload-archive",
+            method = RequestMethod.POST,
+            consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    ResponseEntity<Void> uploadArchiveToVolume(
+            @Parameter(description = "Game server UUID") @PathVariable String uuid,
+            @RequestParam("path") @NotBlank String path,
+            @RequestParam(value = "clear", defaultValue = "false") boolean clear,
+            @RequestBody byte[] zipBytes);
+
+    @Operation(summary = "Get the total uncompressed size of a directory or file")
+    @ApiResponse(responseCode = "200", description = "Size returned")
+    @GetMapping("/directory-size")
+    ResponseEntity<DirectorySizeDto> getDirectorySize(
             @Parameter(description = "Game server UUID") @PathVariable String uuid,
             @RequestParam("path") @NotBlank String path);
 }

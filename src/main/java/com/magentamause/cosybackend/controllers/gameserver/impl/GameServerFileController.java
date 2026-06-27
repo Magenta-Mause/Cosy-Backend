@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.controllers.gameserver.impl;
 
 import com.magentamause.cosybackend.controllers.gameserver.api.GameServerFileApi;
+import com.magentamause.cosybackend.dtos.entitydtos.DirectorySizeDto;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerFileSystemDto;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
@@ -85,5 +86,19 @@ public class GameServerFileController implements GameServerFileApi {
     public ResponseEntity<Void> deleteInVolume(@ResourceId String uuid, String path) {
         gameServerMountService.deleteInBindMountVolume(uuid, path);
         return ResponseEntity.ok().build();
+    }
+
+    @Override
+    @NeedsValidation(Operation.GAME_SERVER_FILES_UPDATE)
+    public ResponseEntity<Void> uploadArchiveToVolume(
+            @ResourceId String uuid, String path, boolean clear, byte[] zipBytes) {
+        gameServerMountService.extractArchiveToBindMount(uuid, path, zipBytes, clear);
+        return ResponseEntity.ok().build();
+    }
+
+    @Override
+    @NeedsValidation(Operation.GAME_SERVER_FILES_READ)
+    public ResponseEntity<DirectorySizeDto> getDirectorySize(@ResourceId String uuid, String path) {
+        return ResponseEntity.ok(gameServerMountService.getDirectorySize(uuid, path));
     }
 }
