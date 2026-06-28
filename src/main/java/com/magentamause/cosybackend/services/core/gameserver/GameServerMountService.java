@@ -65,4 +65,14 @@ public class GameServerMountService {
     public String buildZipArchiveName(String path) {
         return archive.buildZipArchiveName(path);
     }
+
+    public int countZipChunks(String serverUuid, String requestedPath, int chunkSizeMb) {
+        return archive.countZipChunks(serverUuid, requestedPath, chunkSizeMb);
+    }
+
+    public void streamDirectoryAsZipChunk(
+            String serverUuid, String requestedPath, int chunkIndex, int chunkSizeMb,
+            OutputStream outputStream) throws IOException {
+        archive.streamDirectoryAsZipChunk(serverUuid, requestedPath, chunkIndex, chunkSizeMb, outputStream);
+    }
 }

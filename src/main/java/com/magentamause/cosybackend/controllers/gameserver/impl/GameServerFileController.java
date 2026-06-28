@@ -109,4 +109,25 @@ public class GameServerFileController implements GameServerFileApi {
         gameServerMountService.setFilePermissions(uuid, path, mode, uid);
         return ResponseEntity.ok().build();
     }
+
+    @Override
+    @NeedsValidation(Operation.GAME_SERVER_FILES_READ)
+    public ResponseEntity<StreamingResponseBody> downloadDirectoryAsZipChunk(
+            @ResourceId String uuid, String path, int chunkIndex, int chunkSizeMb) {
+
+        int totalChunks = gameServerMountService.countZipChunks(uuid, path, chunkSizeMb);
+        String zipName = gameServerMountService.buildZipArchiveName(path);
+        String partName = zipName + "-part-" + (chunkIndex + 1) + "-of-" + totalChunks + ".zip";
+
+        StreamingResponseBody body =
+                outputStream ->
+                        gameServerMountService.streamDirectoryAsZipChunk(
+                                uuid, path, chunkIndex, chunkSizeMb, outputStream);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + partName + "\"")
+                .header("X-Total-Chunks", String.valueOf(totalChunks))
+                .body(body);
+    }
 }

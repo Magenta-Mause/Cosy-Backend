@@ -169,4 +169,30 @@ public interface GameServerFileApi {
             @RequestParam("path") @NotBlank String path,
             @RequestParam("mode") int mode,
             @RequestParam(value = "uid", required = false) Integer uid);
+
+    @Operation(
+            summary = "Download one chunk of a split zip archive",
+            description =
+                    "Returns X-Total-Chunks header with the total number of chunks. "
+                            + "chunkSizeMb controls the uncompressed byte budget per chunk.")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Chunk zip stream",
+            content =
+                    @Content(
+                            mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+                            schema =
+                                    @Schema(
+                                            type = "string",
+                                            format = "binary",
+                                            description = "Zip archive chunk bytes")))
+    @GetMapping(
+            value = "/download-as-zip-chunk",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    ResponseEntity<StreamingResponseBody> downloadDirectoryAsZipChunk(
+            @Parameter(description = "Game server UUID") @PathVariable String uuid,
+            @RequestParam("path") @NotBlank String path,
+            @RequestParam(value = "chunkIndex", defaultValue = "0") @Min(0) int chunkIndex,
+            @RequestParam(value = "chunkSizeMb", defaultValue = "1024") @Min(1) @Max(4096)
+                    int chunkSizeMb);
 }

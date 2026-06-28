@@ -12,7 +12,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -254,6 +256,130 @@ class GameServerArchiveService {
         if (name.isBlank()) return "archive";
         return name;
     }
+
+    int countZipChunks(String serverUuid, String requestedPath, int chunkSizeMb) {
+        ResolvedBindMount resolved = resolveForZip(serverUuid, requestedPath);
+        List<FileEntry> files = collectFilesForZip(resolved.requested(), resolved.volumeRoot());
+        return buildZipChunks(files, (long) chunkSizeMb * 1024L * 1024L).size();
+    }
+
+    void streamDirectoryAsZipChunk(
+            String serverUuid, String requestedPath, int chunkIndex, int chunkSizeMb,
+            OutputStream outputStream) throws IOException {
+
+        ResolvedBindMount resolved = resolveForZip(serverUuid, requestedPath);
+        List<FileEntry> files = collectFilesForZip(resolved.requested(), resolved.volumeRoot());
+        List<List<FileEntry>> chunks = buildZipChunks(files, (long) chunkSizeMb * 1024L * 1024L);
+
+        if (chunkIndex >= chunks.size()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "chunkIndex " + chunkIndex + " out of range (total: " + chunks.size() + ")");
+        }
+
+        try (ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(outputStream))) {
+            for (FileEntry fe : chunks.get(chunkIndex)) {
+                try {
+                    addFileToZip(zos, fe.absolutePath(), fe.entryName());
+                } catch (NoSuchFileException e) {
+                    log.debug("Skipping deleted file in zip chunk: {}", fe.absolutePath());
+                }
+            }
+        }
+    }
+
+    private ResolvedBindMount resolveForZip(String serverUuid, String requestedPath) {
+        Lock l = locks.lockForServer(serverUuid).readLock();
+        l.lock();
+        try {
+            ResolvedBindMount resolved = resolver.resolveBindMount(serverUuid, requestedPath);
+            if (!resolved.isRootRequest()) {
+                resolver.requireExists(resolved.requested(), resolved.innerRelative());
+                resolver.requireRealPathInsideRoot(
+                        resolved.volumeRoot(), resolved.requested(), resolved.innerRelative());
+            }
+            return resolved;
+        } finally {
+            l.unlock();
+        }
+    }
+
+    private List<FileEntry> collectFilesForZip(Path startPath, Path volumeRoot) {
+        List<FileEntry> files = new ArrayList<>();
+
+        if (!Files.isDirectory(startPath, LinkOption.NOFOLLOW_LINKS)) {
+            try {
+                long size = Files.size(startPath);
+                String name =
+                        startPath.getFileName() != null
+                                ? startPath.getFileName().toString()
+                                : "file";
+                files.add(new FileEntry(startPath, name, size));
+            } catch (IOException ignored) {
+            }
+            return files;
+        }
+
+        try (java.util.stream.Stream<Path> walk = Files.walk(startPath)) {
+            for (Path entry : (Iterable<Path>) walk::iterator) {
+                BasicFileAttributes attrs;
+                try {
+                    attrs =
+                            Files.readAttributes(
+                                    entry, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                } catch (NoSuchFileException e) {
+                    continue;
+                } catch (IOException e) {
+                    log.debug("Skipping unreadable entry in chunk scan: {}", entry);
+                    continue;
+                }
+
+                if (attrs.isSymbolicLink() || attrs.isDirectory()) continue;
+
+                Path normalized = entry.normalize();
+                if (!normalized.startsWith(volumeRoot)) {
+                    log.warn("Skipping path outside volume root in chunk: {}", entry);
+                    continue;
+                }
+
+                String entryName =
+                        startPath.relativize(normalized).toString().replace("\\", "/");
+                files.add(new FileEntry(normalized, entryName, attrs.size()));
+            }
+        } catch (IOException e) {
+            log.warn("Error collecting files for zip chunk: {}", e.getMessage());
+        }
+
+        files.sort(Comparator.comparing(FileEntry::entryName));
+        return files;
+    }
+
+    private List<List<FileEntry>> buildZipChunks(List<FileEntry> allFiles, long chunkSizeBytes) {
+        List<List<FileEntry>> chunks = new ArrayList<>();
+        List<FileEntry> current = new ArrayList<>();
+        long currentSize = 0L;
+
+        for (FileEntry fe : allFiles) {
+            if (!current.isEmpty() && currentSize + fe.size() > chunkSizeBytes) {
+                chunks.add(current);
+                current = new ArrayList<>();
+                currentSize = 0L;
+            }
+            current.add(fe);
+            currentSize += fe.size();
+        }
+        if (!current.isEmpty()) {
+            chunks.add(current);
+        }
+
+        if (chunks.isEmpty()) {
+            chunks.add(List.of());
+        }
+
+        return chunks;
+    }
+
+    private record FileEntry(Path absolutePath, String entryName, long size) {}
 
     private void applyOwnership(Path path) {
         try {
