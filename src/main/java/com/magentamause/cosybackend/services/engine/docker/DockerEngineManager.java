@@ -181,7 +181,15 @@ public class DockerEngineManager implements EngineManager, Closeable {
                         serverConfig.getUuid());
                 continue;
             }
-            labels.put(key, entry.getValue());
+            String value = entry.getValue();
+            if (value == null) {
+                log.warn(
+                        "Skipping annotation '{}' with null value for server {}",
+                        key,
+                        serverConfig.getUuid());
+                continue;
+            }
+            labels.put(key, value);
         }
         return labels;
     }
