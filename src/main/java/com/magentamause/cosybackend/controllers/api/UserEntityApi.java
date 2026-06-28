@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Tag(name = "User Entity", description = "User management")
-@RequestMapping("user-entity")
+@RequestMapping("/user-entity")
 public interface UserEntityApi {
 
     @Operation(summary = "Get all users")

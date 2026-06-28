@@ -2,7 +2,6 @@ package com.magentamause.cosybackend.dtos.template;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.magentamause.cosybackend.util.json.StringOrNumberDeserializer;
 import com.magentamause.cosybackend.util.json.StringOrNumberMapDeserializer;
 import java.util.List;
 import java.util.Map;
@@ -10,14 +9,13 @@ import java.util.Optional;
 
 // WebClient parsing requires @JsonProperty definition - @JsonNaming not sufficient here.
 // Matches the LOCKED v3 wire contract emitted by cosy-template-service (GET /v3/templates).
-// Lenient string-or-number fields (game_id, resource_limit.cpu/memory, port_mapping values) are
+// Lenient string-or-number fields (resource_limit.cpu/memory, port_mapping values) are
 // stored RAW as their canonical String form; {{var}} placeholders are preserved untouched.
 public record ExternalTemplateDto(
         String name,
         String path,
         String description,
-        @JsonProperty("game_id") @JsonDeserialize(using = StringOrNumberDeserializer.class)
-                String gameId,
+        @JsonProperty("game_id") String gameId,
         @JsonProperty("docker_image_name") String dockerImageName,
         @JsonProperty("docker_image_tag") String dockerImageTag,
         @JsonProperty("docker_execution_command") List<String> dockerExecutionCommand,
