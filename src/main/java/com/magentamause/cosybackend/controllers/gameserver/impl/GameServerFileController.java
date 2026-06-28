@@ -126,7 +126,9 @@ public class GameServerFileController implements GameServerFileApi {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + partName + "\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + partName + "\"")
                 .header("X-Total-Chunks", String.valueOf(totalChunks))
                 .body(body);
     }

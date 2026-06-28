@@ -71,8 +71,13 @@ public class GameServerMountService {
     }
 
     public void streamDirectoryAsZipChunk(
-            String serverUuid, String requestedPath, int chunkIndex, int chunkSizeMb,
-            OutputStream outputStream) throws IOException {
-        archive.streamDirectoryAsZipChunk(serverUuid, requestedPath, chunkIndex, chunkSizeMb, outputStream);
+            String serverUuid,
+            String requestedPath,
+            int chunkIndex,
+            int chunkSizeMb,
+            OutputStream outputStream)
+            throws IOException {
+        archive.streamDirectoryAsZipChunk(
+                serverUuid, requestedPath, chunkIndex, chunkSizeMb, outputStream);
     }
 }

@@ -264,8 +264,12 @@ class GameServerArchiveService {
     }
 
     void streamDirectoryAsZipChunk(
-            String serverUuid, String requestedPath, int chunkIndex, int chunkSizeMb,
-            OutputStream outputStream) throws IOException {
+            String serverUuid,
+            String requestedPath,
+            int chunkIndex,
+            int chunkSizeMb,
+            OutputStream outputStream)
+            throws IOException {
 
         ResolvedBindMount resolved = resolveForZip(serverUuid, requestedPath);
         List<FileEntry> files = collectFilesForZip(resolved.requested(), resolved.volumeRoot());
@@ -342,8 +346,7 @@ class GameServerArchiveService {
                     continue;
                 }
 
-                String entryName =
-                        startPath.relativize(normalized).toString().replace("\\", "/");
+                String entryName = startPath.relativize(normalized).toString().replace("\\", "/");
                 files.add(new FileEntry(normalized, entryName, attrs.size()));
             }
         } catch (IOException e) {
