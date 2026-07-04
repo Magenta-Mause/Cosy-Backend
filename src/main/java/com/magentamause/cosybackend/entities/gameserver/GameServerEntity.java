@@ -92,6 +92,18 @@ public class GameServerEntity {
     private List<VolumeMountConfiguration> volumeMounts;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "game_server_configuration_host_uuid")
+    private List<HostVolumeMountConfiguration> hostVolumeMounts;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "game_server_annotations",
+            joinColumns = @JoinColumn(name = "game_server_configuration_uuid"))
+    @MapKeyColumn(name = "annotation_key")
+    @Column(name = "annotation_value")
+    private Map<String, String> annotations;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "metric_layout_uuid")
     @OrderColumn(name = "metric_layout_index")
     private List<MetricLayout> metricLayout;
@@ -139,6 +151,8 @@ public class GameServerEntity {
                 .portMappings(this.getPortMappings())
                 .environmentVariables(this.getEnvironmentVariables())
                 .volumeMounts(this.getVolumeMounts())
+                .hostVolumeMounts(this.getHostVolumeMounts())
+                .annotations(this.getAnnotations())
                 .metricLayout(this.getMetricLayout())
                 .publicDashboard(this.getPublicDashboard())
                 .accessGroups(
@@ -202,7 +216,9 @@ public class GameServerEntity {
                     .executionCommand(this.getDockerExecutionCommand())
                     .portMappings(this.getPortMappings())
                     .environmentVariables(this.getEnvironmentVariables())
-                    .volumeMounts(this.getVolumeMounts());
+                    .volumeMounts(this.getVolumeMounts())
+                    .hostVolumeMounts(this.getHostVolumeMounts())
+                    .annotations(this.getAnnotations());
         }
         if (GameServerFieldVisibilityPolicy.canSeeFiles(permissions)) {
             builder.volumeMounts(this.getVolumeMounts());

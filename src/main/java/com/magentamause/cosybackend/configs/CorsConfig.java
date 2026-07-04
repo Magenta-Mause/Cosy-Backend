@@ -20,6 +20,7 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedOrigins(corsProperties.allowedOrigins().toArray(new String[0]))
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS")
                 .allowedHeaders("*")
+                .exposedHeaders("X-Total-Chunks")
                 .allowCredentials(true);
     }
 }

@@ -2,7 +2,6 @@ package com.magentamause.cosybackend.services.engine.docker;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Statistics;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
@@ -33,11 +32,10 @@ public class DockerMetricsCollector {
             return Optional.empty();
         }
 
-        String containerUuid = containerOpt.get().getId();
+        Container container = containerOpt.get();
+        String containerUuid = container.getId();
 
-        InspectContainerResponse container = client.inspectContainerCmd(containerUuid).exec();
-
-        if (Boolean.FALSE.equals(container.getState().getRunning())) {
+        if (!"running".equalsIgnoreCase(container.getState())) {
             statsMapper.clearState(gameServerUuid);
             return Optional.empty();
         }
@@ -51,7 +49,7 @@ public class DockerMetricsCollector {
                             public void onNext(Statistics statistics) {
                                 Metric stats = statsMapper.mapStats(gameServerUuid, statistics);
                                 stats.setGameServerUuid(
-                                        container.getName().replace("/", "").substring(5));
+                                        container.getNames()[0].replace("/", "").substring(5));
                                 stats.setTime(Instant.now());
                                 statsRef.set(stats);
                                 try {

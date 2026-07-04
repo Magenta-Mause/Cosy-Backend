@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface TemplateRepository extends JpaRepository<TemplateEntity, String> {
 
+    /** Distinct raw template game references (slug or numeric-as-string). */
     @Query("SELECT DISTINCT t.gameId FROM TemplateEntity t")
-    Set<Integer> findDistinctExternalGameIds();
+    Set<String> findDistinctGameIds();
 }

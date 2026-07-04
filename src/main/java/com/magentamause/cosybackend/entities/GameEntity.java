@@ -1,6 +1,7 @@
 package com.magentamause.cosybackend.entities;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameDto;
+import com.magentamause.cosybackend.dtos.template.ExternalGameDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,6 +22,9 @@ public class GameEntity {
     @Column(nullable = false)
     private String name;
 
+    // v3: games/<slug>.yaml filename; the identifier templates reference via game_id.
+    private String slug;
+
     private String logoUrl;
 
     private String heroUrl;
@@ -31,6 +35,19 @@ public class GameEntity {
                 .heroUrl(gameDto.getHeroUrl())
                 .logoUrl(gameDto.getLogoUrl())
                 .externalGameId(gameDto.getExternalGameId())
+                .build();
+    }
+
+    public static GameEntity fromExternalDto(ExternalGameDto externalGameDto) {
+        return GameEntity.builder()
+                .name(externalGameDto.name())
+                .slug(externalGameDto.slug())
+                .heroUrl(externalGameDto.heroUrl())
+                .logoUrl(externalGameDto.logoUrl())
+                .externalGameId(
+                        externalGameDto.externalGameId() != null
+                                ? externalGameDto.externalGameId()
+                                : 0)
                 .build();
     }
 }

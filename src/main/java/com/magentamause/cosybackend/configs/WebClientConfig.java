@@ -71,6 +71,14 @@ public class WebClientConfig {
     }
 
     @Bean
+    public WebClient cosyGamesApiWebClient(CosyTemplateApiProperties cosyTemplateApiProperties) {
+        return WebClient.builder()
+                .baseUrl(cosyTemplateApiProperties.gamesUrl())
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
+
+    @Bean
     public WebClient webhookWebClient() {
         return WebClient.builder()
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)

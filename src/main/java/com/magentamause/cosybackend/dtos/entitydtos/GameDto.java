@@ -18,6 +18,8 @@ public class GameDto {
 
     private int externalGameId;
 
+    private String slug;
+
     private String heroUrl;
 
     private String logoUrl;
@@ -26,6 +28,7 @@ public class GameDto {
         return GameDto.builder()
                 .gameUuid(gameEntity.getUuid())
                 .name(gameEntity.getName())
+                .slug(gameEntity.getSlug())
                 .heroUrl(gameEntity.getHeroUrl())
                 .logoUrl(gameEntity.getLogoUrl())
                 .externalGameId(gameEntity.getExternalGameId())

@@ -7,6 +7,7 @@ import com.magentamause.cosybackend.entities.GameEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.gameserver.utility.EnvironmentVariableConfiguration;
+import com.magentamause.cosybackend.entities.gameserver.utility.HostVolumeMountConfiguration;
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import jakarta.validation.Valid;
@@ -45,13 +46,30 @@ public class GameServerUpdateDto {
     @Valid
     private List<VolumeMountConfigurationDto> volumeMounts;
 
-    public void applyToEntity(GameServerEntity target, Function<Integer, GameEntity> gameProvider) {
+    @UniqueElementsBy(
+            fieldNames = {"containerPath"},
+            message = "duplicate host volume mounts")
+    @Valid
+    private List<HostVolumeMountConfigurationDto> hostVolumeMounts;
+
+    private Map<String, String> annotations;
+
+    /**
+     * @param applyHostMounts when {@code false} the existing host volume mounts on the target are
+     *     preserved untouched (non-admin update path); when {@code true} host mounts are fully
+     *     CRUD-ed from the DTO (admin/owner path).
+     */
+    public void applyToEntity(
+            GameServerEntity target,
+            Function<Integer, GameEntity> gameProvider,
+            boolean applyHostMounts) {
         target.setGame(gameProvider.apply(this.externalGameId));
         target.setServerName(this.getServerName());
         target.setDockerImageName(this.getDockerImageName());
         target.setDockerImageTag(this.getDockerImageTag());
         target.setDockerExecutionCommand(this.getExecutionCommand());
         target.setDockerHardwareLimits(this.getDockerHardwareLimits());
+        target.setAnnotations(this.getAnnotations());
 
         target.setPortMappings(
                 updateList(target.getPortMappings(), this.getPortMappings(), ArrayList::new));
@@ -61,6 +79,9 @@ public class GameServerUpdateDto {
                         this.getEnvironmentVariables(),
                         ArrayList::new));
         updateVolumeMounts(target);
+        if (applyHostMounts) {
+            updateHostVolumeMounts(target);
+        }
     }
 
     private void updateVolumeMounts(GameServerEntity target) {
@@ -88,6 +109,42 @@ public class GameServerUpdateDto {
                 updated.add(reused);
             } else {
                 VolumeMountConfiguration fresh = VolumeMountConfiguration.fromDto(dto);
+                fresh.setUuid(null);
+                updated.add(fresh);
+            }
+        }
+
+        existing.clear();
+        existing.addAll(updated);
+    }
+
+    private void updateHostVolumeMounts(GameServerEntity target) {
+        List<HostVolumeMountConfiguration> existing = target.getHostVolumeMounts();
+        if (existing == null) {
+            existing = new ArrayList<>();
+            target.setHostVolumeMounts(existing);
+        }
+
+        if (this.getHostVolumeMounts() == null) {
+            existing.clear();
+            return;
+        }
+
+        Map<String, HostVolumeMountConfiguration> existingByUuid =
+                existing.stream()
+                        .filter(vm -> vm.getUuid() != null)
+                        .collect(Collectors.toMap(HostVolumeMountConfiguration::getUuid, vm -> vm));
+
+        List<HostVolumeMountConfiguration> updated = new ArrayList<>();
+        for (HostVolumeMountConfigurationDto dto : this.getHostVolumeMounts()) {
+            if (dto.getUuid() != null && existingByUuid.containsKey(dto.getUuid())) {
+                HostVolumeMountConfiguration reused = existingByUuid.get(dto.getUuid());
+                reused.setHostPath(dto.getHostPath());
+                reused.setContainerPath(dto.getContainerPath());
+                reused.setReadOnly(dto.getReadOnly() == null || dto.getReadOnly());
+                updated.add(reused);
+            } else {
+                HostVolumeMountConfiguration fresh = HostVolumeMountConfiguration.fromDto(dto);
                 fresh.setUuid(null);
                 updated.add(fresh);
             }

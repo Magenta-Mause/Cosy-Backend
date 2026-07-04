@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -53,6 +54,10 @@ public class GameServerDto {
     @NotNull @Valid private List<EnvironmentVariableConfiguration> environmentVariables;
 
     @NotNull @Valid private List<VolumeMountConfiguration> volumeMounts;
+
+    @Valid private List<HostVolumeMountConfiguration> hostVolumeMounts;
+
+    private Map<String, String> annotations;
 
     @NotNull private List<MetricLayout> metricLayout;
 
