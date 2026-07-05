@@ -168,6 +168,16 @@ class GameServerArchiveService {
                                     continue;
                                 }
 
+                                // The startsWith checks above are purely lexical. A symlink
+                                // planted in the volume by the game container (e.g. `sub` ->
+                                // `/etc`) would let createDirectories()/write() below follow it
+                                // out of the volume root. Reject any entry whose real path passes
+                                // through, or lands on, an existing symlink.
+                                if (!isEntryPathSafe(volumeRoot, entryPath)) {
+                                    log.warn("Skipping zip entry via symlink: {}", entryName);
+                                    continue;
+                                }
+
                                 if (entry.isDirectory()) {
                                     Files.createDirectories(entryPath);
                                     continue;
@@ -386,11 +396,34 @@ class GameServerArchiveService {
 
     private void applyOwnership(Path path) {
         try {
-            Files.setAttribute(path, "unix:uid", 1000);
-            Files.setAttribute(path, "unix:gid", 1000);
+            Files.setAttribute(path, "unix:uid", 1000, LinkOption.NOFOLLOW_LINKS);
+            Files.setAttribute(path, "unix:gid", 1000, LinkOption.NOFOLLOW_LINKS);
         } catch (UnsupportedOperationException | IOException e) {
             log.debug("Could not chown {} to 1000:1000: {}", path, e.getMessage());
         }
+    }
+
+    /**
+     * Guards zip extraction against escaping the volume root through a pre-existing symlink. Even
+     * though {@code entryPath} is lexically inside {@code volumeRoot}, a symlinked ancestor planted
+     * by the (untrusted) game container would let the subsequent {@code createDirectories}/write
+     * follow it outside the root. Returns {@code false} if any already-existing ancestor up to the
+     * leaf's parent is a symlink, or if the leaf itself already exists as a symlink. Path
+     * components that do not yet exist are created by us as real directories, so they are safe.
+     */
+    private boolean isEntryPathSafe(Path volumeRoot, Path entryPath) {
+        if (Files.isSymbolicLink(entryPath)) {
+            return false;
+        }
+        Path relative = volumeRoot.relativize(entryPath);
+        Path cursor = volumeRoot;
+        for (int i = 0; i < relative.getNameCount() - 1; i++) {
+            cursor = cursor.resolve(relative.getName(i));
+            if (Files.isSymbolicLink(cursor)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void addFileToZip(ZipOutputStream zos, Path file, String entryName) throws IOException {
