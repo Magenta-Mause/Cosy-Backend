@@ -337,6 +337,146 @@ pub unsafe extern "C" fn cosyfs_delete_file(
     }
 }
 
+/// Sets the mode and/or owner of `rel` inside `root`, resolving the target with openat2 so that
+/// symlinks are never followed and the volume root is never escaped (no TOCTOU).
+///
+/// `mode < 0` skips the chmod. `uid < 0 || gid < 0` skips the chown.
+///
+/// Returns 0 on success, -1 on failure and writes details into `*err`.
+/// # Safety
+/// The caller must guarantee:
+/// - `root` and `rel` are valid, NUL-terminated C strings for the duration of the call.
+/// - `err` is a valid writable pointer for the duration of the call.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn cosyfs_set_permissions(
+    root: *const c_char,
+    rel: *const c_char,
+    mode: c_int,
+    uid: c_int,
+    gid: c_int,
+    err: *mut CosyfsError,
+) -> c_int {
+    trace("enter set_permissions");
+
+    unsafe {
+        if err.is_null() || root.is_null() || rel.is_null() {
+            trace("set_permissions: null pointer arg");
+            return -1;
+        }
+        *err = CosyfsError::ok();
+
+        let root_s = match CStr::from_ptr(root).to_str() {
+            Ok(s) => s,
+            Err(_) => {
+                trace("set_permissions: root invalid utf-8");
+                *err = CosyfsError::from_errno(libc::EINVAL, "root invalid utf-8");
+                return -1;
+            }
+        };
+        let rel_s = match CStr::from_ptr(rel).to_str() {
+            Ok(s) => s,
+            Err(_) => {
+                trace_kv("chmod", root_s, "<invalid-utf8>", "status=EINVAL");
+                *err = CosyfsError::from_errno(libc::EINVAL, "rel invalid utf-8");
+                return -1;
+            }
+        };
+
+        let mode_opt = if mode < 0 { None } else { Some(mode as mode_t) };
+        let owner_opt = if uid < 0 || gid < 0 {
+            None
+        } else {
+            Some((uid as libc::uid_t, gid as libc::gid_t))
+        };
+
+        trace_kv(
+            "chmod",
+            root_s,
+            rel_s,
+            &format!("mode={} uid={} gid={}", mode, uid, gid),
+        );
+
+        match linux::set_permissions(root_s, rel_s, mode_opt, owner_opt) {
+            Ok(()) => {
+                trace_kv("chmod", root_s, rel_s, "status=OK");
+                0
+            }
+            Err(e) => {
+                trace_kv(
+                    "chmod",
+                    root_s,
+                    rel_s,
+                    &format!("status=ERR errno={}", e.code),
+                );
+                *err = e;
+                -1
+            }
+        }
+    }
+}
+
+/// Creates `rel` and any missing parent directories inside `root` (like `mkdir -p`) without
+/// following or creating through symlinks.
+///
+/// Returns 0 on success, -1 on failure and writes details into `*err`.
+/// # Safety
+/// The caller must guarantee:
+/// - `root` and `rel` are valid, NUL-terminated C strings for the duration of the call.
+/// - `err` is a valid writable pointer for the duration of the call.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn cosyfs_mkdirs(
+    root: *const c_char,
+    rel: *const c_char,
+    mode: mode_t,
+    err: *mut CosyfsError,
+) -> c_int {
+    trace("enter mkdirs");
+
+    unsafe {
+        if err.is_null() || root.is_null() || rel.is_null() {
+            trace("mkdirs: null pointer arg");
+            return -1;
+        }
+        *err = CosyfsError::ok();
+
+        let root_s = match CStr::from_ptr(root).to_str() {
+            Ok(s) => s,
+            Err(_) => {
+                trace("mkdirs: root invalid utf-8");
+                *err = CosyfsError::from_errno(libc::EINVAL, "root invalid utf-8");
+                return -1;
+            }
+        };
+        let rel_s = match CStr::from_ptr(rel).to_str() {
+            Ok(s) => s,
+            Err(_) => {
+                trace_kv("mkdirs", root_s, "<invalid-utf8>", "status=EINVAL");
+                *err = CosyfsError::from_errno(libc::EINVAL, "rel invalid utf-8");
+                return -1;
+            }
+        };
+
+        trace_kv("mkdirs", root_s, rel_s, &format!("mode={:o}", mode));
+
+        match linux::mkdirs(root_s, rel_s, mode) {
+            Ok(()) => {
+                trace_kv("mkdirs", root_s, rel_s, "status=OK");
+                0
+            }
+            Err(e) => {
+                trace_kv(
+                    "mkdirs",
+                    root_s,
+                    rel_s,
+                    &format!("status=ERR errno={}", e.code),
+                );
+                *err = e;
+                -1
+            }
+        }
+    }
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn cosyfs_debug_ping() {
     let _ = writeln!(io::stderr(), "[cosyfs] debug_ping reached");

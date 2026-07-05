@@ -179,13 +179,13 @@ class GameServerArchiveService {
                                 }
 
                                 if (entry.isDirectory()) {
-                                    Files.createDirectories(entryPath);
+                                    createDirectoriesForEntry(volumeRoot, entryPath);
                                     continue;
                                 }
 
                                 Path parent = entryPath.getParent();
                                 if (parent != null) {
-                                    Files.createDirectories(parent);
+                                    createDirectoriesForEntry(volumeRoot, parent);
                                 }
 
                                 byte[] content = zis.readAllBytes();
@@ -411,6 +411,23 @@ class GameServerArchiveService {
      * leaf's parent is a symlink, or if the leaf itself already exists as a symlink. Path
      * components that do not yet exist are created by us as real directories, so they are safe.
      */
+    /**
+     * Creates {@code dir} (and any missing parents) for a zip entry. Prefers the native library,
+     * which creates each component fd-relative with {@code O_NOFOLLOW} and so never follows or
+     * creates through a symlink. Falls back to {@link Files#createDirectories} only when the native
+     * library is unavailable; that path is guarded by {@link #isEntryPathSafe} at the call site.
+     */
+    private void createDirectoriesForEntry(Path volumeRoot, Path dir) throws IOException {
+        Path relToRoot = volumeRoot.relativize(dir);
+        if (relToRoot.getNameCount() == 0 || relToRoot.toString().isEmpty()) {
+            return;
+        }
+        if (nativeOps.tryMkdirsNative(volumeRoot, relToRoot, 0775)) {
+            return;
+        }
+        Files.createDirectories(dir);
+    }
+
     private boolean isEntryPathSafe(Path volumeRoot, Path entryPath) {
         if (Files.isSymbolicLink(entryPath)) {
             return false;

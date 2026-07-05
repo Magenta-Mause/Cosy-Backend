@@ -35,6 +35,11 @@ public interface CosyFsNative extends Library {
 
     int cosyfs_delete_file(String root, String rel, CosyfsError err);
 
+    int cosyfs_set_permissions(
+            String root, String rel, int mode, int uid, int gid, CosyfsError err);
+
+    int cosyfs_mkdirs(String root, String rel, int mode, CosyfsError err);
+
     void cosyfs_free_buf(Pointer p, long len);
 
     void cosyfs_free_cstring(Pointer s);

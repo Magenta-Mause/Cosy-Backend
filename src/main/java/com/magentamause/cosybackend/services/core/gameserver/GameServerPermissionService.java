@@ -23,6 +23,7 @@ class GameServerPermissionService {
 
     private final GameServerMountLocks locks;
     private final GameServerMountResolver resolver;
+    private final GameServerNativeOps nativeOps;
 
     void setFilePermissions(String serverUuid, String requestedPath, int mode, Integer uid) {
         locks.withWriteLock(
@@ -46,7 +47,15 @@ class GameServerPermissionService {
                             GameServerMountResolver.safeRelativePath(
                                     resolved.innerRelative(), "Path", false);
 
-                    // Preferred path: resolve through the pinned SecureDirectoryStream fds so that
+                    // Preferred path: the native library resolves the target with openat2 and
+                    // applies chmod+chown to the resulting fd, so neither the leaf nor any
+                    // intermediate component can be a symlink and there is no TOCTOU between the
+                    // check and the change.
+                    if (nativeOps.trySetPermissionsNative(volumeRoot, rel, mode & 0777, uid)) {
+                        return;
+                    }
+
+                    // Fallback: resolve through the pinned SecureDirectoryStream fds so that
                     // neither an intermediate component nor the leaf can be a symlink pointing
                     // outside the volume root. Files.setPosixFilePermissions() follows symlinks and
                     // must never be handed an attacker-controlled path.
