@@ -31,7 +31,7 @@ public class TemplateEntity {
     @Column(nullable = false)
     private String path;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "text")
     private String description;
 
     // v3: slug (e.g. "minecraft") or numeric-as-string (e.g. "38365"); stored RAW.
