@@ -31,7 +31,7 @@ public class TemplateEntity {
     @Column(nullable = false)
     private String path;
 
-    @Column(nullable = false, columnDefinition = "text")
+    @Column(nullable = false)
     private String description;
 
     // v3: slug (e.g. "minecraft") or numeric-as-string (e.g. "38365"); stored RAW.
@@ -85,11 +85,22 @@ public class TemplateEntity {
     @Column(columnDefinition = "jsonb")
     private List<String> tags;
 
+    // The description column is varchar(255) in existing deployments and
+    // ddl-auto cannot widen it, so incoming descriptions are capped to fit.
+    private static final int MAX_DESCRIPTION_LENGTH = 255;
+
+    private static String truncateDescription(String description) {
+        if (description == null || description.length() <= MAX_DESCRIPTION_LENGTH) {
+            return description;
+        }
+        return description.substring(0, MAX_DESCRIPTION_LENGTH - 3) + "...";
+    }
+
     public static TemplateEntity ofDto(ExternalTemplateDto externalTemplateDto) {
         return TemplateEntity.builder()
                 .name(externalTemplateDto.name())
                 .path(externalTemplateDto.path())
-                .description(externalTemplateDto.description())
+                .description(truncateDescription(externalTemplateDto.description()))
                 .gameId(externalTemplateDto.gameId())
                 .dockerImageName(externalTemplateDto.dockerImageName())
                 .dockerImageTag(externalTemplateDto.dockerImageTag())
