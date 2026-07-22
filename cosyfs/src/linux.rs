@@ -1,5 +1,5 @@
 use libc::{
-    O_CLOEXEC, O_CREAT, O_DIRECTORY, O_NOFOLLOW, O_RDONLY, O_TRUNC, O_WRONLY, c_int, mode_t,
+    O_CLOEXEC, O_CREAT, O_DIRECTORY, O_NOFOLLOW, O_PATH, O_RDONLY, O_TRUNC, O_WRONLY, c_int, mode_t,
 };
 use std::{
     ffi::{CStr, CString},
@@ -180,6 +180,124 @@ pub fn rename_path(root: &str, old_rel: &str, new_rel: &str) -> Result<(), Cosyf
 
     if let Some(e) = err {
         return Err(CosyfsError::from_errno(e, "rename failed"));
+    }
+    Ok(())
+}
+
+/// Sets the mode and/or owner of `rel` inside `root` without following symlinks or escaping
+/// the root. The target is resolved once with openat2 (`RESOLVE_BENEATH | RESOLVE_NO_SYMLINKS`)
+/// and every change is applied to the resulting file descriptor, so there is no path re-walk and
+/// no TOCTOU window between the security check and the operation.
+///
+/// `mode` is applied when `Some`. `owner` (uid, gid) is applied when `Some`.
+pub fn set_permissions(
+    root: &str,
+    rel: &str,
+    mode: Option<mode_t>,
+    owner: Option<(libc::uid_t, libc::gid_t)>,
+) -> Result<(), CosyfsError> {
+    let rootfd = open_root_dir(root)?;
+
+    // O_PATH yields a handle to the target inode without needing read permission and without
+    // following the final component; openat2's RESOLVE_NO_SYMLINKS refuses a symlink in ANY
+    // component, so a symlinked path is rejected rather than followed.
+    let fd = match open_under_root(rootfd, rel, O_PATH, 0) {
+        Ok(fd) => fd,
+        Err(e) => {
+            unsafe {
+                libc::close(rootfd);
+            }
+            return Err(e);
+        }
+    };
+    unsafe {
+        libc::close(rootfd);
+    }
+
+    let res = (|| {
+        if let Some(m) = mode {
+            // fchmod() rejects O_PATH descriptors, so reach the resolved inode through its
+            // /proc/self/fd magic link. This still refers to the exact fd we opened above.
+            let proc_path = cstr(&format!("/proc/self/fd/{}", fd))?;
+            let r = unsafe { libc::fchmodat(libc::AT_FDCWD, proc_path.as_ptr(), m, 0) };
+            if r < 0 {
+                return Err(CosyfsError::from_errno(errno(), "fchmod failed"));
+            }
+        }
+        if let Some((uid, gid)) = owner {
+            // AT_EMPTY_PATH operates on `fd` itself (the already-resolved, non-symlink target).
+            let empty = cstr("")?;
+            let r = unsafe { libc::fchownat(fd, empty.as_ptr(), uid, gid, libc::AT_EMPTY_PATH) };
+            if r < 0 {
+                return Err(CosyfsError::from_errno(errno(), "fchown failed"));
+            }
+        }
+        Ok(())
+    })();
+
+    unsafe {
+        libc::close(fd);
+    }
+    res
+}
+
+/// Creates `rel` (and any missing parents) inside `root`, like `mkdir -p`, without following or
+/// creating through symlinks. Each component is created with `mkdirat` and descended into with
+/// `openat(O_NOFOLLOW | O_DIRECTORY)` relative to the previous directory's fd, so a pre-existing
+/// symlink component fails with ELOOP instead of being traversed. Existing directories are fine.
+pub fn mkdirs(root: &str, rel: &str, mode: mode_t) -> Result<(), CosyfsError> {
+    validate_rel(rel).map_err(|m| CosyfsError::from_errno(libc::EINVAL, m))?;
+
+    let mut curfd = open_root_dir(root)?;
+
+    for part in rel.split('/') {
+        if part.is_empty() || part == "." {
+            continue;
+        }
+        // ".." is already rejected by validate_rel above.
+
+        let c = match cstr(part) {
+            Ok(c) => c,
+            Err(e) => {
+                unsafe {
+                    libc::close(curfd);
+                }
+                return Err(e);
+            }
+        };
+
+        // Create the component if it is missing; an existing entry (EEXIST) is fine.
+        let r = unsafe { libc::mkdirat(curfd, c.as_ptr(), mode) };
+        if r < 0 {
+            let e = errno();
+            if e != libc::EEXIST {
+                unsafe {
+                    libc::close(curfd);
+                }
+                return Err(CosyfsError::from_errno(e, "mkdirat failed"));
+            }
+        }
+
+        // Descend without following symlinks: O_NOFOLLOW makes a symlinked component fail with
+        // ELOOP, and O_DIRECTORY makes a non-directory fail with ENOTDIR.
+        let nextfd = unsafe {
+            libc::openat(
+                curfd,
+                c.as_ptr(),
+                O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC,
+            )
+        };
+        unsafe {
+            libc::close(curfd);
+        }
+        if nextfd < 0 {
+            return Err(CosyfsError::from_errno(errno(), "openat (descend) failed"));
+        }
+        curfd = nextfd;
+    }
+
+    unsafe {
+        libc::close(curfd);
     }
     Ok(())
 }

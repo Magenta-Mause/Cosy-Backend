@@ -203,4 +203,70 @@ class GameServerNativeOps {
             return false;
         }
     }
+
+    /**
+     * Sets the mode and/or owner of {@code rel} via the native library, which resolves the target
+     * with openat2 (symlink-free, beneath root) and applies the change to the resulting fd, so
+     * there is no path re-walk or TOCTOU. A {@code null} uid skips the chown. Returns {@code false}
+     * only when the native library is unavailable; a genuine native error (e.g. a rejected symlink)
+     * throws rather than falling back.
+     */
+    boolean trySetPermissionsNative(Path volumeRoot, Path rel, int mode, Integer uid) {
+        if (!nativeAvailable()) return false;
+
+        String relStr = rel.toString().replace("\\", "/");
+        CosyFsNative.CosyfsError err = new CosyFsNative.CosyfsError();
+
+        int uidArg = (uid == null) ? -1 : uid;
+        int gidArg = (uid == null) ? -1 : uid;
+
+        try {
+            err.write();
+
+            int rc =
+                    nativeLib()
+                            .cosyfs_set_permissions(
+                                    volumeRoot.toString(), relStr, mode, uidArg, gidArg, err);
+
+            err.read();
+
+            if (rc != 0) {
+                throw mapNativeErr(err, "Native set-permissions failed: " + relStr);
+            }
+            return true;
+        } catch (UnsatisfiedLinkError | NoClassDefFoundError e) {
+            log.warn(
+                    "Native cosyfs not available for set-permissions (falling back): {}",
+                    e.toString());
+            return false;
+        }
+    }
+
+    /**
+     * Creates {@code rel} and any missing parents via the native library, without following or
+     * creating through symlinks. Returns {@code false} only when the native library is unavailable;
+     * a genuine native error (e.g. a symlinked path component) throws rather than falling back.
+     */
+    boolean tryMkdirsNative(Path volumeRoot, Path rel, int mode) {
+        if (!nativeAvailable()) return false;
+
+        String relStr = rel.toString().replace("\\", "/");
+        CosyFsNative.CosyfsError err = new CosyFsNative.CosyfsError();
+
+        try {
+            err.write();
+
+            int rc = nativeLib().cosyfs_mkdirs(volumeRoot.toString(), relStr, mode, err);
+
+            err.read();
+
+            if (rc != 0) {
+                throw mapNativeErr(err, "Native mkdirs failed: " + relStr);
+            }
+            return true;
+        } catch (UnsatisfiedLinkError | NoClassDefFoundError e) {
+            log.warn("Native cosyfs not available for mkdirs (falling back): {}", e.toString());
+            return false;
+        }
+    }
 }
