@@ -12,11 +12,13 @@ Cosy is a multi-repo project under [github.com/Magenta-Mause](https://github.com
 |---|---|
 | **Cosy-Backend** (this repo) | Core orchestration engine: Spring Boot / Java 21, Docker socket, JWT auth, WebSockets, RCON, PostgreSQL |
 | Cosy-Frontend | React 19 + TypeScript web UI (Bun + Vite), consumes this repo's OpenAPI spec |
-| Cosy-Game-Service | Rust (actix-web) game metadata/artwork API (SteamGridDB) |
+| Cosy-Game-Service | Rust (actix-web) game metadata/artwork API (SteamGridDB). **Outdated / no longer used** — the template service now covers this functionality (per the maintainers). |
 | Cosy-Template-Service | Go (Gin) service serving the template catalog |
 | Cosy-Templates | Curated game/template definitions (schema-validated) |
 | Cosy-Minecraft-Integration-Mod | Fabric mod pushing in-game metrics (TPS, players) to the backend |
-| Cosy / Cosy-Docs / Cosy-Internal-Deployment | Meta repo + install scripts / docs site / maintainers' reference k8s deployment |
+| Cosy | Meta repo + install scripts |
+| Cosy-Docs | Documentation site |
+| Cosy-Internal-Deployment | Maintainers' reference Kubernetes deployment |
 
 ## Working in this repo
 
@@ -26,8 +28,13 @@ Cosy is a multi-repo project under [github.com/Magenta-Mause](https://github.com
 - **The schema is Flyway-managed** (`ddl-auto: validate`). Every schema change needs the
   entity change **plus** a new `V<N>__*.sql` in `src/main/resources/db/migration/` in the
   same commit. Never edit an already-applied migration — add a new one.
-- The CI drift guard (`FlywayMigrationTest`, gated by `CI_PG_TESTS=true`) boots the app
-  against a real Postgres and fails the PR if entities and migrations disagree.
+- CI has a schema check (gated by `CI_PG_TESTS=true`): it runs the migrations against a
+  real Postgres and verifies the app can start against the resulting schema, backed by a
+  few explicit schema assertions. This catches missing tables/columns, genuine type
+  changes, and boot failures — but it leans on Hibernate `validate`, which compares type
+  names with length arguments stripped. It does **not** check length/precision,
+  nullability, foreign keys, unique/check constraints, or defaults, so it will not catch
+  every kind of drift. Still review migrations against your entity changes by hand.
 - The backend talks to the Docker socket (root-equivalent on the host). Treat anything
   touching container lifecycle or host file operations as security-sensitive.
 - Templates are fetched from the template service (v3 API); descriptions are stored

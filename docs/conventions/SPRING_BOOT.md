@@ -3,84 +3,91 @@
 ## Layered Architecture
 
 **DO:**
-- Keep controllers thin: validate input, delegate to service, return response.
+- Keep controllers thin: validate input, delegate to service, map the result to a DTO, return response.
 - Put all business logic in the service layer.
 - Put all data access in the repository layer.
-- Keep entities free of business logic and DTO conversion.
-- Define a controller interface (the "schema") that holds all REST-specific annotations: `@RequestMapping`, `@Operation`, `@ApiResponse`, `@Tag`, parameter annotations, etc. The controller class implements this interface and contains only the method bodies.
+- Map entities to their response DTO with an `entity.toDto()` method on the entity — this is the mapping convention used throughout the codebase (`UserEntity`, `GameServerEntity`, `FooterEntity`, … all expose `toDto()`; there is no MapStruct/ModelMapper). Keep other business logic out of entities.
+- Define a controller interface (the API "contract") that holds all REST-specific annotations: `@RequestMapping`, `@Operation`, `@ApiResponse`/`@ApiResponses`, `@Tag`, `@Parameter`, etc. The interface lives in `controllers/api` and is named `*Api`. The `*Controller` class in `controllers/impl` implements it and contains only the method bodies. This is the real split used across this codebase (`UserEntityApi`/`UserEntityController`, `GamesApi`/`GamesController`, …).
 
   ```java
-  // WorkAssignmentApi.java — the schema interface
-  @RequestMapping("/api/v1/assignments")
-  @Tag(name = "Work Assignments")
-  public interface WorkAssignmentApi {
+  // controllers/api/UserEntityApi.java — the contract interface
+  @Tag(name = "User Entity", description = "User management")
+  @RequestMapping("/user-entity")
+  public interface UserEntityApi {
 
-      @GetMapping("/{id}")
-      @Operation(summary = "Get assignment by ID")
-      @ApiResponse(responseCode = "200", description = "Assignment found")
-      @ApiResponse(responseCode = "404", description = "Not found")
-      ResponseEntity<AssignmentDto> getById(@PathVariable UUID id);
+      @Operation(summary = "Get user by UUID")
+      @ApiResponses({
+          @ApiResponse(responseCode = "200", description = "User found"),
+          @ApiResponse(responseCode = "404", description = "User not found")
+      })
+      @GetMapping("/{uuid}")
+      ResponseEntity<UserEntityDto> getUserEntity(
+              @Parameter(description = "User UUID") @PathVariable String uuid);
   }
 
-  // WorkAssignmentController.java — the implementation
+  // controllers/impl/UserEntityController.java — the implementation
   @RestController
-  public class WorkAssignmentController implements WorkAssignmentApi {
+  @RequiredArgsConstructor
+  @Slf4j
+  public class UserEntityController implements UserEntityApi {
 
-      private final AssignmentService service;
+      private final UserEntityService userEntityService;
 
       @Override
-      public ResponseEntity<AssignmentDto> getById(UUID id) {
-          return ResponseEntity.ok(service.getById(id));
+      @NeedsValidation(Operation.USER_GET_BY_UUID) // access-management aspect, see AUTH.md
+      public ResponseEntity<UserEntityDto> getUserEntity(@ResourceId String uuid) {
+          return ResponseEntity.ok(userEntityService.getUserByUuid(uuid).toDto());
       }
   }
   ```
 
-  This keeps the controller class readable, separates the API contract from the implementation, and makes the OpenAPI annotations easy to find and maintain.
+  This keeps the controller class readable, separates the API contract from the implementation, and makes the OpenAPI annotations easy to find and maintain. Note the responses are wrapped in a global `ApiResponse<T>` envelope by `GlobalResponseWrapper` — see Error Handling below.
 
 **DON'T:**
 - Call repositories directly from controllers.
-- Put `toDto()` or mapping logic inside entity classes — this breaks SRP.
-- Leak JPA entities out of the service layer into REST responses.
-- Put `@Operation`, `@ApiResponse`, or other OpenAPI annotations directly on the controller class — put them on the interface instead.
+- Serialize a JPA entity directly in a REST response — a controller returning an entity from a service must map it to a `*Dto` (via `entity.toDto()`) first.
+- Put `@Operation`, `@ApiResponse`, or other OpenAPI annotations directly on the `*Controller` class — put them on the `*Api` interface instead.
 
 ---
 
 ## Package Structure
 
-Organise the codebase **by component type, not by feature**. All controllers live together, all entities live together, and so on. A single feature is therefore spread across the type packages rather than being confined to one feature package.
+Organise the codebase **by component type, not by feature**. All controllers live together, all entities live together, and so on. A single feature is therefore spread across the type packages rather than being confined to one feature package. This is the actual layout of `com.magentamause.cosybackend`:
 
 ```
-com.example.app
-├── Application                   # @SpringBootApplication (root — drives component scan)
-├── client/                       # outbound integrations (external API ports + impls)
-├── configuration/                # @Configuration + @ConfigurationProperties
-├── controller/
-│   ├── GlobalExceptionHandler    # @RestControllerAdvice
-│   └── v1/
-│       ├── schema/               # *Api interfaces — REST/OpenAPI annotations only
-│       └── implementation/       # *Controller classes — implement the schema, method bodies only
-├── entity/                       # JPA @Entity classes
-├── model/
-│   ├── action/                   # request DTOs (input)
-│   ├── core/                     # response DTOs (output) + shared enums
-│   ├── admin/                    # admin-only response DTOs (never exposed to regular users)
-│   └── exception/                # BaseException + all domain exceptions
-├── repository/                   # Spring Data repositories
-├── security/                     # SecurityFilterChain, JWT/authorization components
-└── services/                     # business logic, sub-packaged by domain as it grows
+com.magentamause.cosybackend
+├── CosyBackendApplication        # @SpringBootApplication (root — drives component scan)
+├── controllers/
+│   ├── api/                      # *Api interfaces — REST/OpenAPI annotations only
+│   ├── impl/                     # *Controller classes — implement the *Api, method bodies only
+│   └── gameserver/{api,impl}/    # same api/impl split, grouped for the game-server area
+├── dtos/
+│   ├── actiondtos/               # request DTOs (input), sub-packaged (e.g. user/, gameserver/)
+│   ├── entitydtos/               # response DTOs mapped from entities (*Dto)
+│   └── gamesapi/ template/ loki/ websockets/   # DTOs for specific integrations/channels
+├── entities/                     # JPA @Entity classes (sub-packaged: gameserver/, layout/, loki/, metric/)
+├── repositories/                 # Spring Data repositories
+├── services/                     # business logic, sub-packaged by domain (auth/, core/, engine/, external/, user/, technical/)
+├── security/                     # SecurityFilterChain, JWT filter, access-management aspect + policies
+├── exceptions/                   # custom RuntimeExceptions (sub-packaged: docker/, gameapi/)
+├── configs/                      # @Configuration; configs/properties/ holds @ConfigurationProperties;
+│   └── globalresponse/           # GlobalExceptionHandler + GlobalResponseWrapper + ApiResponse envelope
+├── annotations/                  # custom annotations (+ their validators)
+├── websockets/                   # STOMP/WebSocket endpoints
+└── util/                         # shared helpers
 ```
 
 **DO:**
 - Place a new class in the package for its **type** (controller, entity, repository, service, …), not its feature.
-- Split every endpoint into `controller/v1/schema` (the `*Api` interface) and `controller/v1/implementation` (the `*Controller`), per Layered Architecture above.
-- Separate DTOs by direction and audience: inputs in `model/action`, outputs in `model/core`, admin-only outputs in `model/admin`.
-- Keep `@SpringBootApplication` at the root package so component scanning covers every type package automatically.
-- Sub-package `services/` by domain (e.g. `auth`, `notification`, `core`) as it grows, rather than creating a package per feature.
+- Split every endpoint into `controllers/api` (the `*Api` interface) and `controllers/impl` (the `*Controller`), per Layered Architecture above.
+- Separate DTOs by direction: request/input DTOs in `dtos/actiondtos`, entity-mapped response DTOs in `dtos/entitydtos`; keep integration-specific DTOs (`gamesapi`, `template`, `loki`, `websockets`) in their own sub-packages.
+- Keep `@SpringBootApplication` (`CosyBackendApplication`) at the root package so component scanning covers every type package automatically.
+- Sub-package `services/` by domain (e.g. `auth`, `core`, `engine`, `external`, `user`) as it grows, rather than creating a package per feature.
 
 **DON'T:**
 - Introduce feature packages that mix controllers, services, entities, and DTOs together.
-- Put request and response DTOs in the same package — keep the `action` / `core` split.
-- Expose entities (from `entity/`) directly in responses — always map to a `model/` DTO.
+- Put request and response DTOs in the same package — keep the `actiondtos` / `entitydtos` split.
+- Serialize entities (from `entities/`) directly in responses — always map to a DTO with `toDto()`.
 
 ---
 
@@ -91,7 +98,7 @@ com.example.app
 - Use `@Transactional(readOnly = true)` on read-only service methods to allow DB-level optimisations.
 - Use `@Transactional(propagation = Propagation.MANDATORY)` on repository methods that must always be called within an existing transaction.
 - Use `@Version` on entities for optimistic locking when concurrent updates are possible.
-- Use `@Lock(LockModeType.PESSIMISTIC_WRITE)` with a `findAndLock*` naming convention when you need to serialize access to a row.
+- Use `@Lock(LockModeType.PESSIMISTIC_WRITE)` (with an explicit `@Query`) when you need to serialize access to a row, and give the method a `...Locked` suffix — the convention here is e.g. `findBySecretKeyLocked` (see `UserInviteRepository`).
 
 **DON'T:**
 - Leave multi-step write operations without `@Transactional` — partial commits cause data integrity bugs.
@@ -103,15 +110,13 @@ com.example.app
 ## Database & JPA
 
 **DO:**
-- Use Flyway for all schema changes — no DDL in code or application properties.
-- Use the JPA Metamodel (generated `_` classes) for type-safe Specifications — no magic string field names.
-- Name lock methods explicitly: `findAndLockById(...)`, `findAndLockByKey(...)`.
-- Use `Instant` for all timestamps (`java.time.Instant`).
+- Use Flyway for schema changes — no ad-hoc DDL. (Flyway is being adopted in a sibling PR; today the app runs with `ddl-auto: update` in dev, which Flyway will replace.)
+- Name pessimistic-lock query methods with a `...Locked` suffix (e.g. `findBySecretKeyLocked`).
+- Use `Instant` for all timestamps (`java.time.Instant`) — it is used throughout the entities.
 
 **DON'T:**
 - Use `new java.util.Date()` — use `Instant.now()`.
-- Use `spring.jpa.hibernate.ddl-auto=update` in any non-local environment.
-- Write JPQL or native queries with hardcoded column/field name strings when a Specification or metamodel alternative exists.
+- Use `spring.jpa.hibernate.ddl-auto=update` in production — it is a dev convenience only, and Flyway is the target for managed schema.
 
 ---
 
@@ -128,57 +133,62 @@ com.example.app
 
 ---
 
-## Error Handling
+This codebase does **not** use `ProblemDetail`/RFC 7807. Every HTTP response — success or
+error — is wrapped in a custom `ApiResponse<T>` envelope. `GlobalResponseWrapper` (a
+`ResponseBodyAdvice` in `configs/globalresponse`) wraps successful responses, and
+`GlobalExceptionHandler` (`@RestControllerAdvice` in the same package) produces the same
+envelope for errors.
+
+```java
+// configs/globalresponse/ApiResponse.java — the response/error envelope (snake_case JSON)
+@Data @Builder
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+public class ApiResponse<T> {
+    private boolean success;
+    private T data;
+    private String error;
+    private String path;
+    @Builder.Default private Instant timestamp = Instant.now();
+    private int statusCode;   // serialized as status_code
+}
+```
+
+**How errors are signalled — two real patterns:**
+
+- **Throw `org.springframework.web.server.ResponseStatusException`** with the status and a
+  message. This is the common case (used throughout the services, e.g.
+  `throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials")`).
+  `GlobalExceptionHandler` has a dedicated `@ExceptionHandler(ResponseStatusException.class)`
+  that maps it into the `ApiResponse` envelope.
+- **A custom `RuntimeException` in `exceptions/`**, either annotated with `@ResponseStatus(...)`
+  to set the HTTP status (e.g. `HardwareLimitException` → `403`), or given its own
+  `@ExceptionHandler` in `GlobalExceptionHandler` (e.g. `GamesApiError` → `502`).
 
 **DO:**
-- Define a `BaseException` that carries the HTTP status code and response detail. All custom application exceptions extend it.
-- Name exceptions after the domain concept and failure reason: `UserNotFoundException`, `AssignmentAlreadyClosedException`, etc.
-- Use a single `@ExceptionHandler(BaseException.class)` in your `@RestControllerAdvice` to handle all custom exceptions — no new handler method needed per exception type.
-
-  ```java
-  // BaseException.java
-  public abstract class BaseException extends RuntimeException {
-      private final HttpStatus status;
-      private final String detail;
-
-      protected BaseException(HttpStatus status, String detail) {
-          super(detail);
-          this.status = status;
-          this.detail = detail;
-      }
-
-      public HttpStatus getStatus() { return status; }
-      public String getDetail() { return detail; }
-  }
-
-  // UserNotFoundException.java
-  public class UserNotFoundException extends BaseException {
-      public UserNotFoundException(UUID userId) {
-          super(HttpStatus.NOT_FOUND, "User not found: " + userId);
-      }
-  }
-
-  // GlobalExceptionHandler.java
-  @RestControllerAdvice
-  public class GlobalExceptionHandler {
-
-      @ExceptionHandler(BaseException.class)
-      public ProblemDetail handle(BaseException ex) {
-          ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getDetail());
-          // log based on status category
-          return problem;
-      }
-  }
-  ```
-
-- Return RFC 7807 Problem Detail responses (`application/problem+json`) for all error responses.
-- Use a dedicated named logger per HTTP status code category for structured filtering (e.g. `log4xx`, `log5xx`).
+- Prefer throwing `ResponseStatusException` with the right `HttpStatus` for expected
+  failure cases; reach for a named exception in `exceptions/` when the failure is a
+  reusable domain concept or needs custom handling.
+- Name exceptions after the domain concept and failure reason: `HardwareLimitException`,
+  `ServerAlreadyStoppedException`, `NoAuthenticationFoundException`, etc.
+- Let `GlobalExceptionHandler` own the mapping to `ApiResponse` — including the catch-all
+  `@ExceptionHandler(Exception.class)` that returns a generic `500` (it deliberately
+  re-throws for `/api/v3/api-docs` and `/api/swagger-ui` paths so springdoc still works).
+- Keep validation/framework failures (`MethodArgumentNotValidException`,
+  `HttpMessageNotReadableException`, `MissingRequestCookieException`, …) mapped in the
+  handler, not in controllers.
 
 **DON'T:**
-- Add a new `@ExceptionHandler` method for every exception type — extend `BaseException` instead.
+- Introduce `ProblemDetail`/`application/problem+json` — it would break the uniform
+  `ApiResponse` envelope the frontend expects.
+- Return raw JPA entities, stack traces, or internal messages in the `data`/`error` fields
+  sent to clients.
 - Catch and swallow exceptions without logging or rethrowing.
-- Return stack traces or internal messages in error responses sent to clients.
-- Handle the same exception type in multiple places.
+- Bypass the envelope by hand-building error response bodies in a controller.
+
+> **Possible future improvement (not the current state):** a shared `BaseException`
+> carrying its own `HttpStatus`, handled by a single `@ExceptionHandler(BaseException.class)`,
+> would remove the per-type handler methods. It does **not** exist today — do not document
+> it as if it does.
 
 ---
 
@@ -214,10 +224,10 @@ com.example.app
 ## Security
 
 **DO:**
-- Define security rules in a dedicated `SecurityFilterChain` bean.
-- Use method-level security (`@PreAuthorize`) for fine-grained access control on service methods.
-- Validate and parse JWTs in a dedicated filter or component — not inside business logic.
-- Externalize allowed origins, token issuers, and other security config via `@ConfigurationProperties`.
+- Define coarse route rules in the single `SecurityFilterChain` bean (`SecurityConfiguration`).
+- For fine-grained, resource-aware access control, use the codebase's custom access-management aspect: annotate controller methods with `@NeedsValidation(Operation.X)` and mark the resource argument with `@ResourceId`. `AuthorizationAspect` resolves the resource and runs the matching policy in `security/accessmanagement/policies`. (Method-level `@PreAuthorize` is **not** used here.)
+- Validate and parse JWTs in a dedicated filter/component (`JwtFilter`, `JwtUtils`) — not inside business logic.
+- Externalize security config (JWT secret/expirations, CORS origins) via `@ConfigurationProperties` (`JwtProperties`, `CorsProperties`).
 
 **DON'T:**
 - Hardcode roles, issuers, or secrets in source code.
@@ -248,9 +258,7 @@ com.example.app
 **DO:**
 - Use explicit imports — no wildcard imports (`import java.util.*`).
 - Keep methods short and focused on a single responsibility.
-- Use Spring profiles (`@Profile`) as feature flags for environment-specific behaviour.
-- Define profile name constants in a dedicated `Profiles` class rather than using raw strings.
-- Use Lombok (`@Getter`, `@Builder`, `@RequiredArgsConstructor`) to reduce boilerplate, but prefer explicit constructors when clarity matters.
+- Use Lombok (`@Data`, `@Builder`, `@RequiredArgsConstructor`, `@Slf4j`) to reduce boilerplate, as the codebase does throughout, but prefer explicit constructors when clarity matters.
 
 **DON'T:**
 - Use magic numbers or strings — extract them as named constants.
