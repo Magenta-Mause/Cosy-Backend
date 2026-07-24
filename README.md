@@ -294,7 +294,7 @@ docker run --rm httpd:2.4-alpine htpasswd -nbB loki-user loki-password > infrast
 
 ```powershell
 # powershell
-docker run --rm httpd:2.4-alpine htpasswd -nbB loki-user loki-password | Out-File -Encoding ASCII htpasswd
+docker run --rm httpd:2.4-alpine htpasswd -nbB loki-user loki-password | Out-File -Encoding ASCII infrastructure/htpasswd
 ```
 
 Major dependencies: Spring Boot 4.0 starters (Web MVC, WebFlux, WebSocket, Security, Data JPA, Cache, Actuator),
@@ -355,7 +355,7 @@ Contributions are welcome! Contribution guidelines are maintained **org-wide** i
 [Magenta-Mause/.github](https://github.com/Magenta-Mause/.github) repository.
 
 - **Reporting bugs / requesting features:** all issues for the Cosy project are tracked centrally in the main
-  [Magenta-Mause/Cosy](https://github.com/Magenta-Mause/cosy/issues/new/choose) repository. (Issues opened directly on this
+  [Magenta-Mause/Cosy](https://github.com/Magenta-Mause/Cosy/issues/new/choose) repository. (Issues opened directly on this
   repo are automatically redirected there.)
 - **Development setup:** see [Getting Started](#-getting-started) and [Development](#-development) above.
 - **Before pushing:** run `./mvnw spotless:apply` and `./mvnw verify`.
@@ -369,7 +369,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](./LICEN
 ## 💬 Contact & Support
 
 - **Documentation:** [cosy-hosting.net](https://cosy-hosting.net) / [Cosy-Docs](https://github.com/Magenta-Mause/Cosy-Docs)
-- **Issues & questions:** [Magenta-Mause/Cosy issues](https://github.com/Magenta-Mause/cosy/issues)
+- **Issues & questions:** [Magenta-Mause/Cosy issues](https://github.com/Magenta-Mause/Cosy/issues)
 - **Organization:** [Magenta-Mause on GitHub](https://github.com/magenta-mause)
 
 ---
