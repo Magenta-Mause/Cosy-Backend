@@ -30,12 +30,20 @@ class FlywayMigrationTest {
     void flywayMigratedSchemaAndValidatePassed() {
         // If the context booted, Flyway migrated the empty DB and Hibernate `validate` passed.
 
-        Integer successfulMigrations =
+        // Assert no migration failed. Checking for zero failed rows stays meaningful as more
+        // migrations are added over time, unlike a fixed ">= N applied" count that has to be
+        // bumped with every new migration.
+        Integer failedMigrations =
                 jdbcTemplate.queryForObject(
-                        "SELECT count(*) FROM flyway_schema_history WHERE success = true",
+                        "SELECT count(*) FROM flyway_schema_history WHERE success = false",
                         Integer.class);
-        assertThat(successfulMigrations).isNotNull().isGreaterThanOrEqualTo(2);
+        assertThat(failedMigrations).isNotNull().isZero();
 
+        // This information_schema check is the only assertion that would have caught the original
+        // varchar(255) truncation bug: Hibernate `validate` strips length arguments when comparing
+        // column types, so it treats varchar(255) and text as equal and would NOT have flagged the
+        // un-widened column. Only an explicit data_type lookup pins down that V2 widened it to
+        // text.
         String descriptionType =
                 jdbcTemplate.queryForObject(
                         "SELECT data_type FROM information_schema.columns"
