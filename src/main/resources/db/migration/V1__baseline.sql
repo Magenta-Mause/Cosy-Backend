@@ -1,15 +1,29 @@
--- Baseline of the pre-Flyway schema.
+-- Baseline of the pre-Flyway schema: the schema Hibernate `ddl-auto: update` generated from the
+-- entity model at the time Flyway was adopted.
 --
--- This snapshot is the schema that Hibernate `ddl-auto: update` generates from the CURRENT
--- entity model. FlywayUpgradePathTest enforces that equivalence: it diffs this baseline (V1)
--- against a fresh ddl-auto run and fails on any drift, so V1 must stay in lock-step with the
--- entities.
+-- ============================================================================================
+-- THIS FILE IS FROZEN. NEVER EDIT OR REGENERATE IT.
+-- ============================================================================================
+-- On a fresh install Flyway applies V1 as a normal VERSIONED migration and records a row in
+-- flyway_schema_history with a stored CHECKSUM of this file. If V1's contents ever change, the
+-- next boot of an already-migrated fresh install fails with "Migration checksum mismatch for
+-- migration version 1" and the app will not start.
 --
--- It runs ONLY on empty/fresh databases. Existing pre-Flyway deployments are instead baselined
--- at version 1 (spring.flyway.baseline-on-migrate + baseline-version=1) WHATEVER their actual
--- schema looks like: Flyway records V1 as already applied for them without inspecting it, and
--- real migrations start at V2. Any extra legacy tables/columns those old databases carry are
--- harmless -- Hibernate `validate` only checks the mapped entities and ignores unmapped tables.
+-- That failure mode is easy to miss in testing: pre-Flyway deployments get a type=BASELINE row
+-- with a NULL checksum (Flyway does not checksum a baseline), so an edited V1 sails straight past
+-- them and past the upgrade-path test -- then detonates only on clean installs. So: when
+-- FlywayUpgradePathTest goes red because an entity changed without a matching migration, the fix
+-- is ALWAYS to add a new V<N> migration, never to touch V1 (or any already-released migration).
+--
+-- The one regeneration of this file during the Flyway-adoption PR was a one-time correction made
+-- BEFORE any deployment had applied V1 -- it is not a precedent for editing it afterwards.
+--
+-- Runtime behaviour: V1 runs ONLY on empty/fresh databases. Existing pre-Flyway deployments are
+-- instead baselined at version 1 (spring.flyway.baseline-on-migrate + baseline-version=1)
+-- WHATEVER their actual schema looks like: Flyway records V1 as already applied for them without
+-- inspecting it, and real migrations start at V2. Any extra legacy tables/columns those old
+-- databases carry are harmless -- Hibernate `validate` only checks the mapped entities and
+-- ignores unmapped tables.
 --
 -- NOTE: `template_entity.description` is `text NOT NULL` here, matching the current entity's
 -- columnDefinition="text". V2's ALTER ... TYPE text is therefore a no-op on fresh installs and

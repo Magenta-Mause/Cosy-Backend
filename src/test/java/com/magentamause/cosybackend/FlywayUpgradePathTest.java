@@ -194,9 +194,13 @@ class FlywayUpgradePathTest {
      */
     private static List<ColumnInfo> readPublicColumns(Connection connection) throws SQLException {
         List<ColumnInfo> columns = new ArrayList<>();
+        // column_default is included because Hibernate validate does not check column defaults and
+        // neither did this diff before: a migration that omitted a DEFAULT (e.g. user_entity
+        // .can_create_game_servers boolean DEFAULT true) would otherwise drift past both checks --
+        // a real behaviour change for anything inserting rows outside JPA.
         String sql =
                 "SELECT table_name, column_name, data_type, character_maximum_length,"
-                        + " numeric_precision, is_nullable"
+                        + " numeric_precision, is_nullable, column_default"
                         + " FROM information_schema.columns"
                         + " WHERE table_schema = 'public'"
                         + " AND table_name <> 'flyway_schema_history'";
@@ -210,7 +214,8 @@ class FlywayUpgradePathTest {
                                 rs.getString("data_type"),
                                 (Integer) rs.getObject("character_maximum_length"),
                                 (Integer) rs.getObject("numeric_precision"),
-                                rs.getString("is_nullable")));
+                                rs.getString("is_nullable"),
+                                rs.getString("column_default")));
             }
         }
         columns.sort(
@@ -236,5 +241,6 @@ class FlywayUpgradePathTest {
             String dataType,
             Integer characterMaximumLength,
             Integer numericPrecision,
-            String isNullable) {}
+            String isNullable,
+            String columnDefault) {}
 }
