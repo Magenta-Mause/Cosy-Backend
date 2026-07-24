@@ -44,6 +44,29 @@ You can start the application using the Maven wrapper:
 
 The API will be available at <http://localhost:8080/api>.
 
+## **⬆️ Upgrading (Self-Hosters)**
+
+From this version on, database schema migrations run **automatically at startup** via
+[Flyway](https://flywaydb.org/) — you no longer rely on Hibernate to alter your schema.
+
+**Back up your database before every upgrade.** For a Postgres deployment:
+
+```shell
+pg_dump -U cosy -h localhost cosy > cosy-backup-$(date +%F).sql
+```
+
+On the **first boot after upgrading**, Cosy detects your existing schema, records it as the
+migration baseline, and applies any newer migrations on top — no manual steps required.
+
+If startup instead fails with a `SchemaManagementException` (you'll see the container
+crash-looping), your database schema has **drifted** from what this version expects — most
+likely from an older `ddl-auto: update` install. This is safe to recover from:
+
+1. Restore the backup you just took.
+2. Roll back to the previous image tag. Older versions ignore the `flyway_schema_history`
+   table, so downgrading does no harm.
+3. Open an issue with the relevant startup log output and we'll help you migrate the drift.
+
 ## Custom Metrics (Game Server → Cosy Backend)
 
 Cosy supports **custom, game-specific metrics** published directly by your game server (for example via a Minecraft mod/plugin). This is useful for values that Cosy cannot collect automatically, such as:

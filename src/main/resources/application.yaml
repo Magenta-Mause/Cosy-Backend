@@ -12,9 +12,19 @@ spring:
     username: cosy
     password: cosy
     driver-class-name: org.postgresql.Driver
+  flyway:
+    # baseline-on-migrate exists only to migrate pre-Flyway deployments: on their first
+    # boot after this upgrade Flyway finds a non-empty schema, stamps it as V1 (baseline)
+    # and then applies V2+. It accepts ANY non-empty schema without inspecting it, so a
+    # drifted schema would be silently baselined as if it were a clean V1.
+    # REMOVE this one release after this rollout. Afterwards: an empty DB migrates normally,
+    # and a still-not-upgraded pre-Flyway DB fails with a clear Flyway error ("found non-empty
+    # schema without schema history table") instead of being silently baselined incorrectly.
+    baseline-on-migrate: true
+    baseline-version: "1"
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
