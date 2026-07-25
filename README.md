@@ -221,8 +221,8 @@ To automatically format your code:
 
 The backend uses a **Strategy Pattern** to handle different environments without changing application logic.
 
-* **RuntimeService Interface:** The main contract for server management.
-  * **DockerRuntimeStrategy:** Uses the local Docker Socket (/var/run/docker.sock). Used for single-node setups.
+* **`EngineManager` interface:** The main contract for server management (`services/engine`).
+  * **`DockerEngineManager`:** Uses the local Docker Socket (/var/run/docker.sock). Used for single-node setups, and currently the only implementation — selected via the `EngineType` enum.
 
 ### **File I/O**
 
