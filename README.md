@@ -57,7 +57,7 @@ This repository is the **backend** — the orchestration and API layer. It is on
 
 - **JDK 21** (e.g. [Eclipse Temurin 21](https://adoptium.net/temurin/releases/?version=21)) — required.
 - **Docker Engine** with the **Docker Compose v2** plugin (`docker compose ...`) — required for the dev infrastructure and as the game server runtime.
-- **Maven** — optional; the repo ships a wrapper (`./mvnw`), so a separate install is not needed. The CI/Docker builds use Maven 3.9.x.
+- **Maven** — optional; the repo ships a wrapper (`./mvnw`), so a separate install is not needed. The `Dockerfile` builds with Maven 3.9.x; CI uses the runner-provided `mvn`.
 - **Rust 1.93+** — only needed if you build the container image or the native `cosyfs` library yourself. The multi-stage `Dockerfile` builds it for you.
 
 > The backend listens on **port 8080** with a context path of **`/api`**. The dev infrastructure uses ports **5432** (Postgres), **3100** (Loki via nginx), and **8086** (InfluxDB).
@@ -78,6 +78,18 @@ cd ..
 cp .env.example .env   # then edit values
 ```
 
+> **`.env` is not read automatically.** There is no dotenv dependency in `pom.xml` and Spring Boot does
+> not load `.env` files, so copying the template alone changes nothing. Export it into the shell that
+> runs the app:
+>
+> ```bash
+> set -a; . ./.env; set +a
+> ./mvnw spring-boot:run
+> ```
+>
+> Alternatively point your IDE's run configuration at the file (IntelliJ/VS Code both support env
+> files), or pass the values as container environment variables in a deployment.
+
 ### Configuration
 
 Configuration lives in `src/main/resources/application.yaml`. The defaults are wired for **local development** and match the
@@ -88,7 +100,7 @@ environment variables are explicitly supported (see [`.env.example`](./.env.exam
 
 | Variable | Purpose | Dev default |
 | --- | --- | --- |
-| `COSY_JWT_SECRET_KEY` | JWT signing key — **change in production** | (insecure sample key) |
+| `COSY_JWT_SECRET_KEY` | JWT signing key — **change in production**. Must be **Base64-encoded** (>= 32 bytes decoded); it is Base64-decoded at startup, so a plain passphrase fails fast. Generate with `openssl rand -base64 48`. | (insecure sample key) |
 | `COSY_LOKI_USER` | Loki basic-auth user | `loki-user` |
 | `COSY_LOKI_PASSWORD` | Loki basic-auth password | `loki-password` |
 | `COSY_INFLUX_TOKEN` | InfluxDB API token | `cosy-admin-token` |
@@ -96,6 +108,8 @@ environment variables are explicitly supported (see [`.env.example`](./.env.exam
 | `COSY_DOCKER_VOLUME_DIRECTORY` | Host dir for game server bind mounts | `./dummy/cosy/volume-mounts` |
 | `COSY_DOCKER_BACKEND_VOLUME_MOUNT_PATH` | Backend-side path to those mounts | `./dummy/cosy/volume-mounts` |
 | `COSY_DOCKER_CONTAINER_PREFIX` | Prefix for managed container names | `cosy-` |
+| `COSY_ENGINE_RECONCILIATION_INTERVAL_MS` | How often the status-reconciliation sweep runs | `180000` |
+| `COSY_ENGINE_RECONCILIATION_GRACE_PERIOD_MS` | How long a server in a transitional status is left alone by the sweep | `60000` |
 | `COSY_FOOTER_FULL_NAME` / `_EMAIL` / `_PHONE` / `_STREET` / `_CITY` | Imprint / footer contact info | sample values |
 
 Other settings (CORS origins, external service URLs, JWT token lifetimes, InfluxDB org/bucket, etc.) are configured directly
@@ -117,12 +131,26 @@ Once it boots, the API is available at **<http://localhost:8080/api>** and the i
 **<http://localhost:8080/api/swagger-ui/index.html>**. On first run with `initialize-dummy-data` enabled, a default owner
 account (`admin` / `admin`) and sample data are created — **change these before exposing the instance**.
 
-Prefer containers? Build and run the full image (this also compiles the native `cosyfs` library):
+Prefer containers? Build the full image (this also compiles the native `cosyfs` library):
 
 ```bash
 docker build -t cosy-backend .
-docker run --rm -p 8080:8080 cosy-backend
 ```
+
+Running that image standalone needs more than `-p 8080:8080`: the default datasource URL
+(`jdbc:postgresql://localhost:5432/cosy`) resolves *inside* the container, and the Docker engine needs
+the host socket. For a quick manual run against the dev infrastructure:
+
+```bash
+docker run --rm -p 8080:8080 \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/cosy \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  cosy-backend
+```
+
+For a real deployment, use the compose/Kubernetes manifests in
+[Cosy-Internal-Deployment](https://github.com/Magenta-Mause/Cosy-Internal-Deployment) rather than
+hand-rolling `docker run` flags.
 
 ---
 
@@ -214,7 +242,13 @@ We maintain a strict code style using **Spotless** with **Google Java Format (AO
 ./mvnw test
 ```
 
-Tests use the `test` profile with an in-memory H2 database (PostgreSQL compatibility mode), so no running infrastructure is required.
+Most tests use the `test` profile with an in-memory H2 database (PostgreSQL compatibility mode), so no
+running infrastructure is required.
+
+The Flyway migration tests (`FlywayMigrationTest`, `FlywayUpgradePathTest`) are the exception: they need
+a real PostgreSQL and are skipped unless `CI_PG_TESTS=true` is set. CI provides a Postgres service
+container for them (see [`check.yml`](./.github/workflows/check.yml)); locally they stay skipped unless
+you opt in.
 
 ---
 
@@ -224,8 +258,9 @@ The backend exposes an OpenAPI 3 spec via **springdoc-openapi**. With the app ru
 
 - **Swagger UI:** <http://localhost:8080/api/swagger-ui/index.html>
 
-The API ("Cosy API") uses **Bearer / JWT** authentication. Actuator health endpoints (`health`, `readiness`, `liveness`) are
-exposed under `/api/actuator`.
+The API ("Cosy API") uses **Bearer / JWT** authentication. The actuator health endpoint is exposed at
+`/api/actuator/health` and is reachable without authentication; `readiness` and `liveness` are health
+*groups* underneath it, not separate endpoints.
 
 ### Custom Metrics (Game Server → Cosy Backend)
 
@@ -243,9 +278,15 @@ The server publishes a JSON object (a simple key/value map). Cosy stores this as
 
 Your game server process/container must have these environment variables set (your mod/plugin reads them at runtime):
 
-- `COSY_BACKEND_URL` — Base URL of the Cosy backend (e.g. `https://<your-domain>`)
-- `COSY_GAMESERVER_UUID` — The UUID of this game server in Cosy
+Cosy injects these into every managed container automatically
+(`DockerEngineManager#addUtilEnvVars`); your mod/plugin reads them at runtime:
+
+- `COSY_BASE_URL` — Base URL of the Cosy backend (e.g. `https://<your-domain>`)
+- `COSY_GAME_SERVER_UUID` — The UUID of this game server in Cosy
 - `COSY_CONTAINER_SECRET` — Secret used to authenticate custom metric updates
+- `COSY_METRICS_PERIOD_SECONDS` — Publish interval Cosy expects, in seconds
+- `COSY_GAME_SERVER_NAME`, `COSY_GAME_SERVER_OWNER` — Informational; the server's display name and
+  owning username
 
 > Tip: Read these once at server startup and fail fast (log a clear error) if any are missing.
 
@@ -258,11 +299,12 @@ GET /api/internal/game-server/test-connection/{game-server-uuid}
 Authorization: {secret}
 ```
 
-Response `2xx` with body:
+This endpoint **always** returns HTTP 200 — check the `data` field: `true` means the
+`(uuid, secret)` pair is valid, `false` means it is not.
 
 ```json
 {
-  "data": false,
+  "data": false,  // <-- true if the credentials are valid
   "error": null,
   "path": "/api/internal/game-server/test-connection/f98585aa-78d0-4fdf-9b3b-2f4b8c66d6e0",
   "status_code": 200,
@@ -271,7 +313,8 @@ Response `2xx` with body:
 }
 ```
 
-If validation fails (non-2xx), do not spam updates — log the error and retry with backoff.
+If `data` is `false` (or the request itself fails), do not spam updates — log the error and retry with
+backoff.
 
 #### 3) Publish custom metrics (PUT)
 
@@ -348,6 +391,12 @@ potentially vulnerable fallback is used instead.
 
 ## 🗄️ Database Management
 
+The schema is **Flyway-managed**: `ddl-auto` is set to `validate`, and migrations live in
+`src/main/resources/db/migration/` as `V<N>__*.sql`. Hibernate no longer alters the schema, so every
+entity change needs a matching migration in the same commit, and an already-applied migration is never
+edited. The **Upgrading (Self-Hosters)** section above covers what happens on first boot after an
+upgrade, including how to recover from a drifted schema.
+
 ### Access the database console
 
 ```bash
@@ -377,8 +426,10 @@ published at **[cosy-hosting.net](https://cosy-hosting.net)**.
 
 ## 🤝 Contributing
 
-Contributions are welcome! Contribution guidelines are maintained **org-wide** in the
-[Magenta-Mause/.github](https://github.com/Magenta-Mause/.github) repository.
+Contributions are welcome! Contribution guidelines will be maintained **org-wide** in the
+[Magenta-Mause/.github](https://github.com/Magenta-Mause/.github) repository — that file is still being
+landed, so until it exists, the workflow below plus [Code style & linting](#code-style--linting) is the
+authoritative guide.
 
 - **Reporting bugs / requesting features:** all issues for the Cosy project are tracked centrally in the main
   [Magenta-Mause/Cosy](https://github.com/Magenta-Mause/Cosy/issues/new/choose) repository. (Issues opened directly on this
@@ -396,7 +447,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](./LICEN
 
 - **Documentation:** [cosy-hosting.net](https://cosy-hosting.net) / [Cosy-Docs](https://github.com/Magenta-Mause/Cosy-Docs)
 - **Issues & questions:** [Magenta-Mause/Cosy issues](https://github.com/Magenta-Mause/Cosy/issues)
-- **Organization:** [Magenta-Mause on GitHub](https://github.com/magenta-mause)
+- **Organization:** [Magenta-Mause on GitHub](https://github.com/Magenta-Mause)
 
 ---
 
