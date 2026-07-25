@@ -12,9 +12,19 @@ spring:
     username: cosy
     password: cosy
     driver-class-name: org.postgresql.Driver
+  flyway:
+    # baseline-on-migrate exists only to migrate pre-Flyway deployments: on their first
+    # boot after this upgrade Flyway finds a non-empty schema, stamps it as V1 (baseline)
+    # and then applies V2+. It accepts ANY non-empty schema without inspecting it, so a
+    # drifted schema would be silently baselined as if it were a clean V1.
+    # REMOVE this one release after this rollout. Afterwards: an empty DB migrates normally,
+    # and a still-not-upgraded pre-Flyway DB fails with a clear Flyway error ("found non-empty
+    # schema without schema history table") instead of being silently baselined incorrectly.
+    baseline-on-migrate: true
+    baseline-version: "1"
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
@@ -22,6 +32,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   jackson:
     property-naming-strategy: SNAKE_CASE
+  task:
+    scheduling:
+      # Defaults to 1, which would let a slow engine call in the reconciliation sweep stall the
+      # unrelated @Scheduled tasks in TemplateService and MetricsService.
+      pool:
+        size: 3
 jwt:
   secret-key: ${COSY_JWT_SECRET_KEY:e8996bf24977ce5615015c717447911799207025d1998a01256b7b7717bac18e} #change in prod
   identity-token-expiration-time: 3600000 #1 hour
@@ -66,6 +82,13 @@ cosy:
       volume-directory: ${COSY_DOCKER_VOLUME_DIRECTORY:./dummy/cosy/volume-mounts}
       container-name-prefix: ${COSY_DOCKER_CONTAINER_PREFIX:cosy-} # Prefix for container names
       in-backend-volume-mount-path: ${COSY_DOCKER_BACKEND_VOLUME_MOUNT_PATH:./dummy/cosy/volume-mounts}
+    # Safety net against lost engine status events: every interval the persisted status of each
+    # game server is re-derived from the real container state. Servers that entered a transitional
+    # status (AWAITING_UPDATE, PULLING_IMAGE, STOPPING) within the grace period are skipped, so the
+    # sweep never fights an in-flight start or stop.
+    reconciliation:
+      interval-ms: ${COSY_ENGINE_RECONCILIATION_INTERVAL_MS:180000}
+      grace-period-ms: ${COSY_ENGINE_RECONCILIATION_GRACE_PERIOD_MS:60000}
   footer:
     full-name: ${COSY_FOOTER_FULL_NAME:Full Name}
     email: ${COSY_FOOTER_EMAIL:yourEmail@example.org}
