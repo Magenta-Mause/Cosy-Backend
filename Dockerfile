@@ -3,7 +3,7 @@
 ############################
 # Stage 0: build cosyfs (.so)
 ############################
-FROM rust:1.93-alpine AS cosyfs-builder
+FROM rust:1.97-alpine AS cosyfs-builder
 WORKDIR /work/cosyfs
 
 # Buildx populates these automatically; still OK if you build without buildx.
@@ -47,7 +47,7 @@ RUN set -eux; \
 ############################
 # Stage 1: build the jar
 ############################
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
+FROM maven:3.9.15-eclipse-temurin-26-alpine AS builder
 WORKDIR /app
 
 ARG TARGETARCH
@@ -83,7 +83,7 @@ RUN mvn clean package -DskipTests -B
 ############################
 # Stage 2: run the jar
 ############################
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
 RUN apk add --no-cache zip libc6-compat libgcc
