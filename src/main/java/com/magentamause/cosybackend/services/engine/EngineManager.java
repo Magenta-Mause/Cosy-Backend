@@ -34,7 +34,19 @@ public interface EngineManager {
     void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener);
 
+    /** Whether logs of the given server are currently being streamed. */
+    boolean isLogListenerAttached(String gameServerUuid);
+
     void attachStatusListener(BiConsumer<GameServerStatusUpdateEventType, String> listener);
+
+    /**
+     * Registers a callback invoked whenever the engine's event subscription has been
+     * (re)established.
+     *
+     * <p>Status events emitted while the subscription was down are lost, so listeners must use this
+     * to re-reconcile their view of the world against the engine.
+     */
+    void attachConnectionListener(Runnable listener);
 
     default void startAndAttachLogListener(
             GameServerEntity serviceConfig,

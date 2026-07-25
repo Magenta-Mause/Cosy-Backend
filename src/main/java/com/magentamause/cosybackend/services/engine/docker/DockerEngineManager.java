@@ -91,6 +91,11 @@ public class DockerEngineManager implements EngineManager, Closeable {
     }
 
     @Override
+    public void attachConnectionListener(Runnable listener) {
+        eventHandler.attachConnectionListener(listener);
+    }
+
+    @Override
     public void start(
             GameServerEntity serverConfig,
             Consumer<StartEventDto> progressListener,
@@ -261,6 +266,11 @@ public class DockerEngineManager implements EngineManager, Closeable {
     public void attachLogListener(
             GameServerEntity serviceConfig, Consumer<GameServerLogMessageEntity> listener) {
         logStreamer.attachLogListener(serviceConfig, listener);
+    }
+
+    @Override
+    public boolean isLogListenerAttached(String gameServerUuid) {
+        return logStreamer.isLogListenerAttached(gameServerUuid);
     }
 
     @Override

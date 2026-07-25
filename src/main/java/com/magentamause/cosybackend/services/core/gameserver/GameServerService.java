@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
+import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.dtos.actiondtos.TransferOwnershipDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerCreationDto;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.GameServerUpdateDto;
@@ -35,6 +36,8 @@ import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher
 import com.magentamause.cosybackend.websockets.GameServerUpdatePublisher;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +49,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -55,6 +61,15 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class GameServerService {
+
+    /**
+     * Placeholder for the periodic reconciliation interval. Kept as a constant because
+     * {@code @Scheduled} only accepts compile-time constant strings.
+     */
+    private static final String RECONCILIATION_INTERVAL_PROPERTY =
+            "${cosy.engine.reconciliation.interval-ms:"
+                    + EngineProperties.Reconciliation.DEFAULT_INTERVAL_MS
+                    + "}";
 
     private final GameServerRepository gameServerRepository;
     private final UserEntityService userEntityService;
@@ -70,42 +85,147 @@ public class GameServerService {
     private final RCONService rCONService;
     private final DefaultSettingsMapper defaultSettingsMapper;
     private final GameServerWebhookService webhookService;
+    private final EngineProperties engineProperties;
+
+    /**
+     * When each server's status last changed, used to leave in-flight start/stop operations alone
+     * during reconciliation. Kept in memory on purpose: it is a guard for the current process, not
+     * persisted state.
+     */
+    private final Map<String, Instant> lastStatusChange = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
         engineManager.attachStatusListener(this::handleGameServerEngineEvent);
-        for (GameServerEntity server : gameServerRepository.findAll()) {
-            GameServerDto.GameServerStatus status = engineManager.getStatus(server);
-            updateStatus(server, status);
-            engineManager.attachStatusSupplier(
-                    server.getUuid(), () -> getStatusFromEntity(server.getUuid()));
-            log.info("Setting status of server {} to {} ", server.getUuid(), status);
+        // Events emitted while the engine's event subscription was down are unrecoverable, so every
+        // (re)connect has to re-derive the persisted status from the real container state.
+        engineManager.attachConnectionListener(this::reconcileAllStatuses);
+        reconcileAllStatuses();
+    }
 
-            if (status == GameServerDto.GameServerStatus.RUNNING) {
-                try {
-                    log.info("Re-attaching log listener for running server {}", server.getUuid());
-                    engineManager.attachLogListener(
-                            server,
-                            (logMessage) ->
-                                    gameServerLogService.publishAndSaveLog(logMessage, true));
-                } catch (Exception e) {
-                    log.warn("Failed to re-attach log listener for server {}", server.getUuid(), e);
-                }
+    /**
+     * Re-derives the persisted status of every game server from the real container state and makes
+     * sure running servers have their log stream attached.
+     *
+     * <p>This runs at startup, after every (re)connect of the engine's event subscription and
+     * periodically, so a status update that was never delivered — because the subscription was down
+     * — cannot leave a server stuck in a transitional state forever.
+     */
+    @Scheduled(
+            initialDelayString = RECONCILIATION_INTERVAL_PROPERTY,
+            fixedDelayString = RECONCILIATION_INTERVAL_PROPERTY)
+    public void reconcileAllStatuses() {
+        for (GameServerEntity server : gameServerRepository.findAll()) {
+            try {
+                reconcileStatus(server);
+            } catch (Exception e) {
+                log.warn("Failed to reconcile status of server {}", server.getUuid(), e);
             }
         }
+    }
+
+    private void reconcileStatus(GameServerEntity server) {
+        String uuid = server.getUuid();
+        if (startingServers.contains(uuid)) {
+            // A start is in flight. Pulling a multi-GB image produces no status write for its whole
+            // duration, so the time-based grace below would expire mid-pull and the sweep would
+            // report the not-yet-created container as STOPPED. The start itself publishes the final
+            // status.
+            log.debug("Skipping reconciliation of server {}, which is currently starting", uuid);
+            return;
+        }
+        GameServerDto.GameServerStatus engineStatus = engineManager.getStatus(server);
+        GameServerDto.GameServerStatus persistedStatus = server.getStatus();
+
+        engineManager.attachStatusSupplier(uuid, () -> getStatusFromEntity(uuid));
+
+        if (matchesEngineStatus(persistedStatus, engineStatus)) {
+            attachLogListenerIfMissing(server, engineStatus);
+            return;
+        }
+
+        if (isTransitional(persistedStatus) && changedRecently(uuid)) {
+            // A start or stop is most likely still in flight; the operation itself will publish the
+            // final status.
+            log.debug(
+                    "Skipping reconciliation of server {} in transitional status {}",
+                    uuid,
+                    persistedStatus);
+            return;
+        }
+
+        log.info(
+                "Reconciling status of server {}: persisted {}, engine reports {}",
+                uuid,
+                persistedStatus,
+                engineStatus);
+        updateStatus(server, engineStatus);
+        attachLogListenerIfMissing(server, engineStatus);
+    }
+
+    private void attachLogListenerIfMissing(
+            GameServerEntity server, GameServerDto.GameServerStatus engineStatus) {
+        if (engineStatus != GameServerDto.GameServerStatus.RUNNING
+                || engineManager.isLogListenerAttached(server.getUuid())) {
+            return;
+        }
+        try {
+            log.info("Attaching log listener for running server {}", server.getUuid());
+            engineManager.attachLogListener(
+                    server,
+                    (logMessage) -> gameServerLogService.publishAndSaveLog(logMessage, true));
+        } catch (Exception e) {
+            log.warn("Failed to attach log listener for server {}", server.getUuid(), e);
+        }
+    }
+
+    /**
+     * The engine only distinguishes running from not running. {@code FAILED} is a stopped state
+     * that carries extra information for the user, so it is not overwritten with a plain {@code
+     * STOPPED}.
+     */
+    private boolean matchesEngineStatus(
+            GameServerDto.GameServerStatus persisted, GameServerDto.GameServerStatus engineStatus) {
+        if (engineStatus == GameServerDto.GameServerStatus.RUNNING) {
+            return persisted == GameServerDto.GameServerStatus.RUNNING;
+        }
+        return persisted.isStopped();
+    }
+
+    private boolean isTransitional(GameServerDto.GameServerStatus status) {
+        return status == GameServerDto.GameServerStatus.AWAITING_UPDATE
+                || status == GameServerDto.GameServerStatus.PULLING_IMAGE
+                || status == GameServerDto.GameServerStatus.STOPPING;
+    }
+
+    private boolean changedRecently(String uuid) {
+        Instant lastChange = lastStatusChange.get(uuid);
+        return lastChange != null
+                && Duration.between(lastChange, Instant.now())
+                                .compareTo(
+                                        Duration.ofMillis(
+                                                engineProperties.reconciliation().gracePeriodMs()))
+                        < 0;
     }
 
     private void handleGameServerEngineEvent(
             GameServerStatusUpdateEventType type, String gameServerUuid) {
         Optional<GameServerEntity> server = gameServerRepository.findById(gameServerUuid);
-        server.ifPresent(
-                gameServerEntity -> {
-                    switch (type) {
-                        case STARTED -> handleGameServerEngineStartEvent(gameServerEntity);
-                        case STOPPED -> handleGameServerEngineStopEvent(gameServerEntity);
-                        case FAILED -> handleGameServerEngineFailEvent(gameServerEntity);
-                    }
-                });
+        if (server.isEmpty()) {
+            // Expected: a deleted server's container still emits a die event afterwards.
+            log.debug(
+                    "Ignoring {} event for game server {}, which no longer exists",
+                    type,
+                    gameServerUuid);
+            lastStatusChange.remove(gameServerUuid);
+            return;
+        }
+        GameServerEntity gameServerEntity = server.get();
+        switch (type) {
+            case STARTED -> handleGameServerEngineStartEvent(gameServerEntity);
+            case STOPPED -> handleGameServerEngineStopEvent(gameServerEntity);
+            case FAILED -> handleGameServerEngineFailEvent(gameServerEntity);
+        }
     }
 
     private void handleGameServerEngineStartEvent(GameServerEntity gameServerEntity) {
@@ -400,12 +520,47 @@ public class GameServerService {
     }
 
     public void updateStatus(GameServerEntity serverConfig, GameServerDto.GameServerStatus status) {
+        String uuid = serverConfig.getUuid();
         GameServerDto.GameServerStatus previousStatus = serverConfig.getStatus();
+        lastStatusChange.put(uuid, Instant.now());
         serverConfig.setStatus(status);
-        GameServerEntity savedServer = gameServerRepository.save(serverConfig);
-        gameServerUpdatePublisher.publishGameServerUpdate(savedServer);
+
+        int updatedRows;
+        try {
+            updatedRows = gameServerRepository.updateStatusIfPresent(uuid, status);
+        } catch (ObjectOptimisticLockingFailureException | EmptyResultDataAccessException e) {
+            // Belt and braces for callers that write the entity through other paths: a status write
+            // for a server that was deleted in the meantime used to propagate all the way out of
+            // the Docker event callback and kill the event subscription for the process lifetime.
+            if (!vanished(uuid)) {
+                // The row is still there, so this is a genuine concurrent modification.
+                throw e;
+            }
+            dropStatusUpdate(uuid, status);
+            return;
+        }
+
+        if (updatedRows == 0) {
+            // Benign race: the container of a deleted server still emits its die event.
+            dropStatusUpdate(uuid, status);
+            return;
+        }
+
+        gameServerUpdatePublisher.publishGameServerUpdate(serverConfig);
         webhookService.handleStatusTransition(
-                serverConfig.getUuid(), serverConfig.getServerName(), previousStatus, status);
+                uuid, serverConfig.getServerName(), previousStatus, status);
+    }
+
+    private void dropStatusUpdate(String uuid, GameServerDto.GameServerStatus status) {
+        log.info(
+                "Dropping status update to {} for game server {}, which no longer exists",
+                status,
+                uuid);
+        lastStatusChange.remove(uuid);
+    }
+
+    private boolean vanished(String uuid) {
+        return uuid == null || !gameServerRepository.existsById(uuid);
     }
 
     public GameServerDto.GameServerStatus getStatus(String serviceName) {
