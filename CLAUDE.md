@@ -24,8 +24,12 @@ Cosy is a multi-repo project under [github.com/Magenta-Mause](https://github.com
 
 - Java 21 + Maven wrapper: `./mvnw spring-boot:run` (API at http://localhost:8080/api), `./mvnw verify` for tests.
 - Dev infrastructure (Postgres, Loki, InfluxDB): `docker compose up -d` in `infrastructure/`.
-- **Run `./mvnw spotless:apply` before pushing.** CI runs `spotless:check` as its first
-  step, so a formatting miss fails the build before any test executes.
+- **Run `./mvnw spotless:apply` before pushing — on JDK 21.** CI runs `spotless:check` as
+  its first step, so a formatting miss fails the build before any test executes. Note
+  `./mvnw verify` does **not** cover it: Spotless is bound to no lifecycle phase, so it
+  only runs as a standalone goal and a green local `verify` can still go red in CI. On
+  JDK 25 the plugin dies with `NoSuchMethodError: Log$DeferredDiagnosticHandler.getDiagnostics()`
+  — use JDK 21 (what CI uses). See [docs/conventions/SPRING_BOOT.md](docs/conventions/SPRING_BOOT.md).
 - Local dev login: `admin` / `admin` (see `cosy.defaults` in `application.yaml`).
 - **The schema is Flyway-managed** (`ddl-auto: validate`). Every schema change needs the
   entity change **plus** a new `V<N>__*.sql` in `src/main/resources/db/migration/` in the

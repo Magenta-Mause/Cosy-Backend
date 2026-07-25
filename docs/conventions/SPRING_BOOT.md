@@ -280,12 +280,29 @@ below as the direction to build in rather than a pattern to copy from many examp
 ## Code Style
 
 **Formatting is enforced by Spotless — run it before you push.** CI's first step is
-`mvn spotless:check`, so an unformatted file fails the build before any test runs:
+`mvn -B spotless:check` (google-java-format 1.17.0, AOSP style, UNIX line endings), so an
+unformatted file fails the build before any test runs:
 
 ```
 ./mvnw spotless:apply    # format
 ./mvnw spotless:check    # what CI runs
 ```
+
+Two things about this that catch people out:
+
+- **`./mvnw verify` does not run Spotless.** The plugin is declared in `pom.xml` with no
+  `<executions>` block, so it is bound to no lifecycle phase — it only runs when invoked
+  as a standalone goal. A clean local `verify` therefore tells you nothing about the
+  formatting gate; run `spotless:apply` separately or CI will go red on a green local build.
+- **Run it on JDK 21** (Temurin 21 is what CI uses). On JDK 25, spotless-maven-plugin
+  2.43.0 + google-java-format fails outright with:
+
+  ```
+  NoSuchMethodError: Log$DeferredDiagnosticHandler.getDiagnostics()
+  ```
+
+  That is a toolchain mismatch, not a problem with your code — `spotless:apply` aborts
+  without formatting anything. Switch to JDK 21 and re-run.
 
 **DO:**
 - Use explicit imports — no wildcard imports (`import java.util.*`).
