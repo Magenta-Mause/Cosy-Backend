@@ -34,10 +34,16 @@ import org.springframework.stereotype.Component;
  * Subscribes to the Docker {@code /events} stream and translates container events into game server
  * status updates.
  *
- * <p>The subscription is self-healing: whenever the stream ends — with an error or cleanly — it is
- * re-established with a capped exponential backoff. Events that happened while the stream was down
- * are unrecoverable, so every successful (re)connect also notifies the registered connection
- * listeners, which re-reconcile persisted status against the real container state.
+ * <p>Handling a single event must never cost us the subscription. An exception escaping the
+ * docker-java callback ends the stream, and the backend then stays blind to every further container
+ * event until it is restarted — which is exactly how a status write for an already deleted game
+ * server used to wedge the whole system. Every event is therefore dispatched defensively.
+ *
+ * <p>As a second line of defence the subscription is self-healing: whenever the stream ends — with
+ * an error or cleanly — it is re-established with a capped exponential backoff. Events that
+ * happened while the stream was down are unrecoverable, so every successful (re)connect also
+ * notifies the registered connection listeners, which re-reconcile persisted status against the
+ * real container state.
  */
 @Slf4j
 @Component
@@ -254,10 +260,7 @@ public class DockerEventHandler implements Closeable {
      * is therefore consulted as well, and only a genuinely unexpected exit is treated as a failure.
      */
     private void handleDieEvent(String uuid, Integer exitCode) {
-        Supplier<GameServerDto.GameServerStatus> statusSupplier = statusSuppliers.get(uuid);
-        if (statusSupplier == null) {
-            log.warn("No status supplier for server with uuid: {} found", uuid);
-        } else if (statusSupplier.get() == GameServerDto.GameServerStatus.STOPPING) {
+        if (currentStatusOf(uuid) == GameServerDto.GameServerStatus.STOPPING) {
             notifyListeners(GameServerStatusUpdateEventType.STOPPED, uuid);
             return;
         }
@@ -276,8 +279,40 @@ public class DockerEventHandler implements Closeable {
         notifyListeners(GameServerStatusUpdateEventType.FAILED, uuid);
     }
 
+    /**
+     * Current status of a server, or {@code null} when it cannot be determined — most commonly
+     * because the server was deleted while its container was still shutting down.
+     */
+    private GameServerDto.GameServerStatus currentStatusOf(String uuid) {
+        Supplier<GameServerDto.GameServerStatus> statusSupplier = statusSuppliers.get(uuid);
+        if (statusSupplier == null) {
+            log.warn("No status supplier for server with uuid: {} found", uuid);
+            return null;
+        }
+        try {
+            return statusSupplier.get();
+        } catch (Exception e) {
+            log.debug("Could not determine the current status of server {}", uuid, e);
+            return null;
+        }
+    }
+
+    /**
+     * Notifies every listener, isolating them from each other: one listener blowing up must neither
+     * hide the event from the others nor escape into the docker-java callback.
+     */
     private void notifyListeners(GameServerStatusUpdateEventType eventType, String uuid) {
-        statusListeners.forEach(listener -> listener.accept(eventType, uuid));
+        for (BiConsumer<GameServerStatusUpdateEventType, String> listener : statusListeners) {
+            try {
+                listener.accept(eventType, uuid);
+            } catch (Exception e) {
+                log.error(
+                        "Docker event listener failed for {} event of server {}",
+                        eventType,
+                        uuid,
+                        e);
+            }
+        }
     }
 
     @Override
@@ -324,7 +359,17 @@ public class DockerEventHandler implements Closeable {
 
         @Override
         public void onNext(Event event) {
-            handleEvent(event);
+            try {
+                handleEvent(event);
+            } catch (Exception e) {
+                // An exception escaping this callback tears down the /events subscription, and the
+                // backend then never sees another container event. A single unprocessable event
+                // must never cost us the whole stream, so it is logged and consumption continues.
+                log.error(
+                        "Failed to handle Docker event {}, continuing to consume the event stream",
+                        event,
+                        e);
+            }
         }
 
         @Override

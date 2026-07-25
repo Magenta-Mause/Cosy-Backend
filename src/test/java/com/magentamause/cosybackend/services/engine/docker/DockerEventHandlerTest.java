@@ -167,6 +167,48 @@ class DockerEventHandlerTest {
     }
 
     @Test
+    void aFailingListenerNeitherKillsTheStreamNorHidesTheEventFromOtherListeners() {
+        // An exception escaping the docker-java callback ends the subscription for good: this is
+        // how a status write for an already deleted game server used to wedge the whole backend.
+        handler.attachStatusListener(
+                (type, uuid) -> {
+                    throw new IllegalStateException("Unexpected row count (expected 1 but was 0)");
+                });
+        List<GameServerStatusUpdateEventType> received = recordStatusUpdates();
+        ResultCallback<Event> callback = currentCallback();
+
+        callback.onNext(containerEvent("start", null));
+        callback.onNext(containerEvent("start", null));
+
+        assertThat(received)
+                .as("a healthy listener must keep receiving events")
+                .containsExactly(
+                        GameServerStatusUpdateEventType.STARTED,
+                        GameServerStatusUpdateEventType.STARTED);
+        sleep(NO_ACTION_WINDOW);
+        assertThat(callbacks)
+                .as("the subscription must survive, so no reconnect is needed")
+                .hasSize(1);
+    }
+
+    @Test
+    void aDieEventForADeletedServerDoesNotKillTheStream() {
+        List<GameServerStatusUpdateEventType> received = recordStatusUpdates();
+        // Looking up a deleted server throws; the die event of its container still arrives.
+        handler.attachStatusSupplier(
+                SERVER_UUID,
+                () -> {
+                    throw new IllegalStateException("Game server not found");
+                });
+
+        currentCallback().onNext(containerEvent("die", "143"));
+
+        assertThat(received).containsExactly(GameServerStatusUpdateEventType.STOPPED);
+        sleep(NO_ACTION_WINDOW);
+        assertThat(callbacks).hasSize(1);
+    }
+
+    @Test
     void anUnexpectedDieEventIsReportedAsFailure() {
         List<GameServerStatusUpdateEventType> received = recordStatusUpdates();
         handler.attachStatusSupplier(SERVER_UUID, () -> GameServerDto.GameServerStatus.RUNNING);

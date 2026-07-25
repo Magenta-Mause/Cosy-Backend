@@ -49,7 +49,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -201,14 +203,21 @@ public class GameServerService {
     private void handleGameServerEngineEvent(
             GameServerStatusUpdateEventType type, String gameServerUuid) {
         Optional<GameServerEntity> server = gameServerRepository.findById(gameServerUuid);
-        server.ifPresent(
-                gameServerEntity -> {
-                    switch (type) {
-                        case STARTED -> handleGameServerEngineStartEvent(gameServerEntity);
-                        case STOPPED -> handleGameServerEngineStopEvent(gameServerEntity);
-                        case FAILED -> handleGameServerEngineFailEvent(gameServerEntity);
-                    }
-                });
+        if (server.isEmpty()) {
+            // Expected: a deleted server's container still emits a die event afterwards.
+            log.debug(
+                    "Ignoring {} event for game server {}, which no longer exists",
+                    type,
+                    gameServerUuid);
+            lastStatusChange.remove(gameServerUuid);
+            return;
+        }
+        GameServerEntity gameServerEntity = server.get();
+        switch (type) {
+            case STARTED -> handleGameServerEngineStartEvent(gameServerEntity);
+            case STOPPED -> handleGameServerEngineStopEvent(gameServerEntity);
+            case FAILED -> handleGameServerEngineFailEvent(gameServerEntity);
+        }
     }
 
     private void handleGameServerEngineStartEvent(GameServerEntity gameServerEntity) {
@@ -503,13 +512,38 @@ public class GameServerService {
     }
 
     public void updateStatus(GameServerEntity serverConfig, GameServerDto.GameServerStatus status) {
+        String uuid = serverConfig.getUuid();
         GameServerDto.GameServerStatus previousStatus = serverConfig.getStatus();
-        lastStatusChange.put(serverConfig.getUuid(), Instant.now());
+        lastStatusChange.put(uuid, Instant.now());
         serverConfig.setStatus(status);
-        GameServerEntity savedServer = gameServerRepository.save(serverConfig);
+
+        GameServerEntity savedServer;
+        try {
+            savedServer = gameServerRepository.save(serverConfig);
+        } catch (ObjectOptimisticLockingFailureException | EmptyResultDataAccessException e) {
+            // Writing the status of a server that was deleted in the meantime updates zero rows.
+            // That is a benign race — the container of a deleted server still emits its die event —
+            // but the resulting exception used to propagate all the way out of the Docker event
+            // callback and kill the event subscription for the rest of the process lifetime.
+            if (!vanished(uuid)) {
+                // The row is still there, so this is a genuine concurrent modification.
+                throw e;
+            }
+            log.info(
+                    "Dropping status update to {} for game server {}, which no longer exists",
+                    status,
+                    uuid);
+            lastStatusChange.remove(uuid);
+            return;
+        }
+
         gameServerUpdatePublisher.publishGameServerUpdate(savedServer);
         webhookService.handleStatusTransition(
-                serverConfig.getUuid(), serverConfig.getServerName(), previousStatus, status);
+                uuid, serverConfig.getServerName(), previousStatus, status);
+    }
+
+    private boolean vanished(String uuid) {
+        return uuid == null || !gameServerRepository.existsById(uuid);
     }
 
     public GameServerDto.GameServerStatus getStatus(String serviceName) {

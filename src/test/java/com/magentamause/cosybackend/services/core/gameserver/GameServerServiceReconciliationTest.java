@@ -1,6 +1,8 @@
 package com.magentamause.cosybackend.services.core.gameserver;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -23,13 +25,17 @@ import com.magentamause.cosybackend.websockets.GameServerDockerProgressPublisher
 import com.magentamause.cosybackend.websockets.GameServerUpdatePublisher;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 /**
  * Reconciliation is what actually repairs the damage of a lost engine event: the status update that
@@ -57,6 +63,10 @@ class GameServerServiceReconciliationTest {
     @Mock private RCONService rconService;
     @Mock private DefaultSettingsMapper defaultSettingsMapper;
     @Mock private GameServerWebhookService webhookService;
+
+    @Captor
+    private ArgumentCaptor<BiConsumer<GameServerStatusUpdateEventType, String>>
+            statusListenerCaptor;
 
     private GameServerService service;
 
@@ -162,6 +172,66 @@ class GameServerServiceReconciliationTest {
         service.reconcileAllStatuses();
 
         verify(engineManager, never()).attachLogListener(any(GameServerEntity.class), any());
+    }
+
+    @Test
+    void aStatusUpdateForADeletedServerIsDroppedInsteadOfThrowing() {
+        // The container of a deleted server still emits its die event. The resulting write hits
+        // zero rows, and the exception used to escape the Docker event callback and kill the event
+        // subscription for the rest of the process lifetime.
+        GameServerEntity server =
+                GameServerEntity.builder()
+                        .uuid(SERVER_UUID)
+                        .status(GameServerDto.GameServerStatus.RUNNING)
+                        .build();
+        when(gameServerRepository.save(any(GameServerEntity.class)))
+                .thenThrow(
+                        new ObjectOptimisticLockingFailureException(
+                                GameServerEntity.class, SERVER_UUID));
+        when(gameServerRepository.existsById(SERVER_UUID)).thenReturn(false);
+
+        assertThatCode(() -> service.updateStatus(server, GameServerDto.GameServerStatus.FAILED))
+                .doesNotThrowAnyException();
+
+        verify(gameServerUpdatePublisher, never())
+                .publishGameServerUpdate(any(GameServerEntity.class));
+    }
+
+    @Test
+    void aConcurrentModificationOfAnExistingServerIsNotSwallowed() {
+        GameServerEntity server =
+                GameServerEntity.builder()
+                        .uuid(SERVER_UUID)
+                        .status(GameServerDto.GameServerStatus.RUNNING)
+                        .build();
+        when(gameServerRepository.save(any(GameServerEntity.class)))
+                .thenThrow(
+                        new ObjectOptimisticLockingFailureException(
+                                GameServerEntity.class, SERVER_UUID));
+        when(gameServerRepository.existsById(SERVER_UUID)).thenReturn(true);
+
+        assertThatThrownBy(
+                        () -> service.updateStatus(server, GameServerDto.GameServerStatus.STOPPED))
+                .isInstanceOf(ObjectOptimisticLockingFailureException.class);
+    }
+
+    @Test
+    void anEngineEventForADeletedServerIsIgnored() {
+        when(gameServerRepository.findAll()).thenReturn(List.of());
+        when(gameServerRepository.findById(SERVER_UUID)).thenReturn(Optional.empty());
+        service.init();
+        verify(engineManager).attachStatusListener(statusListenerCaptor.capture());
+
+        assertThatCode(
+                        () ->
+                                statusListenerCaptor
+                                        .getValue()
+                                        .accept(
+                                                GameServerStatusUpdateEventType.FAILED,
+                                                SERVER_UUID))
+                .doesNotThrowAnyException();
+
+        verify(gameServerRepository, never()).save(any(GameServerEntity.class));
     }
 
     @Test
