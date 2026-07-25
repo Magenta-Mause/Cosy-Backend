@@ -160,8 +160,7 @@ class GameServerServiceReconciliationTest {
 
         assertThat(server.getStatus()).isEqualTo(GameServerDto.GameServerStatus.AWAITING_UPDATE);
         verify(gameServerRepository)
-                .updateStatusIfPresent(
-                        SERVER_UUID, GameServerDto.GameServerStatus.AWAITING_UPDATE);
+                .updateStatusIfPresent(SERVER_UUID, GameServerDto.GameServerStatus.AWAITING_UPDATE);
     }
 
     @Test
