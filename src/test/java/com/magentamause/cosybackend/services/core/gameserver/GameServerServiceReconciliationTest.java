@@ -5,12 +5,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.magentamause.cosybackend.configs.properties.EngineProperties;
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
+import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.core.games.GamesService;
@@ -47,6 +49,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 class GameServerServiceReconciliationTest {
 
     private static final String SERVER_UUID = "server-uuid";
+    private static final String OWNER_UUID = "owner-uuid";
     private static final long RECONCILIATION_INTERVAL_MS = 180000;
     private static final long GRACE_PERIOD_MS = 60000;
 
@@ -72,29 +75,35 @@ class GameServerServiceReconciliationTest {
 
     @BeforeEach
     void setUp() {
+        service = serviceWithGracePeriod(GRACE_PERIOD_MS);
+        when(gameServerRepository.save(any(GameServerEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(gameServerRepository.updateStatusIfPresent(
+                        anyString(), any(GameServerDto.GameServerStatus.class)))
+                .thenReturn(1);
+    }
+
+    private GameServerService serviceWithGracePeriod(long gracePeriodMs) {
         EngineProperties engineProperties =
                 new EngineProperties(
                         null,
                         new EngineProperties.Reconciliation(
-                                RECONCILIATION_INTERVAL_MS, GRACE_PERIOD_MS));
-        service =
-                new GameServerService(
-                        gameServerRepository,
-                        userEntityService,
-                        engineManager,
-                        gameServerUpdatePublisher,
-                        dockerProgressPublisher,
-                        gameServerLogService,
-                        gamesService,
-                        hardwareLimitValidator,
-                        hardwareQuotaChecker,
-                        volumeDirectoryService,
-                        rconService,
-                        defaultSettingsMapper,
-                        webhookService,
-                        engineProperties);
-        when(gameServerRepository.save(any(GameServerEntity.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                                RECONCILIATION_INTERVAL_MS, gracePeriodMs));
+        return new GameServerService(
+                gameServerRepository,
+                userEntityService,
+                engineManager,
+                gameServerUpdatePublisher,
+                dockerProgressPublisher,
+                gameServerLogService,
+                gamesService,
+                hardwareLimitValidator,
+                hardwareQuotaChecker,
+                volumeDirectoryService,
+                rconService,
+                defaultSettingsMapper,
+                webhookService,
+                engineProperties);
     }
 
     @Test
@@ -105,7 +114,8 @@ class GameServerServiceReconciliationTest {
         service.reconcileAllStatuses();
 
         assertThat(server.getStatus()).isEqualTo(GameServerDto.GameServerStatus.RUNNING);
-        verify(gameServerRepository).save(server);
+        verify(gameServerRepository)
+                .updateStatusIfPresent(SERVER_UUID, GameServerDto.GameServerStatus.RUNNING);
     }
 
     @Test
@@ -125,7 +135,7 @@ class GameServerServiceReconciliationTest {
 
         service.reconcileAllStatuses();
 
-        verify(gameServerRepository, never()).save(any(GameServerEntity.class));
+        verifyNoStatusWrite();
     }
 
     @Test
@@ -136,7 +146,7 @@ class GameServerServiceReconciliationTest {
         service.reconcileAllStatuses();
 
         assertThat(server.getStatus()).isEqualTo(GameServerDto.GameServerStatus.FAILED);
-        verify(gameServerRepository, never()).save(any(GameServerEntity.class));
+        verifyNoStatusWrite();
     }
 
     @Test
@@ -149,7 +159,9 @@ class GameServerServiceReconciliationTest {
         service.reconcileAllStatuses();
 
         assertThat(server.getStatus()).isEqualTo(GameServerDto.GameServerStatus.AWAITING_UPDATE);
-        verify(gameServerRepository).save(server);
+        verify(gameServerRepository)
+                .updateStatusIfPresent(
+                        SERVER_UUID, GameServerDto.GameServerStatus.AWAITING_UPDATE);
     }
 
     @Test
@@ -184,11 +196,9 @@ class GameServerServiceReconciliationTest {
                         .uuid(SERVER_UUID)
                         .status(GameServerDto.GameServerStatus.RUNNING)
                         .build();
-        when(gameServerRepository.save(any(GameServerEntity.class)))
-                .thenThrow(
-                        new ObjectOptimisticLockingFailureException(
-                                GameServerEntity.class, SERVER_UUID));
-        when(gameServerRepository.existsById(SERVER_UUID)).thenReturn(false);
+        when(gameServerRepository.updateStatusIfPresent(
+                        anyString(), any(GameServerDto.GameServerStatus.class)))
+                .thenReturn(0);
 
         assertThatCode(() -> service.updateStatus(server, GameServerDto.GameServerStatus.FAILED))
                 .doesNotThrowAnyException();
@@ -198,13 +208,34 @@ class GameServerServiceReconciliationTest {
     }
 
     @Test
+    void aStatusUpdateForADeletedServerNeverResurrectsIt() {
+        // save() would resolve to a merge(), and merging a detached entity whose row is gone
+        // re-INSERTs it — the deleted server would silently reappear. The conditional update
+        // affects zero rows instead.
+        GameServerEntity server =
+                GameServerEntity.builder()
+                        .uuid(SERVER_UUID)
+                        .status(GameServerDto.GameServerStatus.RUNNING)
+                        .build();
+        when(gameServerRepository.updateStatusIfPresent(
+                        anyString(), any(GameServerDto.GameServerStatus.class)))
+                .thenReturn(0);
+
+        service.updateStatus(server, GameServerDto.GameServerStatus.STOPPED);
+
+        verify(gameServerRepository, never()).save(any(GameServerEntity.class));
+        verify(webhookService, never()).handleStatusTransition(any(), any(), any(), any());
+    }
+
+    @Test
     void aConcurrentModificationOfAnExistingServerIsNotSwallowed() {
         GameServerEntity server =
                 GameServerEntity.builder()
                         .uuid(SERVER_UUID)
                         .status(GameServerDto.GameServerStatus.RUNNING)
                         .build();
-        when(gameServerRepository.save(any(GameServerEntity.class)))
+        when(gameServerRepository.updateStatusIfPresent(
+                        anyString(), any(GameServerDto.GameServerStatus.class)))
                 .thenThrow(
                         new ObjectOptimisticLockingFailureException(
                                 GameServerEntity.class, SERVER_UUID));
@@ -231,7 +262,7 @@ class GameServerServiceReconciliationTest {
                                                 SERVER_UUID))
                 .doesNotThrowAnyException();
 
-        verify(gameServerRepository, never()).save(any(GameServerEntity.class));
+        verifyNoStatusWrite();
     }
 
     @Test
@@ -241,6 +272,37 @@ class GameServerServiceReconciliationTest {
         service.init();
 
         verify(engineManager).attachConnectionListener(any(Runnable.class));
+    }
+
+    @Test
+    void doesNotStompAnInFlightImagePullThatOutlivedTheGracePeriod() throws Exception {
+        // Pulling a multi-GB image writes no status for its whole duration, so a purely time-based
+        // grace expires mid-pull — modelled here by a grace period of zero. The container does not
+        // exist yet, so the engine reports STOPPED, and the sweep must still keep its hands off.
+        GameServerService serviceWithoutGrace = serviceWithGracePeriod(0);
+        GameServerEntity server = givenServer(GameServerDto.GameServerStatus.STOPPED);
+        server.setOwner(UserEntity.builder().uuid(OWNER_UUID).build());
+        givenEngineStatus(GameServerDto.GameServerStatus.STOPPED);
+        doAnswer(
+                        invocation -> {
+                            server.setStatus(GameServerDto.GameServerStatus.PULLING_IMAGE);
+                            serviceWithoutGrace.reconcileAllStatuses();
+                            return null;
+                        })
+                .when(engineManager)
+                .startAndAttachLogListener(any(), any(), any(), any(), any(), any(), any());
+
+        serviceWithoutGrace.startServer(SERVER_UUID);
+
+        assertThat(server.getStatus()).isEqualTo(GameServerDto.GameServerStatus.PULLING_IMAGE);
+        verify(gameServerRepository, never())
+                .updateStatusIfPresent(SERVER_UUID, GameServerDto.GameServerStatus.STOPPED);
+    }
+
+    private void verifyNoStatusWrite() {
+        verify(gameServerRepository, never())
+                .updateStatusIfPresent(anyString(), any(GameServerDto.GameServerStatus.class));
+        verify(gameServerRepository, never()).save(any(GameServerEntity.class));
     }
 
     private GameServerEntity givenServer(GameServerDto.GameServerStatus status) {

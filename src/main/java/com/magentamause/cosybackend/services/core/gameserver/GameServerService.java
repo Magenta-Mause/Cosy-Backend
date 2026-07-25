@@ -126,6 +126,14 @@ public class GameServerService {
 
     private void reconcileStatus(GameServerEntity server) {
         String uuid = server.getUuid();
+        if (startingServers.contains(uuid)) {
+            // A start is in flight. Pulling a multi-GB image produces no status write for its whole
+            // duration, so the time-based grace below would expire mid-pull and the sweep would
+            // report the not-yet-created container as STOPPED. The start itself publishes the final
+            // status.
+            log.debug("Skipping reconciliation of server {}, which is currently starting", uuid);
+            return;
+        }
         GameServerDto.GameServerStatus engineStatus = engineManager.getStatus(server);
         GameServerDto.GameServerStatus persistedStatus = server.getStatus();
 
@@ -517,29 +525,38 @@ public class GameServerService {
         lastStatusChange.put(uuid, Instant.now());
         serverConfig.setStatus(status);
 
-        GameServerEntity savedServer;
+        int updatedRows;
         try {
-            savedServer = gameServerRepository.save(serverConfig);
+            updatedRows = gameServerRepository.updateStatusIfPresent(uuid, status);
         } catch (ObjectOptimisticLockingFailureException | EmptyResultDataAccessException e) {
-            // Writing the status of a server that was deleted in the meantime updates zero rows.
-            // That is a benign race — the container of a deleted server still emits its die event —
-            // but the resulting exception used to propagate all the way out of the Docker event
-            // callback and kill the event subscription for the rest of the process lifetime.
+            // Belt and braces for callers that write the entity through other paths: a status write
+            // for a server that was deleted in the meantime used to propagate all the way out of
+            // the Docker event callback and kill the event subscription for the process lifetime.
             if (!vanished(uuid)) {
                 // The row is still there, so this is a genuine concurrent modification.
                 throw e;
             }
-            log.info(
-                    "Dropping status update to {} for game server {}, which no longer exists",
-                    status,
-                    uuid);
-            lastStatusChange.remove(uuid);
+            dropStatusUpdate(uuid, status);
             return;
         }
 
-        gameServerUpdatePublisher.publishGameServerUpdate(savedServer);
+        if (updatedRows == 0) {
+            // Benign race: the container of a deleted server still emits its die event.
+            dropStatusUpdate(uuid, status);
+            return;
+        }
+
+        gameServerUpdatePublisher.publishGameServerUpdate(serverConfig);
         webhookService.handleStatusTransition(
                 uuid, serverConfig.getServerName(), previousStatus, status);
+    }
+
+    private void dropStatusUpdate(String uuid, GameServerDto.GameServerStatus status) {
+        log.info(
+                "Dropping status update to {} for game server {}, which no longer exists",
+                status,
+                uuid);
+        lastStatusChange.remove(uuid);
     }
 
     private boolean vanished(String uuid) {

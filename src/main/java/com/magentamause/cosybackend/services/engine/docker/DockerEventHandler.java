@@ -62,9 +62,6 @@ public class DockerEventHandler implements Closeable {
     private static final String CONTAINER_NAME_ATTRIBUTE = "name";
     private static final String EXIT_CODE_ATTRIBUTE = "exitCode";
 
-    /** A container that exits with 0 shut down cleanly. */
-    private static final int EXIT_CODE_SUCCESS = 0;
-
     /**
      * 128 + SIGTERM(15): the container was asked to terminate and did not install a handler. This
      * is how {@code docker stop} normally ends a container, so it is a graceful stop rather than a
@@ -257,7 +254,12 @@ public class DockerEventHandler implements Closeable {
      * <p>The persisted status alone is not sufficient: if the {@code STOPPING} transition was
      * missed (for example while the event stream was down) a perfectly normal shutdown would be
      * reported as {@code FAILED}, which is terminal for clients. The exit code carried by the event
-     * is therefore consulted as well, and only a genuinely unexpected exit is treated as a failure.
+     * is therefore consulted as well.
+     *
+     * <p>Only 143 (SIGTERM) is treated as graceful. Exit code 0 deliberately is not: game servers
+     * routinely exit 0 on a fatal misconfiguration — an unparsable config, an unaccepted EULA, a
+     * rejected licence — and reporting those as a clean {@code STOPPED} would take away the only
+     * signal the user gets that something went wrong.
      */
     private void handleDieEvent(String uuid, Integer exitCode) {
         if (currentStatusOf(uuid) == GameServerDto.GameServerStatus.STOPPING) {
@@ -265,12 +267,11 @@ public class DockerEventHandler implements Closeable {
             return;
         }
 
-        if (exitCode != null && (exitCode == EXIT_CODE_SUCCESS || exitCode == EXIT_CODE_SIGTERM)) {
+        if (exitCode != null && exitCode == EXIT_CODE_SIGTERM) {
             log.info(
-                    "Container of server {} exited gracefully with code {} without a preceding stop"
+                    "Container of server {} was terminated by SIGTERM without a preceding stop"
                             + " request; treating it as stopped rather than failed",
-                    uuid,
-                    exitCode);
+                    uuid);
             notifyListeners(GameServerStatusUpdateEventType.STOPPED, uuid);
             return;
         }

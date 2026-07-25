@@ -155,15 +155,29 @@ class DockerEventHandlerTest {
     }
 
     @Test
-    void aGracefulDieEventWithoutAPrecedingStopIsNotReportedAsFailure() {
-        // The STOPPING transition can be missed while the event stream is down; a clean exit must
-        // not be mislabelled as a failure, because FAILED is terminal for clients.
+    void aSigtermDieEventWithoutAPrecedingStopIsNotReportedAsFailure() {
+        // The STOPPING transition can be missed while the event stream is down; a container that
+        // was terminated by SIGTERM must not be mislabelled as a failure, because FAILED is
+        // terminal for clients.
+        List<GameServerStatusUpdateEventType> received = recordStatusUpdates();
+        handler.attachStatusSupplier(SERVER_UUID, () -> GameServerDto.GameServerStatus.RUNNING);
+
+        currentCallback().onNext(containerEvent("die", "143"));
+
+        assertThat(received).containsExactly(GameServerStatusUpdateEventType.STOPPED);
+    }
+
+    @Test
+    void aSelfInflictedExitZeroWithoutAPrecedingStopIsStillReportedAsFailure() {
+        // Game servers routinely exit 0 on a fatal misconfiguration (unparsable config, unaccepted
+        // EULA, rejected licence). Reporting that as a clean stop would hide the only signal the
+        // user gets that something went wrong.
         List<GameServerStatusUpdateEventType> received = recordStatusUpdates();
         handler.attachStatusSupplier(SERVER_UUID, () -> GameServerDto.GameServerStatus.RUNNING);
 
         currentCallback().onNext(containerEvent("die", "0"));
 
-        assertThat(received).containsExactly(GameServerStatusUpdateEventType.STOPPED);
+        assertThat(received).containsExactly(GameServerStatusUpdateEventType.FAILED);
     }
 
     @Test
