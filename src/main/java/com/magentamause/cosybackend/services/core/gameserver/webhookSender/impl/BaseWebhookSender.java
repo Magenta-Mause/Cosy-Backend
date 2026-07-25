@@ -3,6 +3,7 @@ package com.magentamause.cosybackend.services.core.gameserver.webhookSender.impl
 import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.entities.WebhookType;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
+import com.magentamause.cosybackend.services.core.gameserver.webhookSender.WebhookMessages;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.WebhookSender;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -47,11 +48,7 @@ public abstract class BaseWebhookSender implements WebhookSender {
     }
 
     protected String toMessage(GameServerDomainEvent event) {
-        return switch (event.eventType()) {
-            case SERVER_STARTED -> "Server started: " + event.serverName();
-            case SERVER_STOPPED -> "Server stopped: " + event.serverName();
-            case SERVER_FAILED -> "Server crashed: " + event.serverName();
-        };
+        return WebhookMessages.forEvent(event);
     }
 
     protected abstract Map<String, Object> payload(GameServerDomainEvent event);
