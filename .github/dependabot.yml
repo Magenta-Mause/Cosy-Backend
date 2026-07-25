@@ -6,9 +6,16 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
     groups:
+      # Majors are excluded from the group on purpose, so they arrive as
+      # individual PRs that can be migrated one at a time. Grouping them here
+      # meant one breaking bump (e.g. a Spring Boot minor that shifts generated
+      # schema) blocked every safe bump riding along with it.
       maven-dependencies:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "docker"
     directory: "/"
@@ -19,6 +26,9 @@ updates:
       docker-dependencies:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -29,3 +39,6 @@ updates:
       github-actions-dependencies:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
