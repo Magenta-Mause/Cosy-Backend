@@ -19,11 +19,12 @@ own tokens (no external IdP). See also the Security section of
   4. sets a custom `AuthenticationToken(subject, user)` (a
      `UsernamePasswordAuthenticationToken` granting `ROLE_<role>`) on the
      `SecurityContextHolder`.
-- **Route rules in one `SecurityFilterChain` bean** (`SecurityConfiguration`). Public
-  matchers (`/auth/**`, `/actuator/**`, `/v3/api-docs/**`, `/swagger-ui/**`, a few public
-  GET endpoints like `/game-server`, `/footer`, public metrics/logs, the internal
-  metric-push endpoints, and `/v1/ws/**`) are `permitAll()`; everything else is
-  `.authenticated()`.
+- **Route rules in one `SecurityFilterChain` bean** (`SecurityConfiguration`). The chain
+  ends in `.requestMatchers("/**").authenticated()`, so **everything is protected by
+  default and every `permitAll()` is a deliberate hole.** The exempt set covers auth
+  endpoints, actuator, springdoc, a handful of public GETs, the internal metric-push
+  endpoints and the WebSocket handshake — read `SecurityConfiguration` for the current
+  list rather than trusting one written down here.
 - **Signing:** HMAC (symmetric) via the `jjwt` library (`Keys.hmacShaKeyFor`). The secret
   comes from `@ConfigurationProperties(prefix = "jwt")` (`JwtProperties`), bound from
   `jwt.secret-key`. In production it must be overridden via env

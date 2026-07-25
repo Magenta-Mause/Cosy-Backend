@@ -114,8 +114,8 @@ never create or alter a table for you — a missing migration means the app fail
 
 **DO:**
 - Ship every schema change as a new `V<N>__*.sql` in `src/main/resources/db/migration/`,
-  in the same commit as the entity change. Migrations to date: `V1__baseline.sql`,
-  `V2__widen_template_description.sql`, `V3__drop_orphaned_legacy_tables.sql`.
+  in the same commit as the entity change. `V1__baseline.sql` is the baseline of the
+  pre-Flyway schema and only runs on empty databases; see the directory for the current set.
 - Name pessimistic-lock query methods with a `...Locked` suffix — `UserInviteRepository`
   has the one example, `findBySecretKeyLocked` (`@Lock(LockModeType.PESSIMISTIC_WRITE)`
   on an explicit `@Query`).
@@ -132,14 +132,9 @@ never create or alter a table for you — a missing migration means the app fail
 
 ## Configuration Properties
 
-**DO:**
-- Use `@ConfigurationProperties(prefix = "...")` with a validated, nested POJO for all app-specific config.
-- Annotate config classes with `@Validated` and use Bean Validation (`@NotNull`, `@Min`, etc.) on fields.
-- Bind config once at startup — fail fast if required properties are missing.
-
-**DON'T:**
-- Use `@Value` for anything beyond trivial single values — it does not compose or validate.
-- Scatter config reads across multiple classes without a central properties class.
+App-specific config is bound with `@ConfigurationProperties(prefix = "...")` into a
+`@Validated` POJO in `configs/properties/` (`JwtProperties`, `CorsProperties`, …), not
+read with `@Value` at the point of use. Follow that when adding config.
 
 ---
 
@@ -206,30 +201,25 @@ public class ApiResponse<T> {
 
 ## Logging
 
-**DO:**
-- Log at `DEBUG` for the happy path (successful operations, normal flow).
-- Log at `WARN` for recoverable client errors (4xx) — the client did something wrong, not the service.
-- Log at `ERROR` for server errors (5xx) — something the service is responsible for.
-- Include enough context in log messages to diagnose the issue without a debugger (IDs, statuses, key values).
-- Use SLF4J with parameterised messages: `log.debug("Processing item {}", id)` — never string concatenation.
+The level policy here is deliberate and differs from the usual default — **the happy path
+logs at `DEBUG`, not `INFO`**:
 
-**DON'T:**
-- Log at `WARN` or `ERROR` for expected 4xx responses — this creates noise in alerting.
-- Log sensitive data (PII, tokens, passwords).
-- Use `System.out.println` or `printStackTrace()`.
+- `DEBUG` — successful operations, normal flow.
+- `WARN` — recoverable client errors (4xx). The client did something wrong, not the service.
+- `ERROR` — server errors (5xx), i.e. something the service is responsible for.
+
+Logging an expected 4xx at `WARN`/`ERROR` creates alerting noise, which is the point of
+the split. Never log tokens, passwords, or PII.
 
 ---
 
 ## Validation
 
-**DO:**
-- Validate all incoming request bodies and path/query parameters with Bean Validation (`@Valid`, `@NotNull`, `@Size`, etc.) at the controller layer.
-- Validate configuration properties at startup with `@Validated`.
-- Use custom `ConstraintValidator` implementations for domain-specific rules.
-
-**DON'T:**
-- Duplicate validation logic across the controller and service layer.
-- Perform validation inside entity setters — validate at the boundary.
+Bean Validation (`@Valid` + constraints) applies at the controller boundary as usual. What
+is repo-specific: domain rules live in custom `ConstraintValidator` implementations under
+`annotations/`, alongside the annotation they back — and resource-aware *authorisation*
+is a separate mechanism, `@NeedsValidation`, described under Security below. The two are
+easy to confuse by name; they are unrelated.
 
 ---
 
@@ -250,10 +240,9 @@ public class ApiResponse<T> {
 
 ## Testing Conventions
 
-**Be aware of the starting point:** this repo currently has very little test coverage —
-three classes in `src/test`, namely the `CosyBackendApplicationTests` context load and the
-two Flyway tests. There is no established service-unit-test suite yet, so treat the notes
-below as the direction to build in rather than a pattern to copy from many examples.
+**Be aware of the starting point:** coverage in this repo is thin and grows unevenly —
+check `src/test` for what currently exists before assuming there is (or isn't) a pattern
+to follow for your area.
 
 **DO:**
 - Use JUnit 5. Spring Boot's `spring-boot-starter-test` is on the classpath, so JUnit 5,
@@ -279,21 +268,15 @@ below as the direction to build in rather than a pattern to copy from many examp
 
 ## Code Style
 
-**Formatting is enforced by Spotless — run it before you push.** CI's first step is
-`mvn -B spotless:check` (google-java-format 1.17.0, AOSP style, UNIX line endings), so an
-unformatted file fails the build before any test runs:
+Spotless (google-java-format 1.17.0, AOSP style) enforces formatting, and `README.md`
+covers the basic `spotless:apply` / `spotless:check` usage. Two things it doesn't say, and
+that you cannot infer from `pom.xml` at a glance:
 
-```
-./mvnw spotless:apply    # format
-./mvnw spotless:check    # what CI runs
-```
-
-Two things about this that catch people out:
-
-- **`./mvnw verify` does not run Spotless.** The plugin is declared in `pom.xml` with no
-  `<executions>` block, so it is bound to no lifecycle phase — it only runs when invoked
-  as a standalone goal. A clean local `verify` therefore tells you nothing about the
-  formatting gate; run `spotless:apply` separately or CI will go red on a green local build.
+- **`./mvnw verify` does not run Spotless.** The plugin is declared with no `<executions>`
+  block, so it is bound to no lifecycle phase and only runs as a standalone goal. A clean
+  local `verify` therefore tells you nothing about the formatting gate — CI runs
+  `spotless:check` as its *first* step, so an unformatted file goes red before any test
+  executes.
 - **Run it on JDK 21** (Temurin 21 is what CI uses). On JDK 25, spotless-maven-plugin
   2.43.0 + google-java-format fails outright with:
 
@@ -304,11 +287,6 @@ Two things about this that catch people out:
   That is a toolchain mismatch, not a problem with your code — `spotless:apply` aborts
   without formatting anything. Switch to JDK 21 and re-run.
 
-**DO:**
-- Use explicit imports — no wildcard imports (`import java.util.*`).
-- Use Lombok (`@Data`, `@Builder`, `@RequiredArgsConstructor`, `@Slf4j`) to reduce boilerplate, as the codebase does throughout, but prefer explicit constructors when clarity matters.
-
-**DON'T:**
-- Hand-format around Spotless — if the formatter disagrees with you, let it win.
-- Suppress warnings (`@SuppressWarnings`) without a comment explaining why.
-- Mix concerns in a single class (e.g. a service that also handles HTTP response formatting).
+Lombok (`@Data`, `@Builder`, `@RequiredArgsConstructor`, `@Slf4j`) is used throughout;
+prefer it over hand-written boilerplate, but write the explicit constructor where clarity
+wins.
