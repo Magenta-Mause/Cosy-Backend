@@ -24,6 +24,8 @@ Cosy is a multi-repo project under [github.com/Magenta-Mause](https://github.com
 
 - Java 21 + Maven wrapper: `./mvnw spring-boot:run` (API at http://localhost:8080/api), `./mvnw verify` for tests.
 - Dev infrastructure (Postgres, Loki, InfluxDB): `docker compose up -d` in `infrastructure/`.
+- **Run `./mvnw spotless:apply` before pushing.** CI runs `spotless:check` as its first
+  step, so a formatting miss fails the build before any test executes.
 - Local dev login: `admin` / `admin` (see `cosy.defaults` in `application.yaml`).
 - **The schema is Flyway-managed** (`ddl-auto: validate`). Every schema change needs the
   entity change **plus** a new `V<N>__*.sql` in `src/main/resources/db/migration/` in the

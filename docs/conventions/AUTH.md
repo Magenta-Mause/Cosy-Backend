@@ -66,26 +66,47 @@ The **identity token is deliberately claim-rich** so the frontend can read auth 
   `AuthorizationAspect` resolves the resource and delegates to the matching policy in
   `security/accessmanagement/policies` (e.g. `GameServerPolicy`, `UserPolicy`).
 
-## Frontend side (React)
+## The client-facing contract
 
-- The Orval `customInstance` (axios) attaches the bearer token and handles a
-  **silent refresh on 401** using the refresh cookie.
-- Route access control lives in TanStack Router `beforeLoad` guards, **never** inside
-  page components.
-- An auth-context/hook decodes the identity token claims for UI state.
+What this repo guarantees to a client (Cosy-Frontend or any other consumer) — the
+endpoints live on `AuthorizationApi` under `/auth`:
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /auth/login` | credentials in, identity token in `LoginResponseDto`; refresh token per `TokenMode` |
+| `GET /auth/token` | exchange the refresh token (cookie or body) for a fresh identity token |
+| `POST /auth/logout` | clears the refresh cookie (`maxAge=0`) |
+
+Clients send the identity token as `Authorization: Bearer <token>` on every request.
+WebSocket/streaming handshakes cannot set headers, so both `JwtFilter` and
+`JwtHandshakeInterceptor` also accept the token as an `authToken` **query parameter** —
+keep that in mind when reviewing logging, since query strings are far more likely to end
+up in access logs than headers are.
+
+Because the identity token carries the role and limit claims, a client can render auth
+state without an extra round-trip — but **claims are a snapshot from mint time**. A role
+or quota change does not take effect until the token is refreshed, so never treat a
+client-side claim check as enforcement; the server-side policy is the authority.
+
+Frontend-side implementation details (how Cosy-Frontend stores the token and guards
+routes) live in the Cosy-Frontend repo — don't mirror them here, they drift.
 
 ## DO / DON'T
 
 **DO:**
-- Keep the API stateless; validate the JWT in a dedicated filter, not in business logic.
-- Split access vs refresh tokens; keep the refresh token in an httpOnly cookie.
-- Source the signing secret from env/`@ConfigurationProperties`; fail closed.
-- Put auth endpoints behind rate limiting (+ captcha on public sign-up/login if exposed).
+- Keep the API stateless; validate the JWT in `JwtFilter`, not in business logic.
+- Enforce resource-level access with `@NeedsValidation` + a policy, so the rule sits next
+  to the other policies rather than inline in a controller body.
+- Source the signing secret from `JwtProperties`; override `COSY_JWT_SECRET_KEY` in any
+  real deployment.
+- Add a new `Operation` + policy when you add an endpoint that touches a user-owned
+  resource — an endpoint with no `@NeedsValidation` is authenticated but otherwise
+  unrestricted.
 
 **DON'T:**
-- Hardcode the JWT secret, roles, or issuers in source (a committed default is a smell,
-  even when overridden in prod).
-- Scatter access control as inline checks in controllers/components — use the filter
-  chain, the `@NeedsValidation`/policy aspect, and router `beforeLoad`.
-- Store the access token where XSS can read it if it can be avoided; prefer the
-  in-memory + httpOnly-refresh pattern.
+- Hardcode roles or issuers in source, or rely on the committed dev secret anywhere real.
+- Add a `permitAll()` matcher without being sure the handler is safe unauthenticated —
+  the chain ends in `.requestMatchers("/**").authenticated()`, so new endpoints are
+  protected by default and every `permitAll()` is a deliberate hole.
+- Widen the `JwtFilter` to accept the refresh token for authentication — the token-type
+  check is the only thing keeping a long-lived token out of ordinary requests.

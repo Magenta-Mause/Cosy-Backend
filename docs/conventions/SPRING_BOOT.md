@@ -96,9 +96,9 @@ com.magentamause.cosybackend
 **DO:**
 - Annotate every service method that writes to the database with `@Transactional`.
 - Use `@Transactional(readOnly = true)` on read-only service methods to allow DB-level optimisations.
-- Use `@Transactional(propagation = Propagation.MANDATORY)` on repository methods that must always be called within an existing transaction.
-- Use `@Version` on entities for optimistic locking when concurrent updates are possible.
-- Use `@Lock(LockModeType.PESSIMISTIC_WRITE)` (with an explicit `@Query`) when you need to serialize access to a row, and give the method a `...Locked` suffix — the convention here is e.g. `findBySecretKeyLocked` (see `UserInviteRepository`).
+- Use `@Lock(LockModeType.PESSIMISTIC_WRITE)` (with an explicit `@Query`) when you need to
+  serialize access to a row, and give the method a `...Locked` suffix — `UserInviteRepository.findBySecretKeyLocked`
+  is the existing example (invite redemption must not race).
 
 **DON'T:**
 - Leave multi-step write operations without `@Transactional` — partial commits cause data integrity bugs.
@@ -109,14 +109,24 @@ com.magentamause.cosybackend
 
 ## Database & JPA
 
+The schema is **Flyway-managed**; Hibernate runs with `ddl-auto: validate`, so it will
+never create or alter a table for you — a missing migration means the app fails to boot.
+
 **DO:**
-- Use Flyway for schema changes — no ad-hoc DDL. (Flyway is being adopted in a sibling PR; today the app runs with `ddl-auto: update` in dev, which Flyway will replace.)
-- Name pessimistic-lock query methods with a `...Locked` suffix (e.g. `findBySecretKeyLocked`).
+- Ship every schema change as a new `V<N>__*.sql` in `src/main/resources/db/migration/`,
+  in the same commit as the entity change. Migrations to date: `V1__baseline.sql`,
+  `V2__widen_template_description.sql`, `V3__drop_orphaned_legacy_tables.sql`.
+- Name pessimistic-lock query methods with a `...Locked` suffix — `UserInviteRepository`
+  has the one example, `findBySecretKeyLocked` (`@Lock(LockModeType.PESSIMISTIC_WRITE)`
+  on an explicit `@Query`).
 - Use `Instant` for all timestamps (`java.time.Instant`) — it is used throughout the entities.
 
 **DON'T:**
+- Edit a migration that has already been applied — Flyway checksums it and will fail on
+  the next start. Add a new versioned migration instead.
 - Use `new java.util.Date()` — use `Instant.now()`.
-- Use `spring.jpa.hibernate.ddl-auto=update` in production — it is a dev convenience only, and Flyway is the target for managed schema.
+- Reach for `ddl-auto: update` to "fix" a validation failure — that hides the missing
+  migration and desynchronises deployed instances.
 
 ---
 
@@ -132,6 +142,8 @@ com.magentamause.cosybackend
 - Scatter config reads across multiple classes without a central properties class.
 
 ---
+
+## Error Handling & the Response Envelope
 
 This codebase does **not** use `ProblemDetail`/RFC 7807. Every HTTP response — success or
 error — is wrapped in a custom `ApiResponse<T>` envelope. `GlobalResponseWrapper` (a
@@ -238,29 +250,48 @@ public class ApiResponse<T> {
 
 ## Testing Conventions
 
+**Be aware of the starting point:** this repo currently has very little test coverage —
+three classes in `src/test`, namely the `CosyBackendApplicationTests` context load and the
+two Flyway tests. There is no established service-unit-test suite yet, so treat the notes
+below as the direction to build in rather than a pattern to copy from many examples.
+
 **DO:**
-- Use JUnit 5 (`@ExtendWith(MockitoExtension.class)`) and AssertJ for assertions.
-- Prefer `assertThatThrownBy(...)` over `@Test(expected = ...)` for exception assertions.
-- Use `.satisfies(...)` in AssertJ to group assertions on a single object cleanly.
-- Write tests for failure paths and boundary values, not just the happy path.
-- Use `@SpringBootTest` sparingly — prefer unit tests with mocks for service logic.
-- Use `@DataJpaTest` for repository-layer tests with an in-memory DB.
+- Use JUnit 5. Spring Boot's `spring-boot-starter-test` is on the classpath, so JUnit 5,
+  Mockito and AssertJ are all available without adding dependencies.
+- Gate anything that needs a real Postgres behind
+  `@EnabledIfEnvironmentVariable(named = "CI_PG_TESTS", matches = "true")`, as
+  `FlywayMigrationTest` and `FlywayUpgradePathTest` do. CI sets that variable and provides
+  a `postgres:16-alpine` service; a plain local `./mvnw verify` skips those tests instead
+  of failing on a missing database.
+- Add a migration test alongside a migration that does anything non-trivial —
+  `FlywayUpgradePathTest` exists to prove an existing database upgrades cleanly, not just
+  that a fresh one builds.
+- Prefer plain unit tests with mocks for service logic; `@SpringBootTest` boots the whole
+  context and is slow.
 
 **DON'T:**
 - Assert only that no exception was thrown — assert the actual result.
-- Use `Mockito.when(...).thenReturn(...)` for behaviour that should be tested for real (e.g. DB queries).
-- Write tests that only cover the happy path and skip error branches.
+- Write a test that silently needs a local Postgres without the `CI_PG_TESTS` guard — it
+  will fail for every contributor who just runs `./mvnw verify`.
+- Cover only the happy path and skip error branches.
 
 ---
 
 ## Code Style
 
+**Formatting is enforced by Spotless — run it before you push.** CI's first step is
+`mvn spotless:check`, so an unformatted file fails the build before any test runs:
+
+```
+./mvnw spotless:apply    # format
+./mvnw spotless:check    # what CI runs
+```
+
 **DO:**
 - Use explicit imports — no wildcard imports (`import java.util.*`).
-- Keep methods short and focused on a single responsibility.
 - Use Lombok (`@Data`, `@Builder`, `@RequiredArgsConstructor`, `@Slf4j`) to reduce boilerplate, as the codebase does throughout, but prefer explicit constructors when clarity matters.
 
 **DON'T:**
-- Use magic numbers or strings — extract them as named constants.
+- Hand-format around Spotless — if the formatter disagrees with you, let it win.
 - Suppress warnings (`@SuppressWarnings`) without a comment explaining why.
 - Mix concerns in a single class (e.g. a service that also handles HTTP response formatting).
