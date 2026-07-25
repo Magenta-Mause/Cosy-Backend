@@ -47,7 +47,11 @@ public class GameServerEntity {
     @Enumerated(EnumType.STRING)
     private GameServerDesign design;
 
-    @CreationTimestamp private LocalDateTime createdOn;
+    // nullable = false is stated explicitly so the mapping does not depend on how a given Hibernate
+    // version chooses to generate DDL for @CreationTimestamp (6 emitted it nullable, 7 does not).
+    @CreationTimestamp
+    @Column(nullable = false)
+    private LocalDateTime createdOn;
 
     private LocalDateTime timestampLastStarted;
 
