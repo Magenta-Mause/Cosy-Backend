@@ -11,8 +11,8 @@ own tokens (no external IdP). See also the Security section of
   stateless token API). No server-side session.
 - **A `JwtFilter extends OncePerRequestFilter`** (`security/jwtfilter`), registered
   `addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)`. It:
-  1. resolves the token from `Authorization: Bearer <token>` (falling back to an
-     `authToken` request parameter, used by streaming/WebSocket handshakes),
+  1. resolves the token from `Authorization: Bearer <token>` — and **only** from that
+     header; there is no request-parameter fallback (see the WebSocket note below),
   2. validates the signature, the `cosy-backend` issuer, a non-empty subject, and that
      the `tokenType` claim is the **identity** token,
   3. loads the `UserEntity` by the token subject (user UUID),
@@ -78,11 +78,16 @@ endpoints live on `AuthorizationApi` under `/auth`:
 | `GET /auth/token` | exchange the refresh token (cookie or body) for a fresh identity token |
 | `POST /auth/logout` | clears the refresh cookie (`maxAge=0`) |
 
-Clients send the identity token as `Authorization: Bearer <token>` on every request.
-WebSocket/streaming handshakes cannot set headers, so both `JwtFilter` and
-`JwtHandshakeInterceptor` also accept the token as an `authToken` **query parameter** —
-keep that in mind when reviewing logging, since query strings are far more likely to end
-up in access logs than headers are.
+Clients send the identity token as `Authorization: Bearer <token>` on every request —
+**every** HTTP request, with no exceptions. The zip-download endpoints stream their
+response but are ordinary header-authenticated requests; they are not a special case.
+
+The **WebSocket handshake** is the sole exception, because a browser cannot set headers
+on it: `JwtHandshakeInterceptor` accepts the token as an `authToken` **query parameter**
+on `/v1/ws`. That endpoint is `permitAll()` in the filter chain, so the interceptor — not
+`JwtFilter` — is what authenticates it. Treat that URL as sensitive: query strings are
+logged by every reverse proxy Cosy ships with (nginx, Caddy, ingress-nginx), so a
+handshake URL in an access log is a usable identity token until it expires.
 
 Because the identity token carries the role and limit claims, a client can render auth
 state without an extra round-trip — but **claims are a snapshot from mint time**. A role
