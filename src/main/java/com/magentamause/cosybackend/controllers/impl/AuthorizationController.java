@@ -1,5 +1,6 @@
 package com.magentamause.cosybackend.controllers.impl;
 
+import com.magentamause.cosybackend.configs.properties.SecurityProperties;
 import com.magentamause.cosybackend.controllers.TokenMode;
 import com.magentamause.cosybackend.controllers.api.AuthorizationApi;
 import com.magentamause.cosybackend.dtos.actiondtos.user.LoginDto;
@@ -23,6 +24,7 @@ public class AuthorizationController implements AuthorizationApi {
 
     private final AuthorizationService authorizationService;
     private final JwtUtils jwtUtils;
+    private final SecurityProperties securityProperties;
 
     @Value("${server.servlet.context-path}")
     private String basePath;
@@ -42,7 +44,7 @@ public class AuthorizationController implements AuthorizationApi {
         ResponseCookie responseCookie =
                 ResponseCookie.from("refreshToken", refreshToken)
                         .httpOnly(true)
-                        .secure(false)
+                        .secure(securityProperties.cookieSecure())
                         .maxAge(
                                 jwtUtils.getTokenValidityDuration(
                                                 JwtTokenBody.TokenType.REFRESH_TOKEN)
@@ -63,10 +65,13 @@ public class AuthorizationController implements AuthorizationApi {
 
     @Override
     public ResponseEntity<Void> logout() {
+        // The delete cookie must carry the same attributes as the one issued at login —
+        // a Set-Cookie whose Secure flag differs does not overwrite the stored cookie,
+        // so a mismatch here silently leaves the user logged in.
         ResponseCookie deleteCookie =
                 ResponseCookie.from("refreshToken", "")
                         .httpOnly(true)
-                        .secure(false)
+                        .secure(securityProperties.cookieSecure())
                         .path(basePath + "/auth/token")
                         .maxAge(0)
                         .sameSite("Strict")

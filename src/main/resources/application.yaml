@@ -49,6 +49,14 @@ management:
         include: "health,readiness,liveness"
 
 cosy:
+  security:
+    # Adds `Secure` to the refresh-token cookie. Defaults to false because the installer's
+    # TLS mode is opt-in: browsers silently drop a Secure cookie over plain HTTP, so a
+    # true default would break login on every non-TLS install. Deployments that terminate
+    # TLS (Caddy, or an ingress with cert-manager) should set COSY_SECURITY_COOKIE_SECURE
+    # to true — without it the month-long refresh cookie also travels over plain HTTP and
+    # can be overwritten by a network attacker.
+    cookie-secure: ${COSY_SECURITY_COOKIE_SECURE:false}
   cors:
     allowed-origins:
       - http://localhost:3000
