@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.repositories;
 
 import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.repositories.projections.GameServerPortUsage;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -11,6 +12,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 public interface GameServerRepository extends JpaRepository<GameServerEntity, String> {
     List<GameServerEntity> findByOwner_Uuid(String ownerUuid);
+
+    /**
+     * Every host port every game server has configured, one row per port.
+     *
+     * <p>Servers without port mappings are absent — they cannot collide with anything. The join
+     * keeps this to a single flat query instead of loading whole entities with all their eager
+     * collections just to read a port number.
+     */
+    @Query(
+            """
+            select new com.magentamause.cosybackend.repositories.projections.GameServerPortUsage(
+                g.uuid, g.serverName, g.status, p.instancePort, p.protocol)
+            from GameServerEntity g join g.portMappings p
+            """)
+    List<GameServerPortUsage> findAllPortUsages();
 
     /**
      * Writes the status of an existing game server and reports how many rows were affected.
