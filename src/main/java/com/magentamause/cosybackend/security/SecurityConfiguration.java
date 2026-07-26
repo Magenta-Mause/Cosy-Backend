@@ -24,7 +24,20 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // CSRF is disabled as this is a stateless JWT-based API
+                // CSRF is disabled as this is a stateless JWT-based API: there is no ambient
+                // credential for a cross-site request to ride. Authentication is a bearer JWT
+                // the attacker cannot produce — normally the Authorization header, but JwtFilter
+                // also accepts an "authToken" request parameter. (The /v1/ws handshake reads a
+                // parameter of the same name, but through its own JwtHandshakeInterceptor; the
+                // endpoint is permitAll() here, so it does not depend on JwtFilter's fallback.)
+                // Neither form is attached by the browser on its own.
+                // The only cookie is the refresh token: HttpOnly, SameSite=Strict,
+                // path-scoped to /auth/token and read only by a GET, which Spring's CsrfFilter
+                // exempts anyway.
+                // Caveat: POST /auth/logout is permitAll() and takes no credential, so a
+                // cross-site form post can force-clear the victim's refresh cookie. That is a
+                // nuisance, not a compromise — nothing is read or written on their behalf.
+                // See docs/conventions/AUTH.md; CodeQL alert #2 is dismissed on this basis.
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         authorizeRequests ->
