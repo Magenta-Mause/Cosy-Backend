@@ -24,7 +24,12 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // CSRF is disabled as this is a stateless JWT-based API
+                // CSRF is disabled as this is a stateless JWT-based API: every protected
+                // endpoint authenticates from the Authorization: Bearer header, which a
+                // cross-site request cannot set, so there is no ambient credential to ride.
+                // The only cookie is the refresh token, which is HttpOnly, SameSite=Strict
+                // and path-scoped to /auth/token — a GET that CSRF protection exempts anyway.
+                // See docs/conventions/AUTH.md; CodeQL alert #2 is dismissed on this basis.
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         authorizeRequests ->
