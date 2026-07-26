@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://adoptium.net/temurin/releases/?version=21)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Build](https://github.com/Magenta-Mause/Cosy-Backend/actions/workflows/check.yml/badge.svg)](https://github.com/Magenta-Mause/Cosy-Backend/actions/workflows/check.yml)
 
 This Spring Boot application acts as the "Town Hall" of the Cosy ecosystem. It manages game server containers, handles
@@ -31,7 +31,7 @@ This repository is the **backend** — the orchestration and API layer. It is on
 
 ### Key features
 
-- 🎮 **Game server orchestration** — create, start, stop and manage containerized game servers via a pluggable runtime strategy (Docker).
+- 🎮 **Game server orchestration** — create, start, stop and manage containerized game servers behind a pluggable engine abstraction (`EngineManager`, Docker today).
 - 🧩 **Template-driven provisioning** — spin up servers from templates served by the Cosy template & game services.
 - 📈 **Metrics** — system metrics into InfluxDB, plus **custom, game-specific metrics** pushed by the game server itself (see below).
 - 📜 **Log streaming** — server logs shipped to Grafana Loki and streamed to clients over WebSockets.
@@ -42,7 +42,7 @@ This repository is the **backend** — the orchestration and API layer. It is on
 ## 🛠️ Tech Stack
 
 - **Language:** Java 21
-- **Framework:** Spring Boot 4.0 (Web MVC + WebFlux + WebSocket, Spring Security, Spring Data JPA, Actuator)
+- **Framework:** Spring Boot 4.1 (Web MVC + WebFlux + WebSocket, Spring Security, Spring Data JPA, Actuator)
 - **Build tool:** Maven (via the bundled wrapper)
 - **API docs:** springdoc-openapi (Swagger UI)
 - **Datastores:** PostgreSQL (application data), InfluxDB (metrics), Grafana Loki (logs)
@@ -89,6 +89,9 @@ cp .env.example .env   # then edit values
 >
 > Alternatively point your IDE's run configuration at the file (IntelliJ/VS Code both support env
 > files), or pass the values as container environment variables in a deployment.
+>
+> Only override what you actually need: an unset variable falls back to the development default in
+> `application.yaml`, but a variable set to the *empty* string overrides that default with `""`.
 
 ### Configuration
 
@@ -100,7 +103,7 @@ environment variables are explicitly supported (see [`.env.example`](./.env.exam
 
 | Variable | Purpose | Dev default |
 | --- | --- | --- |
-| `COSY_JWT_SECRET_KEY` | JWT signing key — **change in production**. Must be **Base64-encoded** (>= 32 bytes decoded); it is Base64-decoded at startup, so a plain passphrase fails fast. Generate with `openssl rand -base64 48`. | (insecure sample key) |
+| `COSY_JWT_SECRET_KEY` | JWT signing key — **change in production**. Must be **Base64-encoded** (>= 32 bytes decoded); it is Base64-decoded at startup, so a plain passphrase fails fast. Generate with `openssl rand -base64 48`. Leave it *unset* (not empty) to use the dev default — an empty value fails startup. | (insecure sample key) |
 | `COSY_LOKI_USER` | Loki basic-auth user | `loki-user` |
 | `COSY_LOKI_PASSWORD` | Loki basic-auth password | `loki-password` |
 | `COSY_INFLUX_TOKEN` | InfluxDB API token | `cosy-admin-token` |
@@ -276,8 +279,6 @@ The server publishes a JSON object (a simple key/value map). Cosy stores this as
 
 #### 1) Required environment variables
 
-Your game server process/container must have these environment variables set (your mod/plugin reads them at runtime):
-
 Cosy injects these into every managed container automatically
 (`DockerEngineManager#addUtilEnvVars`); your mod/plugin reads them at runtime:
 
@@ -336,7 +337,8 @@ Body — a flat JSON key/value map:
 }
 ```
 
-Cosy treats this payload as the server's **current custom metric holder**. Publish on an interval (e.g. every 5–10 seconds) and/or when values change.
+Cosy treats this payload as the server's **current custom metric holder**. Publish on the interval Cosy
+asks for via `COSY_METRICS_PERIOD_SECONDS` and/or when values change.
 
 **Recommendations**
 
@@ -365,7 +367,7 @@ docker run --rm httpd:2.4-alpine htpasswd -nbB loki-user loki-password > infrast
 docker run --rm httpd:2.4-alpine htpasswd -nbB loki-user loki-password | Out-File -Encoding ASCII infrastructure/htpasswd
 ```
 
-Major dependencies: Spring Boot 4.0 starters (Web MVC, WebFlux, WebSocket, Security, Data JPA, Cache, Actuator),
+Major dependencies: Spring Boot 4.1 starters (Web MVC, WebFlux, WebSocket, Security, Data JPA, Cache, Actuator),
 `springdoc-openapi` (Swagger UI), `jjwt` (JWT), `docker-java` (container management), `influxdb-client-java` (metrics),
 `rcon-java` (RCON), JNA (native `cosyfs` binding), Lombok, and PostgreSQL / H2 drivers.
 
