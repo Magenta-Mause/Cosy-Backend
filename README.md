@@ -25,14 +25,20 @@ This repository is the **backend** — the orchestration and API layer. It is on
 | Repository | Role |
 | --- | --- |
 | [Cosy](https://github.com/Magenta-Mause/Cosy) | Main project / self-host download & install repo |
-| [Cosy-Frontend](https://github.com/Magenta-Mause/Cosy-Frontend) | Web UI |
+| [Cosy-Frontend](https://github.com/Magenta-Mause/Cosy-Frontend) | Web UI — consumes this repo's OpenAPI spec |
 | **Cosy-Backend** (this repo) | Orchestration engine & REST/WebSocket API |
+| [Cosy-Template-Service](https://github.com/Magenta-Mause/Cosy-Template-Service) | Go service serving the template & game catalog (`/v3/templates`, `/v3/games`) — this backend's template source, see `cosy.templates-api` |
+| [Cosy-Templates](https://github.com/Magenta-Mause/Cosy-Templates) | The template definitions themselves (Docker Compose & Kubernetes, schema-validated) |
+| [Cosy-Minecraft-Integration-Mod](https://github.com/Magenta-Mause/Cosy-Minecraft-Integration-Mod) | Fabric server-side mod — reference implementation of the [custom-metrics contract](#custom-metrics-game-server--cosy-backend) below |
 | [Cosy-Docs](https://github.com/Magenta-Mause/Cosy-Docs) | Documentation ([cosy-hosting.net](https://cosy-hosting.net)) |
+| [Cosy-Internal-Deployment](https://github.com/Magenta-Mause/Cosy-Internal-Deployment) | Maintainers' reference Kubernetes deployment for test environments |
+| [Cosy-Systemtest](https://github.com/Magenta-Mause/Cosy-Systemtest) | End-to-end system tests against a fresh install |
+| [Cosy-Game-Service](https://github.com/Magenta-Mause/Cosy-Game-Service) | Legacy SteamGridDB wrapper — **maintenance mode**; game data now comes from Cosy-Template-Service |
 
 ### Key features
 
 - 🎮 **Game server orchestration** — create, start, stop and manage containerized game servers behind a pluggable engine abstraction (`EngineManager`, Docker today).
-- 🧩 **Template-driven provisioning** — spin up servers from templates served by the Cosy template & game services.
+- 🧩 **Template-driven provisioning** — spin up servers from templates served by the Cosy template service.
 - 📈 **Metrics** — system metrics into InfluxDB, plus **custom, game-specific metrics** pushed by the game server itself (see below).
 - 📜 **Log streaming** — server logs shipped to Grafana Loki and streamed to clients over WebSockets.
 - 🔐 **Security** — JWT-based authentication and a policy-based access-management layer.
