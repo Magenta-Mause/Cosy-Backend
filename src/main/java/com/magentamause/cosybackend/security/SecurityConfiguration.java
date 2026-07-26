@@ -27,9 +27,11 @@ public class SecurityConfiguration {
                 // CSRF is disabled as this is a stateless JWT-based API: there is no ambient
                 // credential for a cross-site request to ride. Authentication is a bearer JWT
                 // the attacker cannot produce — normally the Authorization header, but JwtFilter
-                // also accepts an "authToken" request parameter, which the WebSocket handshake
-                // relies on (JwtHandshakeInterceptor). Neither is attached by the browser on its
-                // own. The only cookie is the refresh token: HttpOnly, SameSite=Strict,
+                // also accepts an "authToken" request parameter. (The /v1/ws handshake reads a
+                // parameter of the same name, but through its own JwtHandshakeInterceptor; the
+                // endpoint is permitAll() here, so it does not depend on JwtFilter's fallback.)
+                // Neither form is attached by the browser on its own.
+                // The only cookie is the refresh token: HttpOnly, SameSite=Strict,
                 // path-scoped to /auth/token and read only by a GET, which Spring's CsrfFilter
                 // exempts anyway.
                 // Caveat: POST /auth/logout is permitAll() and takes no credential, so a
