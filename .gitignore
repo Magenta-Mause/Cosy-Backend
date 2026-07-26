@@ -39,6 +39,11 @@ build/
 src/main/resources/application-local.yaml
 dummy
 
+# env files (keep .env.example tracked)
+.env
+.env.*
+!.env.example
+
 ### Mac OS ###
 .DS_Store
 
