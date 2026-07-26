@@ -40,8 +40,7 @@ class JwtFilterTest {
 
     @Test
     void authenticatesFromTheAuthorizationHeader() throws Exception {
-        UserEntity user =
-                UserEntity.builder().uuid(USER_UUID).role(UserEntity.Role.OWNER).build();
+        UserEntity user = UserEntity.builder().uuid(USER_UUID).role(UserEntity.Role.OWNER).build();
         when(jwtUtils.getTokenContentBody("valid-token", JwtTokenBody.TokenType.IDENTITY_TOKEN))
                 .thenReturn(claims);
         when(claims.getSubject()).thenReturn(USER_UUID);
