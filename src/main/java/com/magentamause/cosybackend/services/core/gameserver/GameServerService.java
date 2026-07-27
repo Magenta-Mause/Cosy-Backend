@@ -15,6 +15,7 @@ import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
+import com.magentamause.cosybackend.exceptions.PortInUseException;
 import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
 import com.magentamause.cosybackend.exceptions.RconException;
 import com.magentamause.cosybackend.exceptions.ServerAlreadyStoppedException;
@@ -71,6 +72,9 @@ public class GameServerService {
                     + EngineProperties.Reconciliation.DEFAULT_INTERVAL_MS
                     + "}";
 
+    /** Substring Docker uses when a host port binding cannot be established. */
+    private static final String DOCKER_PORT_ALLOCATED_MARKER = "port is already allocated";
+
     private final GameServerRepository gameServerRepository;
     private final UserEntityService userEntityService;
     private final EngineManager engineManager;
@@ -81,6 +85,7 @@ public class GameServerService {
     private final GamesService gamesService;
     private final HardwareLimitPresentValidator hardwareLimitValidator;
     private final HardwareQuotaChecker hardwareQuotaChecker;
+    private final GameServerPortChecker portChecker;
     private final VolumeDirectoryService entry;
     private final RCONService rCONService;
     private final DefaultSettingsMapper defaultSettingsMapper;
@@ -303,6 +308,7 @@ public class GameServerService {
     GameServerEntity saveGameServerConfiguration(GameServerEntity entity, boolean isNew) {
         hardwareLimitValidator.validateHardwareLimitsPresent(
                 entity.getOwner().getDockerHardwareLimits(), entity.getDockerHardwareLimits());
+        portChecker.assertNoDuplicatePorts(entity);
         if (isNew) {
             entity.setUuid(null);
             entity.setStatus(GameServerDto.GameServerStatus.STOPPED);
@@ -311,7 +317,38 @@ public class GameServerService {
 
         GameServerEntity saved = gameServerRepository.save(entity);
         entry.assertVolumeDirectoriesExist(saved);
+        warnAboutSharedPorts(saved);
         return saved;
+    }
+
+    /**
+     * Sharing a host port with another server is a valid configuration — the two simply cannot run
+     * at the same time. Saving is therefore not blocked, but the server log records it, because
+     * this is the last moment the user is looking at the port before a start fails over it.
+     */
+    private void warnAboutSharedPorts(GameServerEntity server) {
+        List<GameServerPortChecker.PortConflict> overlaps =
+                portChecker.findConfiguredOverlaps(server);
+        if (overlaps.isEmpty()) {
+            return;
+        }
+
+        log.debug(
+                "Game server '{}' shares host ports with other servers: {}",
+                server.getUuid(),
+                overlaps.stream().map(GameServerPortChecker.PortConflict::describe).toList());
+
+        String ports =
+                overlaps.stream()
+                        .map(GameServerPortChecker.PortConflict::describePort)
+                        .collect(Collectors.joining(", "));
+        gameServerLogService.publishAndSaveLog(
+                server,
+                GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
+                "Port also configured on another game server: "
+                        + ports
+                        + ". Only one of the servers can run at a time.",
+                false);
     }
 
     public void deleteGameServerById(String uuid) {
@@ -398,9 +435,18 @@ public class GameServerService {
                         getGameServersByOwner(gameServerOwner.getUuid());
                 hardwareQuotaChecker.assertSufficientQuota(
                         gameServerOwner, serverConfig, gameServersByOwner);
+                portChecker.assertPortsAvailable(serverConfig);
 
                 startServerAsync(gameServerUuid, serverConfig);
             }
+        } catch (PortInUseException e) {
+            startingServers.remove(gameServerUuid);
+            gameServerLogService.publishAndSaveLog(
+                    serverConfig,
+                    GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
+                    e.getMessage(),
+                    false);
+            throw e;
         } catch (HardwareLimitException e) {
             startingServers.remove(gameServerUuid);
             log.warn("Could not start Server '{}' - Hardware quota limit reached.", gameServerUuid);
@@ -464,7 +510,7 @@ public class GameServerService {
                 gameServerLogService.publishAndSaveLog(
                         serverConfig,
                         GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
-                        e.getOriginalException().toString(),
+                        describeStartFailure(e),
                         false);
                 updateStatus(serverConfig, GameServerDto.GameServerStatus.FAILED);
             } catch (DockerPullImageException e) {
@@ -487,6 +533,21 @@ public class GameServerService {
         } finally {
             startingServers.remove(gameServerUuid);
         }
+    }
+
+    /**
+     * The port check runs before the start, but a port can still be taken in the window between the
+     * check and the actual bind — by a start racing this one, or by something outside Cosy. Docker
+     * reports that as a connectivity error whose wording gives no hint that a port is to blame, so
+     * the cause is spelled out here.
+     */
+    private String describeStartFailure(InternalServiceStartException e) {
+        String original = String.valueOf(e.getOriginalException());
+        if (original.toLowerCase().contains(DOCKER_PORT_ALLOCATED_MARKER)) {
+            return "A host port of this server was taken by something else while it was starting: "
+                    + original;
+        }
+        return original;
     }
 
     private GameServerDto.GameServerStatus getStatusFromEntity(String uuid) {
