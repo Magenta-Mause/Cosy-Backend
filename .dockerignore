@@ -1,0 +1,36 @@
+# Keep the build context to what the Dockerfile actually COPYs: pom.xml, src/ and
+# cosyfs/. Everything else only inflates the context that has to be shipped to the
+# builder — and, more importantly, invalidates the build cache: BuildKit hashes the
+# whole context for `COPY . .`-style layers, so a stray edit to docs/ or a local
+# `target/` rebuild would drop the cached rust and maven layers the PR systemtest gate
+# depends on for a tolerable turnaround.
+#
+# Expect no speedup on a fresh CI checkout (there is no target/ or .idea/ there); this
+# matters for local `docker build` and for cache stability.
+
+# Build output
+target/
+cosyfs/target/
+
+# VCS and IDE
+.git
+.gitignore
+.gitattributes
+.idea
+.mvn
+
+# Docs and non-build assets
+docs/
+dummy/
+infrastructure/
+scripts/
+*.md
+LICENSE
+
+# Local config — must never reach an image layer
+.env
+.env.*
+!.env.example
+
+# CI definitions
+.github/
