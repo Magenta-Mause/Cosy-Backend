@@ -3,7 +3,7 @@
 ############################
 # Stage 0: build cosyfs (.so)
 ############################
-FROM rust:1.97-alpine AS cosyfs-builder
+FROM rust:1.98-alpine AS cosyfs-builder
 WORKDIR /work/cosyfs
 
 # Buildx populates these automatically; still OK if you build without buildx.
