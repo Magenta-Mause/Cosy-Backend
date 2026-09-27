@@ -6,6 +6,7 @@ import com.magentamause.cosybackend.dtos.loki.LokiLogQuery;
 import com.magentamause.cosybackend.dtos.loki.LokiPushRequest;
 import com.magentamause.cosybackend.dtos.loki.LokiQueryResponse;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.services.core.logs.LogTimestampSequencer;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class LokiQueryService {
     }
 
     public void saveGameServerLog(GameServerLogMessageEntity logEntity) {
-        long timestampNs = logEntity.getTimestamp().toEpochMilli() * 1_000_000;
+        long timestampNs = LogTimestampSequencer.toEpochNanos(logEntity.getTimestamp());
 
         Map<String, String> labels = new java.util.HashMap<>();
         labels.put("app", lokiProperties.applicationName());
@@ -96,7 +97,8 @@ public class LokiQueryService {
             grouped.computeIfAbsent(labels, k -> new java.util.ArrayList<>())
                     .add(
                             List.of(
-                                    String.valueOf(log.getTimestamp().toEpochMilli() * 1_000_000),
+                                    String.valueOf(
+                                            LogTimestampSequencer.toEpochNanos(log.getTimestamp())),
                                     log.getMessage()));
         }
 
@@ -148,6 +150,6 @@ public class LokiQueryService {
 
     private static Long toNs(Instant i) {
         if (i == null) throw new RuntimeException("Cannot convert null Instant to nanoseconds");
-        return i.toEpochMilli() * 1_000_000;
+        return LogTimestampSequencer.toEpochNanos(i);
     }
 }

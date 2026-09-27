@@ -4,6 +4,7 @@ import com.magentamause.cosybackend.dtos.loki.LokiQueryResponse;
 import com.magentamause.cosybackend.dtos.loki.LokiStreamResult;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,12 @@ public class LokiMapper {
 
         Stream<LokiStreamResult> resultStream = response.data().result().stream();
 
-        return resultStream.flatMap(LokiMapper::parseResult).toList();
+        // Each log level is its own Loki stream and every stream is ordered on its own, so
+        // merge them into one chronological list.
+        return resultStream
+                .flatMap(LokiMapper::parseResult)
+                .sorted(Comparator.comparing(GameServerLogMessageEntity::getTimestamp))
+                .toList();
     }
 
     private static Stream<GameServerLogMessageEntity> parseResult(LokiStreamResult result) {
@@ -55,6 +61,6 @@ public class LokiMapper {
     }
 
     private static Instant parseTimestamp(String timestamp) {
-        return Instant.ofEpochMilli(Long.parseLong(timestamp) / 1_000_000);
+        return Instant.ofEpochSecond(0, Long.parseLong(timestamp));
     }
 }

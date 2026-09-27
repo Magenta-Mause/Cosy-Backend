@@ -21,6 +21,7 @@ public class GameServerLogService {
     private final LokiQueryService lokiQueryService;
     private final GameServerLogWebsocketPublisher gameServerLogWebsocketPublisher;
     private final TimeRangeResolver timeRangeResolver;
+    private final LogTimestampSequencer logTimestampSequencer;
     private static final Pattern LOG_ERROR_DETECTION_REGEX =
             Pattern.compile("\\[error\\]", Pattern.CASE_INSENSITIVE);
 
@@ -54,6 +55,8 @@ public class GameServerLogService {
                         == GameServerLogMessageEntity.LogLevel.ERROR) {
             copy.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);
         }
+        // Unique timestamps keep log pagination exact, see LogTimestampSequencer.
+        copy.setTimestamp(logTimestampSequencer.next(copy.getTimestamp()));
         lokiQueryService.saveGameServerLog(copy);
         gameServerLogWebsocketPublisher.publishLog(copy.getGameServerUuid(), copy);
         return copy;
@@ -77,6 +80,8 @@ public class GameServerLogService {
                         == GameServerLogMessageEntity.LogLevel.ERROR) {
             copy.setLevel(GameServerLogMessageEntity.LogLevel.ERROR);
         }
+        // Unique timestamps keep log pagination exact, see LogTimestampSequencer.
+        copy.setTimestamp(logTimestampSequencer.next(copy.getTimestamp()));
         lokiQueryService.saveGameServerLog(copy);
         gameServerLogWebsocketPublisher.publishLog(gameServer, copy);
         return copy;

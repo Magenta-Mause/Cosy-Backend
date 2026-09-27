@@ -4,10 +4,12 @@ import com.magentamause.cosybackend.configs.properties.TimeRangeProperties;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 /** Resolves and validates requested time ranges against {@link TimeRangeProperties}. */
+@RequiredArgsConstructor
 public class TimeRangeResolver {
 
     /**
@@ -19,11 +21,6 @@ public class TimeRangeResolver {
 
     private final TimeRangeProperties properties;
     private final Clock clock;
-
-    public TimeRangeResolver(TimeRangeProperties properties, Clock clock) {
-        this.properties = properties;
-        this.clock = clock;
-    }
 
     /**
      * @param start requested start, {@code null} for {@code end - defaultSpan}
