@@ -74,11 +74,25 @@ class TimeRangeResolverTest {
     }
 
     @Test
-    void spanBeyondTheMaximumIsRejected() {
+    void spanSlightlyBeyondTheMaximumIsTrimmed() {
+        // A "last 30 days" preset computed on the client arrives a few ms over the limit.
+        TimeRange range =
+                resolver.resolve(NOW.minus(Duration.ofDays(30)).minusMillis(250), null, false);
+
+        assertThat(range.start()).isEqualTo(NOW.minus(Duration.ofDays(30)));
+        assertThat(range.end()).isEqualTo(NOW);
+    }
+
+    @Test
+    void spanBeyondTheMaximumAndTheToleranceIsRejected() {
         assertThatThrownBy(
                         () ->
                                 resolver.resolve(
-                                        NOW.minus(Duration.ofDays(30)).minusSeconds(1), NOW, false))
+                                        NOW.minus(Duration.ofDays(30))
+                                                .minus(TimeRangeResolver.CLOCK_TOLERANCE)
+                                                .minusSeconds(1),
+                                        NOW,
+                                        false))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(e -> assertStatus(e, HttpStatus.BAD_REQUEST));
     }
@@ -91,11 +105,21 @@ class TimeRangeResolverTest {
     }
 
     @Test
+    void restrictedCallerSlightlyBeyondThePublicLookbackIsTrimmed() {
+        TimeRange range =
+                resolver.resolve(NOW.minus(Duration.ofHours(24)).minusSeconds(2), null, true);
+
+        assertThat(range.start()).isEqualTo(NOW.minus(Duration.ofHours(24)));
+    }
+
+    @Test
     void restrictedCallerMayNotQueryBeyondThePublicLookback() {
         assertThatThrownBy(
                         () ->
                                 resolver.resolve(
-                                        NOW.minus(Duration.ofHours(24)).minusSeconds(1),
+                                        NOW.minus(Duration.ofHours(24))
+                                                .minus(TimeRangeResolver.CLOCK_TOLERANCE)
+                                                .minusSeconds(1),
                                         null,
                                         true))
                 .isInstanceOf(ResponseStatusException.class)

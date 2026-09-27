@@ -10,6 +10,13 @@ import org.springframework.web.server.ResponseStatusException;
 /** Resolves and validates requested time ranges against {@link TimeRangeProperties}. */
 public class TimeRangeResolver {
 
+    /**
+     * Relative ranges ("last 30 days") are computed from the client's clock, so the requested start
+     * can overshoot a limit by the request latency plus clock skew. Overshoots within this
+     * tolerance are trimmed to the limit instead of rejected.
+     */
+    static final Duration CLOCK_TOLERANCE = Duration.ofMinutes(5);
+
     private final TimeRangeProperties properties;
     private final Clock clock;
 
@@ -33,20 +40,36 @@ public class TimeRangeResolver {
         if (!resolvedStart.isBefore(resolvedEnd)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "start must be before end");
         }
-        if (Duration.between(resolvedStart, resolvedEnd).compareTo(properties.maxSpan()) > 0) {
+
+        Instant earliestBySpan = resolvedEnd.minus(properties.maxSpan());
+        if (resolvedStart.isBefore(earliestBySpan.minus(CLOCK_TOLERANCE))) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "time range must not exceed " + properties.maxSpan().toDays() + " days");
         }
-        if (restricted && resolvedStart.isBefore(now.minus(properties.publicMaxLookback()))) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "public access is limited to the last "
-                            + properties.publicMaxLookback().toHours()
-                            + " hours");
+        resolvedStart = latest(resolvedStart, earliestBySpan);
+
+        if (restricted) {
+            Instant earliestPublic = now.minus(properties.publicMaxLookback());
+            if (resolvedStart.isBefore(earliestPublic.minus(CLOCK_TOLERANCE))) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "public access is limited to the last "
+                                + properties.publicMaxLookback().toHours()
+                                + " hours");
+            }
+            resolvedStart = latest(resolvedStart, earliestPublic);
+            if (!resolvedStart.isBefore(resolvedEnd)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "start must be before end");
+            }
         }
 
         return new TimeRange(resolvedStart, resolvedEnd);
+    }
+
+    private static Instant latest(Instant a, Instant b) {
+        return a.isAfter(b) ? a : b;
     }
 
     /**
