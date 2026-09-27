@@ -7,7 +7,6 @@ import com.magentamause.cosybackend.dtos.loki.LokiPushRequest;
 import com.magentamause.cosybackend.dtos.loki.LokiQueryResponse;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
 import java.time.Instant;
-import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -29,16 +28,20 @@ public class LokiQueryService {
     private final LokiProperties lokiProperties;
     private static final Pattern UUID_REGEX = Pattern.compile("^" + UtilConfig.UUID_REGEX + "$");
 
-    public List<GameServerLogMessageEntity> queryLogs(LokiLogQuery query, TemporalAmount since) {
+    /**
+     * Returns the newest {@code query.limit()} lines in {@code [start, end)}. The backward
+     * direction is Loki's default; it is set explicitly because log pagination relies on it.
+     */
+    public List<GameServerLogMessageEntity> queryLogs(
+            LokiLogQuery query, Instant start, Instant end) {
         String logQl = buildLogQl(query);
-        Instant end = Instant.now();
-        Instant start = end.minus(since);
 
         LokiQueryResponse response =
                 lokiWebClient
                         .get()
                         .uri(
-                                "/loki/api/v1/query_range?query={query}&limit={limit}&start={since}&end={end}",
+                                "/loki/api/v1/query_range?query={query}&limit={limit}&start={start}&end={end}"
+                                        + "&direction=backward",
                                 logQl,
                                 query.limit(),
                                 toNs(start),

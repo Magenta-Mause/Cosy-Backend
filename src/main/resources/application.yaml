@@ -68,6 +68,14 @@ cosy:
     password: ${COSY_LOKI_PASSWORD:loki-password}
     url: http://localhost:3100
     application-name: cosy-backend # Label to identify logs from this application
+  # Limits for the time ranges requested by the log and metric endpoints.
+  time-range:
+    default-span: 5h
+    max-span: 30d
+    # How far back visitors of a public dashboard (without the read permission) may query.
+    public-max-lookback: 24h
+    # Must match Loki's retention_period; older log ranges are clamped to it.
+    log-retention: ${COSY_LOG_RETENTION:7d}
   influx:
     url: http://localhost:8086
     token: ${COSY_INFLUX_TOKEN:cosy-admin-token}

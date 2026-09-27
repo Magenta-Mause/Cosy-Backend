@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,11 +19,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/game-server/{gameServerUuid}/logs")
 public interface GameServerLogApi {
 
-    @Operation(summary = "Get game server logs")
+    @Operation(
+            summary = "Get game server logs",
+            description =
+                    "Returns the newest `limit` log lines within [start, end). If exactly `limit`"
+                            + " lines are returned there may be older ones; request them with"
+                            + " `end` set to the oldest returned timestamp. The range is clamped to"
+                            + " the log retention period.")
     @ApiResponse(responseCode = "200", description = "Logs returned")
+    @ApiResponse(responseCode = "400", description = "Invalid or too large time range")
     @GetMapping
     ResponseEntity<List<GameServerLogMessageEntity>> getLogs(
             @Parameter(description = "Game server UUID") @PathVariable String gameServerUuid,
-            @RequestParam(defaultValue = "500", required = false) @Min(1) @Max(2000) int limit,
-            @RequestParam(defaultValue = "5", required = false) @Min(1) @Max(400) int sinceHours);
+            @Parameter(description = "Range start (inclusive), defaults to end minus 5 hours")
+                    @RequestParam(required = false)
+                    Instant start,
+            @Parameter(description = "Range end (exclusive), defaults to now")
+                    @RequestParam(required = false)
+                    Instant end,
+            @RequestParam(defaultValue = "500", required = false) @Min(1) @Max(2000) int limit);
 }

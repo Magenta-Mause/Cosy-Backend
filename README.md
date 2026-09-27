@@ -112,6 +112,7 @@ environment variables are explicitly supported (see [`.env.example`](./.env.exam
 | `COSY_JWT_SECRET_KEY` | JWT signing key — **change in production**. Must be **Base64-encoded** (>= 32 bytes decoded); it is Base64-decoded at startup, so a plain passphrase fails fast. Generate with `openssl rand -base64 48`. Leave it *unset* (not empty) to use the dev default — an empty value fails startup. | (insecure sample key) |
 | `COSY_LOKI_USER` | Loki basic-auth user | `loki-user` |
 | `COSY_LOKI_PASSWORD` | Loki basic-auth password | `loki-password` |
+| `COSY_LOG_RETENTION` | How long Loki keeps logs (Spring duration, e.g. `7d`). Log queries are clamped to it — keep it equal to Loki's `retention_period`. | `7d` |
 | `COSY_INFLUX_TOKEN` | InfluxDB API token | `cosy-admin-token` |
 | `COSY_DOCKER_SOCKET_PATH` | Docker socket URI | `unix:///var/run/docker.sock` |
 | `COSY_DOCKER_VOLUME_DIRECTORY` | Host dir for game server bind mounts | `./dummy/cosy/volume-mounts` |
