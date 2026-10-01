@@ -6,8 +6,8 @@ import com.magentamause.cosybackend.dtos.loki.LokiLogQuery;
 import com.magentamause.cosybackend.dtos.loki.LokiPushRequest;
 import com.magentamause.cosybackend.dtos.loki.LokiQueryResponse;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.services.core.logs.LogTimestampSequencer;
 import java.time.Instant;
-import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -29,16 +29,20 @@ public class LokiQueryService {
     private final LokiProperties lokiProperties;
     private static final Pattern UUID_REGEX = Pattern.compile("^" + UtilConfig.UUID_REGEX + "$");
 
-    public List<GameServerLogMessageEntity> queryLogs(LokiLogQuery query, TemporalAmount since) {
+    /**
+     * Returns the newest {@code query.limit()} lines in {@code [start, end)}. The backward
+     * direction is Loki's default; it is set explicitly because log pagination relies on it.
+     */
+    public List<GameServerLogMessageEntity> queryLogs(
+            LokiLogQuery query, Instant start, Instant end) {
         String logQl = buildLogQl(query);
-        Instant end = Instant.now();
-        Instant start = end.minus(since);
 
         LokiQueryResponse response =
                 lokiWebClient
                         .get()
                         .uri(
-                                "/loki/api/v1/query_range?query={query}&limit={limit}&start={since}&end={end}",
+                                "/loki/api/v1/query_range?query={query}&limit={limit}&start={start}&end={end}"
+                                        + "&direction=backward",
                                 logQl,
                                 query.limit(),
                                 toNs(start),
@@ -51,7 +55,7 @@ public class LokiQueryService {
     }
 
     public void saveGameServerLog(GameServerLogMessageEntity logEntity) {
-        long timestampNs = logEntity.getTimestamp().toEpochMilli() * 1_000_000;
+        long timestampNs = LogTimestampSequencer.toEpochNanos(logEntity.getTimestamp());
 
         Map<String, String> labels = new java.util.HashMap<>();
         labels.put("app", lokiProperties.applicationName());
@@ -93,7 +97,8 @@ public class LokiQueryService {
             grouped.computeIfAbsent(labels, k -> new java.util.ArrayList<>())
                     .add(
                             List.of(
-                                    String.valueOf(log.getTimestamp().toEpochMilli() * 1_000_000),
+                                    String.valueOf(
+                                            LogTimestampSequencer.toEpochNanos(log.getTimestamp())),
                                     log.getMessage()));
         }
 
@@ -145,6 +150,6 @@ public class LokiQueryService {
 
     private static Long toNs(Instant i) {
         if (i == null) throw new RuntimeException("Cannot convert null Instant to nanoseconds");
-        return i.toEpochMilli() * 1_000_000;
+        return LogTimestampSequencer.toEpochNanos(i);
     }
 }

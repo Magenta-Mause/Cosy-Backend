@@ -2,12 +2,14 @@ package com.magentamause.cosybackend.controllers.gameserver.impl;
 
 import com.magentamause.cosybackend.controllers.gameserver.api.GameServerMetricsApi;
 import com.magentamause.cosybackend.dtos.actiondtos.gameserver.MetricPointDto;
+import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
 import com.magentamause.cosybackend.security.accessmanagement.NeedsValidation;
 import com.magentamause.cosybackend.security.accessmanagement.Operation;
 import com.magentamause.cosybackend.security.accessmanagement.ResourceId;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerService;
 import com.magentamause.cosybackend.services.core.metrics.MetricsService;
-import java.time.Duration;
+import com.magentamause.cosybackend.services.core.timerange.TimeRange;
+import com.magentamause.cosybackend.services.core.timerange.TimeRangeService;
 import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +25,15 @@ import org.springframework.web.server.ResponseStatusException;
 public class GameServerMetricsController implements GameServerMetricsApi {
     private final MetricsService metricsService;
     private final GameServerService gameServerService;
+    private final TimeRangeService timeRangeService;
 
     @Override
     @NeedsValidation(value = Operation.GAME_SERVER_METRIC_READ)
     public ResponseEntity<List<MetricPointDto>> getMetrics(
             @ResourceId String gameServerUuid, Instant end, Instant start, int pointCount) {
-        TimeRange range = resolveAndValidateTimeRange(start, end);
+        TimeRange range =
+                timeRangeService.resolveForGameServer(
+                        gameServerUuid, start, end, GameServerAccessPermission.READ_SERVER_METRICS);
 
         return ResponseEntity.ok(
                 metricsService.queryMetrics(
@@ -39,7 +44,7 @@ public class GameServerMetricsController implements GameServerMetricsApi {
     @NeedsValidation(value = Operation.GAME_SERVER_METRIC_READ_PUBLIC, allowUnauthorized = true)
     public ResponseEntity<List<MetricPointDto>> getPublicEvaluableMetrics(
             @ResourceId String gameServerUuid, Instant end, Instant start, int pointCount) {
-        TimeRange range = resolveAndValidateTimeRange(start, end);
+        TimeRange range = timeRangeService.resolvePublic(start, end);
 
         if (!gameServerService.isGameServerPubliclyEvaluable(gameServerUuid)) {
             throw new ResponseStatusException(
@@ -50,23 +55,4 @@ public class GameServerMetricsController implements GameServerMetricsApi {
                 metricsService.queryPublicMetrics(
                         gameServerUuid, range.start(), range.end(), pointCount));
     }
-
-    private TimeRange resolveAndValidateTimeRange(Instant start, Instant end) {
-        Instant now = Instant.now();
-        Instant resolvedEnd = end != null ? end : now;
-        Instant resolvedStart = start != null ? start : now.minus(Duration.ofHours(1));
-
-        if (resolvedEnd.isAfter(now)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "end must not be in the future");
-        }
-
-        if (!resolvedStart.isBefore(resolvedEnd)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "start must be before end");
-        }
-
-        return new TimeRange(resolvedStart, resolvedEnd);
-    }
-
-    private record TimeRange(Instant start, Instant end) {}
 }
