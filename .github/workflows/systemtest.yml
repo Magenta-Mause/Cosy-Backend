@@ -1,0 +1,342 @@
+name: Systemtest
+
+# End-to-end merge gate: build this PR's backend image, install a real Cosy from
+# scratch with it, and drive the @core features through the actual UI. The suite lives
+# in Magenta-Mause/Cosy-Systemtest; only the "which code do we install" part is here.
+#
+# WHY THE IMAGE IS NEVER PUSHED: Cosy's docker-compose.yml sets no `pull_policy`, and
+# install_cosy.sh runs a plain `docker compose up -d`. Compose's default policy is
+# `missing`, so an image that already exists locally under the requested tag is used
+# as-is and no registry is contacted. That means this workflow needs no
+# `packages: write`, leaves nothing behind in ghcr, and works on fork pull requests
+# (which get no secrets). The systemtest action asserts all of this rather than
+# assuming it — see docs/pr-gate.md in the systemtest repo.
+#
+# WHY A MATCHING FRONTEND BRANCH IS BUILT TOO: Cosy features are routinely cross-cutting
+# (`feat/custom-webhook-format` exists in both repos right now). Testing this PR against
+# a released frontend would go red for a reason the backend author cannot fix, so the
+# gate looks for the sibling branch and builds it as well.
+#
+# This is the SECOND gate on this repository. `check` (spotless + `mvn verify`) is the
+# fast one and should stay the first thing a contributor waits on; this one is the
+# expensive end-to-end proof. Note the two build on different JDKs — `check` uses 21,
+# the Dockerfile builds on temurin 26 and runs on 25 — so a PR can pass `check` and
+# still fail the image build here.
+
+on:
+  pull_request:
+    # Must match the ruleset's target branch exactly. A PR whose base is not listed
+    # here never reports this check, and a required check that never reports leaves the
+    # PR permanently unmergeable.
+    branches: [ "main" ]
+    # `labeled`/`unlabeled` so toggling `systemtest:full` or `systemtest-skip` re-runs
+    # the gate; `ready_for_review` because a draft that skipped the gate would otherwise
+    # keep its stale green forever.
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  workflow_dispatch:
+
+# Deliberately NO `paths` / `paths-ignore` filter. A skipped job never reports its
+# check, and GitHub then waits for it forever. Scope is controlled by the skip label
+# instead, which is visible on the PR and produces an explicit, allowlisted reason.
+
+concurrency:
+  # Per PR, and newer pushes win: unlike the nightly (which must never cancel itself),
+  # an obsolete gate run for a superseded commit is pure waste.
+  group: systemtest-pr-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  systemtest:
+    runs-on: ubuntu-latest
+    # Generous: this repo's image is the slow one (rust cdylib + maven, 8-15 min cold)
+    # plus a full install and the @core suite. See the table in docs/pr-gate.md.
+    timeout-minutes: 75
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'systemtest-skip') }}
+
+    env:
+      SYSTEMTEST_REPO: Magenta-Mause/Cosy-Systemtest
+      SIBLING_REPO: Magenta-Mause/Cosy-Frontend
+      BACKEND_IMAGE: ghcr.io/magenta-mause/cosy-backend
+      FRONTEND_IMAGE: ghcr.io/magenta-mause/cosy-frontend
+      # On a manual run there is no pull request, so fall back to the branch the
+      # workflow was dispatched on — sibling resolution then works the same way.
+      HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      PR_BODY: ${{ github.event.pull_request.body }}
+
+    steps:
+      - name: Decide what this run covers
+        id: scope
+        env:
+          # An exact array-membership test, evaluated by the expression engine. NOT a
+          # grep over the joined label list: GitHub labels may contain spaces, so a
+          # space-joined string cannot be parsed back unambiguously.
+          FULL_SUITE: ${{ contains(github.event.pull_request.labels.*.name, 'systemtest:full') }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # ONE definition of the image tag, reused by every build and by the installer
+          # flags. Written once because a built tag and an installed tag drifting apart
+          # is exactly the silent-green failure the systemtest action's guards exist to
+          # catch — better not to create the opportunity in the first place.
+          tag="pr-${PR_NUMBER:-manual-${GITHUB_RUN_ID}}-$(echo "$GITHUB_SHA" | cut -c1-7)"
+          echo "Image tag for this run: ${tag}"
+          echo "image-tag=${tag}" >> "$GITHUB_OUTPUT"
+
+          # `systemtest:full` opts a risky PR into the whole matrix. The default is
+          # @core (6 spec files): the full suite roughly doubles the wall clock and
+          # pulls in specs that depend on hosted third-party services, which is not
+          # something a merge should block on.
+          #
+          # Note this is a bash `if` and not a `x && 'a' || 'b'` expression: when the
+          # true-branch value is the empty string (which is what "no --grep" is), that
+          # idiom silently evaluates to the false branch.
+          if [ "$FULL_SUITE" = "true" ]; then
+            echo "grep=" >> "$GITHUB_OUTPUT"
+            echo "scope=full" >> "$GITHUB_OUTPUT"
+            echo "Scope: full suite (systemtest:full label)"
+          else
+            echo "grep=@core" >> "$GITHUB_OUTPUT"
+            echo "scope=@core" >> "$GITHUB_OUTPUT"
+            echo "Scope: @core"
+          fi
+
+      - name: Checkout this pull request
+        uses: actions/checkout@v7
+
+      # Resolved inline rather than with the systemtest repo's own action, because that
+      # action does not exist locally until this step has run: `uses:` refs are resolved
+      # before any step executes and cannot take an expression.
+      - name: Resolve the systemtest ref
+        id: st
+        run: |
+          ref="main"; reason="default-branch"
+
+          override="$(printf '%s' "${PR_BODY:-}" | tr -d '\r' \
+            | grep -iE '^[[:space:]]*Systemtest-Ref[[:space:]]*:' | head -n 1 \
+            | sed -E 's/^[^:]*:[[:space:]]*//' | sed -E 's/[[:space:]]+$//' || true)"
+
+          if [ -n "$override" ]; then
+            ref="$override"; reason="explicit-override"
+          elif [ -n "$(git ls-remote --heads "https://github.com/${SYSTEMTEST_REPO}.git" \
+                        "refs/heads/${HEAD_REF}" 2>/dev/null)" ]; then
+            ref="$HEAD_REF"; reason="branch"
+          fi
+
+          if [ -z "$(git ls-remote --heads "https://github.com/${SYSTEMTEST_REPO}.git" \
+                      "refs/heads/${ref}" 2>/dev/null)" ]; then
+            echo "::error::${SYSTEMTEST_REPO} has no branch '${ref}' (${reason}). An \
+          override that does not resolve is a typo, not an instruction to fall back."
+            exit 1
+          fi
+          echo "Systemtest suite: ${SYSTEMTEST_REPO}@${ref} (${reason})"
+          echo "ref=${ref}" >> "$GITHUB_OUTPUT"
+
+      # Works with the default GITHUB_TOKEN only because Cosy-Systemtest is PUBLIC. If
+      # it is ever made private this fails with an opaque 404 and will need a token with
+      # cross-repo read.
+      - name: Checkout the systemtest suite
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.SYSTEMTEST_REPO }}
+          ref: ${{ steps.st.outputs.ref }}
+          path: systemtest
+
+      - name: Find the matching frontend branch
+        id: sibling
+        uses: ./systemtest/.github/actions/resolve-sibling-ref
+        with:
+          sibling-repo: ${{ env.SIBLING_REPO }}
+          head-ref: ${{ env.HEAD_REF }}
+          override-key: Frontend-Ref
+          pr-body: ${{ env.PR_BODY }}
+
+      # The `docker-container` driver is what makes `type=gha` layer caching possible,
+      # and that cache is the difference between a ~5-minute and a ~15-minute build of
+      # this repo's image. It is also why `load: true` below is mandatory.
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build this PR's backend image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          # NOT OPTIONAL. Under the docker-container driver a build's output stays in
+          # the build cache and never reaches the daemon's image store unless it is
+          # loaded. With no local image, compose's `missing` policy falls back to
+          # ghcr.io and the gate would test the last PUBLISHED backend while looking
+          # perfectly green. The systemtest action asserts the image is really there.
+          load: true
+          tags: ${{ env.BACKEND_IMAGE }}:${{ steps.scope.outputs.image-tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Check out the matching frontend
+        if: steps.sibling.outputs.matched == 'true'
+        uses: actions/checkout@v7
+        with:
+          # NOT `env.SIBLING_REPO`: when the sibling was found through a fork's pull
+          # request, the branch only exists on the fork.
+          repository: ${{ steps.sibling.outputs.repository }}
+          ref: ${{ steps.sibling.outputs.ref }}
+          path: frontend
+
+      - name: Build the matching frontend image
+        if: steps.sibling.outputs.matched == 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: frontend
+          push: false
+          load: true
+          tags: ${{ env.FRONTEND_IMAGE }}:${{ steps.scope.outputs.image-tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Install Cosy and run the systemtest suite
+        id: run
+        uses: ./systemtest/.github/actions/run-systemtest
+        with:
+          backend-tag: ${{ steps.scope.outputs.image-tag }}
+          # Empty when no sibling matched, which installs the pinned released frontend.
+          frontend-tag: ${{ steps.sibling.outputs.matched == 'true' && steps.scope.outputs.image-tag || '' }}
+          # `main`, not the installer's default: install_cosy.sh pins config to the last
+          # RELEASE tag, so a change needing a new compose variable would otherwise be
+          # structurally untestable here. The nightly still tests the pinned config.
+          config-ref: main
+          grep: ${{ steps.scope.outputs.grep }}
+          retries: "1"
+          fail-on-failure: "true"
+          expect-image-tags: "true"
+          # Keeps gate runs out of every release panel and alert, all of which pin
+          # channel="release" explicitly, while still charting them separately.
+          channel: pr
+          # No hosted report for a PR run — it stays a GitHub artifact — so no URL is
+          # derived, rather than putting a permanent 404 on the dashboard.
+          report-published: "false"
+
+      # THE AUTHORITATIVE GATE, and deliberately here rather than in the shared action:
+      # it has to keep working even if someone later "simplifies" the action, mistypes
+      # the grep, or flips fail-on-failure.
+      #
+      # It answers a question `--fail-on-failure` structurally cannot: did every feature
+      # we expect actually RUN and pass? Six specs skipped by `runsOnlyWithInstall()`
+      # because the install died is a green Playwright, a green runner and a green job —
+      # verified, not theoretical. An allowlist of names that must each be present AND
+      # `passed` is the only thing that catches it.
+      - name: Assert every expected feature ran and passed
+        if: always() && (steps.run.outcome == 'success' || steps.run.outcome == 'failure')
+        env:
+          SCOPE: ${{ steps.scope.outputs.scope }}
+        run: |
+          summary=systemtest/results/summary.json
+          if [ ! -f "$summary" ]; then
+            echo "::error::${summary} does not exist — the suite never produced a result. \
+          A missing result is a FAILURE here, because 'no evidence' must never read as \
+          'no problem'."
+            exit 1
+          fi
+
+          # The @core matrix from the systemtest README. `uninstall` is appended by the
+          # action's teardown assertion rather than by a spec, and is included on
+          # purpose: leaving no mess behind is part of what a release has to do.
+          expected=(install auth console files server-create server-lifecycle uninstall)
+
+          rc=0
+          for feature in "${expected[@]}"; do
+            status="$(jq -r --arg f "$feature" \
+              '.features[] | select(.feature == $f) | .status' "$summary" | head -n 1)"
+            case "$status" in
+              passed) printf '  ok   %-18s passed\n' "$feature" ;;
+              "")     printf '  FAIL %-18s ABSENT from the summary\n' "$feature"; rc=1 ;;
+              *)      printf '  FAIL %-18s %s\n' "$feature" "$status"; rc=1 ;;
+            esac
+          done
+
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::Not every expected @core feature ran and passed. ABSENT or \
+          SKIPPED counts as a failure: it means the gate verified nothing about it."
+            echo "Full summary:"
+            jq '.features' "$summary" || true
+          elif [ "$SCOPE" != "@core" ]; then
+            echo "Scope was '${SCOPE}'; the @core subset above is asserted by name and \
+          every other feature is covered by the runner's --fail-on-failure."
+          fi
+          exit "$rc"
+
+      # Publish this run to SigNoz so the gate's own history — flakiness, wall clock,
+      # which features go red on PRs — is visible next to the nightly. It lands under
+      # channel="pr", which every release panel and alert excludes by pinning
+      # channel="release", so it cannot contaminate the released-product view.
+      #
+      # `continue-on-error` is deliberate and is the opposite of the nightly. There the
+      # push IS the signal, so a failed push exits 1 and reds the job (convention 8).
+      # Here the gate's verdict is the assertion step above; telemetry must never be
+      # what decides whether a pull request can merge.
+      #
+      # Skips itself with one INFO line when the OTEL_INGEST_* secrets are absent —
+      # which is always the case on a fork PR, and on any repo where they have not been
+      # provisioned. Nothing breaks; the run simply does not appear on the dashboard.
+      - name: Push results to SigNoz
+        if: always() && (steps.run.outcome == 'success' || steps.run.outcome == 'failure')
+        continue-on-error: true
+        working-directory: systemtest
+        env:
+          OTEL_INGEST_URL: ${{ vars.OTEL_INGEST_URL || 'https://otel-ingest.jannekeipert.de' }}
+          OTEL_INGEST_USER: ${{ secrets.OTEL_INGEST_USER }}
+          OTEL_INGEST_PASSWORD: ${{ secrets.OTEL_INGEST_PASSWORD }}
+          # Run-level, so it rides on run_info only (convention 11). Without it a row in
+          # the PR table is a bare GitHub run id nobody can place.
+          COSY_PR_URL: ${{ github.event.pull_request.html_url }}
+        run: npx tsx scripts/run-systemtest.ts --push-only
+
+      - name: Upload systemtest report
+        if: always() && (steps.run.outcome == 'success' || steps.run.outcome == 'failure')
+        uses: actions/upload-artifact@v4
+        with:
+          name: systemtest-pr-${{ github.event.pull_request.number || github.run_id }}
+          path: |
+            systemtest/playwright-report/
+            systemtest/results/
+            systemtest/test-results/
+          retention-days: 7
+
+  # The job whose name goes in the branch ruleset. It exists so a legitimately skipped
+  # run still REPORTS — a required check that never reports blocks the PR forever —
+  # while an unexplained skip stays red.
+  systemtest-gate:
+    if: always()
+    needs: [systemtest]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verdict
+        env:
+          RESULT: ${{ needs.systemtest.result }}
+          # Evaluated here rather than read from the skipped job: a job that did not run
+          # exposes no outputs, so the reason has to come from the event itself.
+          SKIP_LABELLED: ${{ contains(github.event.pull_request.labels.*.name, 'systemtest-skip') }}
+        run: |
+          echo "systemtest job result: ${RESULT}"
+          case "$RESULT" in
+            success)
+              echo "Systemtest passed."
+              ;;
+            skipped)
+              # Allowlisted skips only. Green-on-any-skip is how a repo silently loses
+              # its gate: someone adds a `paths-ignore` to save CI minutes, and every
+              # filtered pull request merges unverified.
+              if [ "$SKIP_LABELLED" = "true" ]; then
+                echo "::warning::Systemtest was SKIPPED via the 'systemtest-skip' label. \
+          This pull request has NOT been verified end to end."
+              else
+                echo "::error::The systemtest job was skipped for an unrecognised reason. \
+          Refusing to report green for a gate that did not run."
+                exit 1
+              fi
+              ;;
+            *)
+              echo "::error::Systemtest ${RESULT}. See the job log and the uploaded report."
+              exit 1
+              ;;
+          esac
