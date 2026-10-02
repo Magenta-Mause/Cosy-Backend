@@ -47,7 +47,7 @@ RUN set -eux; \
 ############################
 # Stage 1: build the jar
 ############################
-FROM maven:3.9.15-eclipse-temurin-26-alpine AS builder
+FROM maven:3-eclipse-temurin-24-alpine AS builder
 WORKDIR /app
 
 ARG TARGETARCH
