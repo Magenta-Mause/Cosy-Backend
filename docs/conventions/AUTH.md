@@ -53,9 +53,20 @@ The **identity token is deliberately claim-rich** so the frontend can read auth 
   default `COOKIE`): `COOKIE` (browser) issues it as a `refreshToken` **httpOnly** cookie
   (`sameSite=Strict`, `path` scoped to `…/auth/token`, `maxAge` = refresh expiry);
   `DIRECT` returns it in the response body (`LoginResponseDto`) for non-browser clients.
-- **Caveat (current state):** the cookie's `secure` flag is hardcoded `false` in
-  `AuthorizationController` — it is **not** environment-toggled. A real deployment behind
-  TLS should set `Secure`; treat this as a known gap, not the intended production posture.
+- **The cookie's `Secure` flag is configuration, not a constant.** It comes from
+  `cosy.security.cookie-secure` (`SecurityProperties`, env `COSY_SECURITY_COOKIE_SECURE`)
+  and **defaults to `false`**, because the installer's TLS mode is opt-in and a browser
+  silently drops a `Secure` cookie over plain HTTP — a `true` default would break login on
+  every non-TLS install. Any deployment terminating TLS should set it to `true`; the
+  refresh cookie lives for a month, so without it that cookie travels in the clear and can
+  be overwritten by a network attacker. Login and logout must read the same property: a
+  `Set-Cookie` whose attributes differ from the stored cookie's does not overwrite it.
+- **`Secure` cannot be auto-detected here.** TLS always terminates at the reverse proxy
+  (nginx, Caddy, or the ingress), so the application only ever sees plain HTTP and
+  `request.isSecure()` is false in exactly the TLS deployments that need the flag.
+  Auto-detection would require `server.forward-headers-strategy` **and** a guarantee that
+  the backend port is unreachable except through the proxy, since `X-Forwarded-Proto` is
+  otherwise client-settable. The explicit property avoids that trap.
 
 ## Authorization
 
