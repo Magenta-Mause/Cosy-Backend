@@ -2,6 +2,7 @@ package com.magentamause.cosybackend.configs.globalresponse;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.magentamause.cosybackend.exceptions.GamesApiError;
+import com.magentamause.cosybackend.exceptions.PortInUseException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -140,6 +141,27 @@ public class GlobalExceptionHandler {
                                 .error(ex.getMessage())
                                 .path(request.getRequestURI())
                                 .statusCode(HttpStatus.BAD_GATEWAY.value())
+                                .build());
+    }
+
+    /**
+     * Without this handler the {@code @ResponseStatus(CONFLICT)} on the exception would never take
+     * effect: the catch-all {@code @ExceptionHandler(Exception.class)} below matches first and
+     * would answer a port collision with a generic 500. The port list goes into {@code data}
+     * because that is the field the frontend renders as the error's details.
+     */
+    @ExceptionHandler(PortInUseException.class)
+    public ResponseEntity<ApiResponse<?>> handlePortInUse(
+            PortInUseException ex, HttpServletRequest request) {
+        log.warn("Refused a game server start over an occupied host port: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(
+                        ApiResponse.builder()
+                                .success(false)
+                                .data(ex.getMessage())
+                                .error(ex.getMessage())
+                                .path(request.getRequestURI())
+                                .statusCode(HttpStatus.CONFLICT.value())
                                 .build());
     }
 

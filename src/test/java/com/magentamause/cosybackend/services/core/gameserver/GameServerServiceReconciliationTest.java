@@ -62,6 +62,7 @@ class GameServerServiceReconciliationTest {
     @Mock private GamesService gamesService;
     @Mock private HardwareLimitPresentValidator hardwareLimitValidator;
     @Mock private HardwareQuotaChecker hardwareQuotaChecker;
+    @Mock private GameServerPortChecker portChecker;
     @Mock private VolumeDirectoryService volumeDirectoryService;
     @Mock private RCONService rconService;
     @Mock private DefaultSettingsMapper defaultSettingsMapper;
@@ -99,6 +100,7 @@ class GameServerServiceReconciliationTest {
                 gamesService,
                 hardwareLimitValidator,
                 hardwareQuotaChecker,
+                portChecker,
                 volumeDirectoryService,
                 rconService,
                 defaultSettingsMapper,

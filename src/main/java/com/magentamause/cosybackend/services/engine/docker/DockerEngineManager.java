@@ -15,6 +15,7 @@ import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerStatusUpdateEventType;
 import com.magentamause.cosybackend.services.engine.EngineManager;
+import com.magentamause.cosybackend.services.engine.PublishedPort;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerConfigurationMapper;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerContainerNameResolver;
 import com.magentamause.cosybackend.services.engine.docker.util.DockerHostConfigFactory;
@@ -50,6 +51,7 @@ public class DockerEngineManager implements EngineManager, Closeable {
     private final DockerEventHandler eventHandler;
     private final DockerImageManager imageManager;
     private final DockerContainerFinder containerFinder;
+    private final DockerPortInspector portInspector;
     private final DockerMetricsCollector metricsCollector;
     private final DockerLogStreamer logStreamer;
     private final DockerCommandSender commandSender;
@@ -284,6 +286,11 @@ public class DockerEngineManager implements EngineManager, Closeable {
                 throw new IOException("Failed to close DockerClient", e);
             }
         }
+    }
+
+    @Override
+    public List<PublishedPort> getPublishedHostPorts() {
+        return portInspector.listPublishedHostPorts();
     }
 
     @Override
