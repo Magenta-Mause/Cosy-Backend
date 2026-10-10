@@ -23,12 +23,18 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
     private final UserEntityService userEntityService;
 
+    // The header is the only accepted carrier. An `authToken` request-parameter fallback
+    // used to live here, but nothing sent it: the WebSocket handshake — the one caller
+    // that genuinely cannot set a header — is matched by permitAll() and reads the
+    // parameter itself in JwtHandshakeInterceptor. Keeping it here put identity tokens
+    // into the query strings of every REST endpoint, where reverse-proxy access logs
+    // capture them for the token's full lifetime.
     private String resolveToken(HttpServletRequest request) {
         String token = request.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             return token.substring(7);
         }
-        return request.getParameter("authToken");
+        return null;
     }
 
     @Override
