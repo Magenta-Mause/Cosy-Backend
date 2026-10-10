@@ -4,6 +4,7 @@ import com.magentamause.cosybackend.dtos.entitydtos.GameServerDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
+import com.magentamause.cosybackend.exceptions.ErrorCode;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ public class HardwareQuotaChecker {
                             ? "memory"
                             : "cpu";
             throw new HardwareLimitException(
+                    ErrorCode.SERVER_RESOURCE_LIMIT_MISSING,
                     "user has "
                             + configuredLimit
                             + " limit; so they can not start a game"

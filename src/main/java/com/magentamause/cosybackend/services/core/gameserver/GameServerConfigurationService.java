@@ -7,12 +7,13 @@ import com.magentamause.cosybackend.entities.gameserver.utility.GameServerDesign
 import com.magentamause.cosybackend.entities.gameserver.utility.RCONConfiguration;
 import com.magentamause.cosybackend.entities.layout.MetricLayout;
 import com.magentamause.cosybackend.entities.layout.PrivateDashboardLayout;
+import com.magentamause.cosybackend.exceptions.ApiException;
+import com.magentamause.cosybackend.exceptions.ErrorCode;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -39,8 +40,9 @@ public class GameServerConfigurationService {
                         .findById(gameServerUuid)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
+                                        new ApiException(
                                                 HttpStatus.NOT_FOUND,
+                                                ErrorCode.GAME_SERVER_NOT_FOUND,
                                                 "Server '" + gameServerUuid + "' not found"));
 
         gameServer.getMetricLayout().clear();
@@ -55,8 +57,9 @@ public class GameServerConfigurationService {
                         .findById(gameServerUuid)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
+                                        new ApiException(
                                                 HttpStatus.NOT_FOUND,
+                                                ErrorCode.GAME_SERVER_NOT_FOUND,
                                                 "Server '" + gameServerUuid + "' not found"));
 
         privateDashboardLayouts.forEach(
@@ -78,8 +81,9 @@ public class GameServerConfigurationService {
                         .findById(gameServerUuid)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
+                                        new ApiException(
                                                 HttpStatus.NOT_FOUND,
+                                                ErrorCode.GAME_SERVER_NOT_FOUND,
                                                 "Server '" + gameServerUuid + "' not found"));
 
         updateDto

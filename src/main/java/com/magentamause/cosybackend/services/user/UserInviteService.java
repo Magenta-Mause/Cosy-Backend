@@ -3,6 +3,8 @@ package com.magentamause.cosybackend.services.user;
 import com.magentamause.cosybackend.dtos.actiondtos.user.UserInviteCreationDto;
 import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.UserInviteEntity;
+import com.magentamause.cosybackend.exceptions.ApiException;
+import com.magentamause.cosybackend.exceptions.ErrorCode;
 import com.magentamause.cosybackend.repositories.UserInviteRepository;
 import java.security.SecureRandom;
 import java.util.List;
@@ -13,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -41,12 +42,16 @@ public class UserInviteService {
 
         if (presetUsername != null) {
             if (userInviteRepository.existsByUsernameIgnoreCase(presetUsername)) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT, "Invite with the given username already exists");
+                throw new ApiException(
+                        HttpStatus.CONFLICT,
+                        ErrorCode.INVITE_USERNAME_TAKEN,
+                        "Invite with the given username already exists");
             }
             if (userEntityService.existsByUsernameIgnoreCase(presetUsername)) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT, "A user with the given username already exists");
+                throw new ApiException(
+                        HttpStatus.CONFLICT,
+                        ErrorCode.USERNAME_TAKEN,
+                        "A user with the given username already exists");
             }
         }
 
@@ -74,8 +79,10 @@ public class UserInviteService {
                 .findBySecretKey(secretToken)
                 .orElseThrow(
                         () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND, "Invite not found"));
+                                new ApiException(
+                                        HttpStatus.NOT_FOUND,
+                                        ErrorCode.INVITE_NOT_FOUND,
+                                        "Invite not found"));
     }
 
     public UserInviteEntity getInviteByUuidOrElseThrow(String inviteUuid) {
@@ -83,8 +90,10 @@ public class UserInviteService {
                 .findById(inviteUuid)
                 .orElseThrow(
                         () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND, "Invite not found"));
+                                new ApiException(
+                                        HttpStatus.NOT_FOUND,
+                                        ErrorCode.INVITE_NOT_FOUND,
+                                        "Invite not found"));
     }
 
     private UserInviteEntity getInviteBySecretKeyWithLockOrElseThrow(String username) {
@@ -92,8 +101,10 @@ public class UserInviteService {
                 .findBySecretKeyLocked(username)
                 .orElseThrow(
                         () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND, "Invite not found"));
+                                new ApiException(
+                                        HttpStatus.NOT_FOUND,
+                                        ErrorCode.INVITE_NOT_FOUND,
+                                        "Invite not found"));
     }
 
     @Transactional
@@ -123,8 +134,10 @@ public class UserInviteService {
 
         UserEntity builtUser = userBuilder.build();
         if (userEntityService.existsByUsernameIgnoreCase(builtUser.getUsername())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "A user with the given username already exists");
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    ErrorCode.USERNAME_TAKEN,
+                    "A user with the given username already exists");
         }
         UserEntity user = userEntityService.saveUserEntity(builtUser);
         userInviteRepository.delete(invite);

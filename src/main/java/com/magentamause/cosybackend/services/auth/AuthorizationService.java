@@ -1,6 +1,8 @@
 package com.magentamause.cosybackend.services.auth;
 
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.exceptions.ApiException;
+import com.magentamause.cosybackend.exceptions.ErrorCode;
 import com.magentamause.cosybackend.security.jwtfilter.JwtTokenBody;
 import com.magentamause.cosybackend.security.jwtfilter.JwtUtils;
 import com.magentamause.cosybackend.services.user.UserEntityService;
@@ -26,10 +28,12 @@ public class AuthorizationService {
         try {
             user = userEntityService.getUserByUsername(username);
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS, "Invalid credentials");
         }
         if (!passwordEncoder.matches(plainPassword, user.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS, "Invalid credentials");
         }
         return generateRefreshToken(user.getUuid());
     }

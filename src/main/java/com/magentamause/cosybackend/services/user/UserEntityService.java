@@ -4,6 +4,8 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.UserEntity.Role;
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
+import com.magentamause.cosybackend.exceptions.ApiException;
+import com.magentamause.cosybackend.exceptions.ErrorCode;
 import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository;
 import com.magentamause.cosybackend.repositories.UserEntityRepository;
 import java.util.List;
@@ -37,8 +39,9 @@ public class UserEntityService {
                 .findById(uuid)
                 .orElseThrow(
                         () ->
-                                new ResponseStatusException(
+                                new ApiException(
                                         HttpStatus.NOT_FOUND,
+                                        ErrorCode.USER_NOT_FOUND,
                                         "User with uuid " + uuid + " not found"));
     }
 
@@ -51,8 +54,9 @@ public class UserEntityService {
                 .findByUsernameIgnoreCase(username)
                 .orElseThrow(
                         () ->
-                                new ResponseStatusException(
+                                new ApiException(
                                         HttpStatus.NOT_FOUND,
+                                        ErrorCode.USER_NOT_FOUND,
                                         "User with username " + username + " not found"));
     }
 
@@ -69,8 +73,9 @@ public class UserEntityService {
                         .findById(uuid)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
+                                        new ApiException(
                                                 HttpStatus.NOT_FOUND,
+                                                ErrorCode.USER_NOT_FOUND,
                                                 "User with uuid " + uuid + " not found"));
         removeUserFromAccessGroups(user);
         userEntityRepository.delete(user);
@@ -82,7 +87,10 @@ public class UserEntityService {
 
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             log.warn("Old password is incorrect for user {}", user.getUsername());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Old password is incorrect");
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED,
+                    ErrorCode.OLD_PASSWORD_INCORRECT,
+                    "Old password is incorrect");
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         return saveUserEntity(user);

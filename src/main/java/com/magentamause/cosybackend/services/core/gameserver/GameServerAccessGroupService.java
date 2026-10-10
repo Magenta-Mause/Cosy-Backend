@@ -6,6 +6,8 @@ import com.magentamause.cosybackend.entities.UserEntity;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessGroupEntity;
 import com.magentamause.cosybackend.entities.gameserver.utility.accessmanagement.GameServerAccessPermission;
+import com.magentamause.cosybackend.exceptions.ApiException;
+import com.magentamause.cosybackend.exceptions.ErrorCode;
 import com.magentamause.cosybackend.repositories.GameServerAccessGroupRepository;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.auth.GameServerPermissionsUtility;
@@ -42,8 +44,10 @@ public class GameServerAccessGroupService {
     private void ensureUniqueName(GameServerEntity gameServer, String name) {
         if (gameServer.getAccessGroups().stream()
                 .anyMatch(accessGroup -> accessGroup.getGroupName().equals(name))) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Access group with that name already exists");
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.ACCESS_GROUP_NAME_TAKEN,
+                    "Access group with that name already exists");
         }
     }
 
@@ -115,8 +119,9 @@ public class GameServerAccessGroupService {
                 .findById(accessGroupUuid)
                 .orElseThrow(
                         () ->
-                                new ResponseStatusException(
+                                new ApiException(
                                         HttpStatus.NOT_FOUND,
+                                        ErrorCode.ACCESS_GROUP_NOT_FOUND,
                                         "Access group '" + accessGroupUuid + "' not found"));
     }
 
@@ -131,8 +136,10 @@ public class GameServerAccessGroupService {
                         .getOptionalUserByUuid(userUuid)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND, "User not found"));
+                                        new ApiException(
+                                                HttpStatus.NOT_FOUND,
+                                                ErrorCode.USER_NOT_FOUND,
+                                                "User not found"));
         if (user.getRole().isAdmin()) {
             return List.of(GameServerAccessPermission.ADMIN);
         }

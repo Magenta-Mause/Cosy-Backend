@@ -2,19 +2,25 @@ package com.magentamause.cosybackend.exceptions;
 
 import com.magentamause.cosybackend.services.engine.docker.util.HardwareQuotaChecker;
 import com.magentamause.cosybackend.services.engine.docker.util.MemoryUtils;
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+@Getter
 @ResponseStatus(HttpStatus.FORBIDDEN)
 public class HardwareLimitException extends RuntimeException {
-    public HardwareLimitException(String message) {
+    private final ErrorCode errorCode;
+
+    public HardwareLimitException(ErrorCode errorCode, String message) {
         super(message);
+        this.errorCode = errorCode;
     }
 
     public HardwareLimitException(
             HardwareQuotaChecker.ResourceUsage totalUsage,
             HardwareQuotaChecker.ResourceUsage userLimit) {
         super(buildString(totalUsage, userLimit));
+        this.errorCode = ErrorCode.HARDWARE_QUOTA_EXCEEDED;
     }
 
     private static String buildString(
