@@ -162,9 +162,24 @@ class FlywayUpgradePathTest {
                             count(
                                     legacy,
                                     "SELECT count(*) FROM flyway_schema_history WHERE"
+                                            + " version = '4' AND success = true"))
+                    .as("applied V4 custom webhook migration")
+                    .isEqualTo(1);
+            assertThat(
+                            count(
+                                    legacy,
+                                    "SELECT count(*) FROM flyway_schema_history WHERE"
                                             + " success = false"))
                     .as("no failed migrations")
                     .isZero();
+
+            // V4 has to rewrite the webhook_type check constraint, not just add columns: an
+            // upgraded database still carries the pre-CUSTOM constraint, which Hibernate never
+            // touches, so inserting a CUSTOM webhook would fail if the migration only widened the
+            // schema.
+            assertThat(acceptsCustomWebhookType(legacy))
+                    .as("webhook_type check constraint accepts CUSTOM after upgrade")
+                    .isTrue();
         }
 
         // (d) Fresh reference: run the migrations from scratch on an empty database using plain
@@ -258,6 +273,26 @@ class FlywayUpgradePathTest {
         columns.sort(
                 Comparator.comparing(ColumnInfo::tableName).thenComparing(ColumnInfo::columnName));
         return columns;
+    }
+
+    /**
+     * Probes the {@code webhook_type} check constraint by inserting a CUSTOM webhook and rolling
+     * back, so the database is left untouched for the schema diff that follows.
+     */
+    private static boolean acceptsCustomWebhookType(Connection connection) throws SQLException {
+        boolean autoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try (Statement statement = connection.createStatement()) {
+            statement.execute(
+                    "INSERT INTO webhook_entity (uuid, enabled, webhook_type, webhook_url)"
+                            + " VALUES ('v4-probe', true, 'CUSTOM', 'https://example.org/hook')");
+            return true;
+        } catch (SQLException rejected) {
+            return false;
+        } finally {
+            connection.rollback();
+            connection.setAutoCommit(autoCommit);
+        }
     }
 
     private static int count(Connection connection, String sql) throws SQLException {
