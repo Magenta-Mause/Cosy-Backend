@@ -34,6 +34,9 @@ public class GameServerMetricsController implements GameServerMetricsApi {
         TimeRange range =
                 timeRangeService.resolveForGameServer(
                         gameServerUuid, start, end, GameServerAccessPermission.READ_SERVER_METRICS);
+        if (range.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
 
         return ResponseEntity.ok(
                 metricsService.queryMetrics(
@@ -44,11 +47,14 @@ public class GameServerMetricsController implements GameServerMetricsApi {
     @NeedsValidation(value = Operation.GAME_SERVER_METRIC_READ_PUBLIC, allowUnauthorized = true)
     public ResponseEntity<List<MetricPointDto>> getPublicEvaluableMetrics(
             @ResourceId String gameServerUuid, Instant end, Instant start, int pointCount) {
-        TimeRange range = timeRangeService.resolvePublic(start, end);
-
         if (!gameServerService.isGameServerPubliclyEvaluable(gameServerUuid)) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Game server is not publicly evaluable");
+        }
+
+        TimeRange range = timeRangeService.resolvePublic(start, end);
+        if (range.isEmpty()) {
+            return ResponseEntity.ok(List.of());
         }
 
         return ResponseEntity.ok(

@@ -25,7 +25,8 @@ public interface GameServerLogApi {
                     "Returns the newest `limit` log lines within [start, end). If exactly `limit`"
                             + " lines are returned there may be older ones; request them with"
                             + " `end` set to the oldest returned timestamp. The range is clamped to"
-                            + " the log retention period.")
+                            + " the log retention period, and for callers without the read"
+                            + " permission (public dashboard) to the public lookback window.")
     @ApiResponse(responseCode = "200", description = "Logs returned")
     @ApiResponse(responseCode = "400", description = "Invalid or too large time range")
     @GetMapping

@@ -105,33 +105,39 @@ class TimeRangeResolverTest {
     }
 
     @Test
-    void restrictedCallerSlightlyBeyondThePublicLookbackIsTrimmed() {
-        TimeRange range =
-                resolver.resolve(NOW.minus(Duration.ofHours(24)).minusSeconds(2), null, true);
+    void restrictedCallerBeyondThePublicLookbackIsTrimmedNotRejected() {
+        // A public page opened a while ago still sends the start it computed when it loaded.
+        TimeRange range = resolver.resolve(NOW.minus(Duration.ofHours(30)), null, true);
 
         assertThat(range.start()).isEqualTo(NOW.minus(Duration.ofHours(24)));
-    }
-
-    @Test
-    void restrictedCallerMayNotQueryBeyondThePublicLookback() {
-        assertThatThrownBy(
-                        () ->
-                                resolver.resolve(
-                                        NOW.minus(Duration.ofHours(24))
-                                                .minus(TimeRangeResolver.CLOCK_TOLERANCE)
-                                                .minusSeconds(1),
-                                        null,
-                                        true))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(e -> assertStatus(e, HttpStatus.BAD_REQUEST));
+        assertThat(range.end()).isEqualTo(NOW);
     }
 
     @Test
     void restrictedLookbackIsMeasuredFromNowNotFromEnd() {
         Instant end = NOW.minus(Duration.ofHours(23));
 
-        assertThatThrownBy(() -> resolver.resolve(end.minus(Duration.ofHours(2)), end, true))
-                .isInstanceOf(ResponseStatusException.class);
+        TimeRange range = resolver.resolve(end.minus(Duration.ofHours(2)), end, true);
+
+        assertThat(range.start()).isEqualTo(NOW.minus(Duration.ofHours(24)));
+        assertThat(range.end()).isEqualTo(end);
+    }
+
+    @Test
+    void restrictedRangeEntirelyBeyondThePublicLookbackIsEmpty() {
+        // Paging backwards: the cursor (end) has reached the edge of the public window.
+        Instant end = NOW.minus(Duration.ofHours(24));
+
+        TimeRange range = resolver.resolve(end.minus(Duration.ofHours(1)), end, true);
+
+        assertThat(range.isEmpty()).isTrue();
+    }
+
+    @Test
+    void unrestrictedCallerIsNotLimitedToThePublicLookback() {
+        TimeRange range = resolver.resolve(NOW.minus(Duration.ofHours(30)), null, false);
+
+        assertThat(range.start()).isEqualTo(NOW.minus(Duration.ofHours(30)));
     }
 
     @Test

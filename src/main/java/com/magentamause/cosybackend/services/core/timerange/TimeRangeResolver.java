@@ -27,7 +27,10 @@ public class TimeRangeResolver {
      * @param end requested end, {@code null} for now. An end in the future is clamped to now so
      *     that a client clock running ahead or a date picker selecting "end of today" still works.
      * @param restricted whether the caller only has public access and is limited to {@code
-     *     publicMaxLookback}
+     *     publicMaxLookback}. The start is trimmed to that window rather than rejected: the caller
+     *     gets the same data either way, and a page that has been open for a while (whose start was
+     *     fixed when it loaded) keeps working. The result is empty if nothing of the range lies
+     *     inside the window.
      */
     public TimeRange resolve(Instant start, Instant end, boolean restricted) {
         Instant now = clock.instant();
@@ -48,18 +51,10 @@ public class TimeRangeResolver {
 
         if (restricted) {
             Instant earliestPublic = now.minus(properties.publicMaxLookback());
-            if (resolvedStart.isBefore(earliestPublic.minus(CLOCK_TOLERANCE))) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "public access is limited to the last "
-                                + properties.publicMaxLookback().toHours()
-                                + " hours");
+            if (!resolvedEnd.isAfter(earliestPublic)) {
+                return new TimeRange(resolvedEnd, resolvedEnd);
             }
             resolvedStart = latest(resolvedStart, earliestPublic);
-            if (!resolvedStart.isBefore(resolvedEnd)) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "start must be before end");
-            }
         }
 
         return new TimeRange(resolvedStart, resolvedEnd);
