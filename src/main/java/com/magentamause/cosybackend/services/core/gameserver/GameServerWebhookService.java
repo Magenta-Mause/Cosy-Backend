@@ -8,6 +8,8 @@ import com.magentamause.cosybackend.entities.GameServerEventType;
 import com.magentamause.cosybackend.entities.WebhookEntity;
 import com.magentamause.cosybackend.entities.WebhookType;
 import com.magentamause.cosybackend.entities.gameserver.GameServerEntity;
+import com.magentamause.cosybackend.exceptions.ApiException;
+import com.magentamause.cosybackend.exceptions.ErrorCode;
 import com.magentamause.cosybackend.repositories.GameServerRepository;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.GameServerDomainEvent;
 import com.magentamause.cosybackend.services.core.gameserver.webhookSender.WebhookSender;
@@ -37,8 +39,9 @@ public class GameServerWebhookService {
                         .findById(gameServerUuid)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
+                                        new ApiException(
                                                 HttpStatus.NOT_FOUND,
+                                                ErrorCode.GAME_SERVER_NOT_FOUND,
                                                 "Game server with uuid "
                                                         + gameServerUuid
                                                         + " not found"));
@@ -54,8 +57,9 @@ public class GameServerWebhookService {
                         .findById(gameServerUuid)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
+                                        new ApiException(
                                                 HttpStatus.NOT_FOUND,
+                                                ErrorCode.GAME_SERVER_NOT_FOUND,
                                                 "Game server with uuid "
                                                         + gameServerUuid
                                                         + " not found"));
@@ -86,8 +90,9 @@ public class GameServerWebhookService {
                         .findById(gameserverUuid)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
+                                        new ApiException(
                                                 HttpStatus.NOT_FOUND,
+                                                ErrorCode.GAME_SERVER_NOT_FOUND,
                                                 "Game server with uuid "
                                                         + gameserverUuid
                                                         + " not found"));
@@ -119,8 +124,9 @@ public class GameServerWebhookService {
                         .findById(gameServerUuid)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
+                                        new ApiException(
                                                 HttpStatus.NOT_FOUND,
+                                                ErrorCode.GAME_SERVER_NOT_FOUND,
                                                 "Game server with uuid "
                                                         + gameServerUuid
                                                         + " not found"));
@@ -150,8 +156,9 @@ public class GameServerWebhookService {
                         .findById(event.serverId())
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
+                                        new ApiException(
                                                 HttpStatus.NOT_FOUND,
+                                                ErrorCode.GAME_SERVER_NOT_FOUND,
                                                 "Game server with uuid "
                                                         + event.serverId()
                                                         + " not found"));

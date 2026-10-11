@@ -154,6 +154,7 @@ public class ApiResponse<T> {
     private boolean success;
     private T data;
     private String error;
+    private ErrorCode errorCode;   // serialized as error_code, null on success
     private String path;
     @Builder.Default private Instant timestamp = Instant.now();
     private int statusCode;   // serialized as status_code
@@ -167,6 +168,13 @@ public class ApiResponse<T> {
   `throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials")`).
   `GlobalExceptionHandler` has a dedicated `@ExceptionHandler(ResponseStatusException.class)`
   that maps it into the `ApiResponse` envelope.
+- **Throw `ApiException`** (`exceptions/`, a `ResponseStatusException` subclass) when the
+  client should be able to tell this failure apart:
+  `throw new ApiException(HttpStatus.CONFLICT, ErrorCode.USERNAME_TAKEN, "A user with the given username already exists")`.
+  The `ErrorCode` lands in the envelope as `error_code`; the frontend translates it, while
+  the English text in `data` stays as the fallback detail. A plain `ResponseStatusException`
+  gets a generic code derived from its status (`ErrorCode.fromStatus`), so every error
+  response carries one.
 - **A custom `RuntimeException` in `exceptions/`**, either annotated with `@ResponseStatus(...)`
   to set the HTTP status (e.g. `HardwareLimitException` → `403`), or given its own
   `@ExceptionHandler` in `GlobalExceptionHandler` (e.g. `GamesApiError` → `502`).
@@ -183,6 +191,10 @@ public class ApiResponse<T> {
 - Keep validation/framework failures (`MethodArgumentNotValidException`,
   `HttpMessageNotReadableException`, `MissingRequestCookieException`, …) mapped in the
   handler, not in controllers.
+
+- Add an `ErrorCode` when a failure is something a user can act on (a quota, a name that is
+  taken, a server in the wrong state). Codes are API contract: add new ones, never rename
+  or reuse an existing one, and add the frontend translation in the same change set.
 
 **DON'T:**
 - Introduce `ProblemDetail`/`application/problem+json` — it would break the uniform

@@ -1,6 +1,8 @@
 package com.magentamause.cosybackend.configs.globalresponse;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.magentamause.cosybackend.exceptions.ApiException;
+import com.magentamause.cosybackend.exceptions.ErrorCode;
 import com.magentamause.cosybackend.exceptions.GamesApiError;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
@@ -34,6 +36,10 @@ public class GlobalExceptionHandler {
                                 .error(ex.getMessage())
                                 .path(request.getRequestURI())
                                 .statusCode(ex.getStatusCode().value())
+                                .errorCode(
+                                        ex instanceof ApiException apiException
+                                                ? apiException.getErrorCode()
+                                                : ErrorCode.fromStatus(ex.getStatusCode()))
                                 .build());
     }
 
@@ -51,6 +57,7 @@ public class GlobalExceptionHandler {
                                                 + '"')
                                 .path(ex.getResourcePath())
                                 .statusCode(HttpStatus.NOT_FOUND.value())
+                                .errorCode(ErrorCode.NOT_FOUND)
                                 .build());
     }
 
@@ -66,6 +73,7 @@ public class GlobalExceptionHandler {
                                 .error("HTTP method not supported for this endpoint.")
                                 .path(path)
                                 .statusCode(HttpStatus.METHOD_NOT_ALLOWED.value())
+                                .errorCode(ErrorCode.METHOD_NOT_ALLOWED)
                                 .build());
     }
 
@@ -81,6 +89,7 @@ public class GlobalExceptionHandler {
                                 .error("This endpoint expects a different request body.")
                                 .path(path)
                                 .statusCode(HttpStatus.BAD_REQUEST.value())
+                                .errorCode(ErrorCode.BAD_REQUEST)
                                 .build());
     }
 
@@ -110,6 +119,7 @@ public class GlobalExceptionHandler {
                                 .data(errors)
                                 .statusCode(HttpStatus.BAD_REQUEST.value())
                                 .error("Invalid method arguments")
+                                .errorCode(ErrorCode.VALIDATION_FAILED)
                                 .build());
     }
 
@@ -124,6 +134,7 @@ public class GlobalExceptionHandler {
                                 .success(false)
                                 .data("Required cookie is missing")
                                 .error("Required cookie is missing.")
+                                .errorCode(ErrorCode.BAD_REQUEST)
                                 .build());
     }
 
@@ -140,6 +151,7 @@ public class GlobalExceptionHandler {
                                 .error(ex.getMessage())
                                 .path(request.getRequestURI())
                                 .statusCode(HttpStatus.BAD_GATEWAY.value())
+                                .errorCode(ErrorCode.UPSTREAM_ERROR)
                                 .build());
     }
 
@@ -152,6 +164,7 @@ public class GlobalExceptionHandler {
                         ApiResponse.builder()
                                 .success(false)
                                 .error("Missing required request parameter: " + parameterName)
+                                .errorCode(ErrorCode.BAD_REQUEST)
                                 .path(request.getRequestURI())
                                 .statusCode(HttpStatus.BAD_REQUEST.value())
                                 .build());
@@ -174,6 +187,7 @@ public class GlobalExceptionHandler {
                                 .data("An unexpected error occurred.")
                                 .path(path)
                                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                                .errorCode(ErrorCode.INTERNAL_ERROR)
                                 .build());
     }
 }

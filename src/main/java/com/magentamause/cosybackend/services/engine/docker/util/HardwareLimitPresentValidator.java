@@ -1,9 +1,10 @@
 package com.magentamause.cosybackend.services.engine.docker.util;
 
 import com.magentamause.cosybackend.entities.gameserver.utility.DockerHardwareLimits;
+import com.magentamause.cosybackend.exceptions.ApiException;
+import com.magentamause.cosybackend.exceptions.ErrorCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class HardwareLimitPresentValidator {
@@ -15,8 +16,10 @@ public class HardwareLimitPresentValidator {
             return;
         }
         if (serverLimits == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Hardware limits are required for this user.");
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.HARDWARE_LIMIT_REQUIRED,
+                    "Hardware limits are required for this user.");
         }
 
         validateCpuRequirements(userLimits, serverLimits);
@@ -30,8 +33,10 @@ public class HardwareLimitPresentValidator {
             return;
         }
         if (serverLimits.getDockerMaxCpuCores() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "CPU limit is required for this user.");
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.HARDWARE_LIMIT_REQUIRED,
+                    "CPU limit is required for this user.");
         }
     }
 
@@ -42,8 +47,10 @@ public class HardwareLimitPresentValidator {
             return;
         }
         if (serverLimits.getDockerMemoryLimit() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Memory limit is required for this user.");
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.HARDWARE_LIMIT_REQUIRED,
+                    "Memory limit is required for this user.");
         }
     }
 }

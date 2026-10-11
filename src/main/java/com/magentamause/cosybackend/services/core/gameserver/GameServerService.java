@@ -14,6 +14,8 @@ import com.magentamause.cosybackend.entities.gameserver.utility.HostVolumeMountC
 import com.magentamause.cosybackend.entities.gameserver.utility.PortMapping;
 import com.magentamause.cosybackend.entities.gameserver.utility.VolumeMountConfiguration;
 import com.magentamause.cosybackend.entities.loki.GameServerLogMessageEntity;
+import com.magentamause.cosybackend.exceptions.ApiException;
+import com.magentamause.cosybackend.exceptions.ErrorCode;
 import com.magentamause.cosybackend.exceptions.HardwareLimitException;
 import com.magentamause.cosybackend.exceptions.RconBadAuthorizationException;
 import com.magentamause.cosybackend.exceptions.RconException;
@@ -273,8 +275,9 @@ public class GameServerService {
         return getOptionalGameServerById(uuid)
                 .orElseThrow(
                         () ->
-                                new ResponseStatusException(
+                                new ApiException(
                                         HttpStatus.NOT_FOUND,
+                                        ErrorCode.GAME_SERVER_NOT_FOUND,
                                         "Game server with uuid " + uuid + " not found"));
     }
 
@@ -286,8 +289,10 @@ public class GameServerService {
         if (gameServerDto.getHostVolumeMounts() != null
                 && !gameServerDto.getHostVolumeMounts().isEmpty()
                 && !user.getRole().isAdmin()) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Only administrators may configure host volume mounts");
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.HOST_MOUNT_ADMIN_ONLY,
+                    "Only administrators may configure host volume mounts");
         }
 
         Function<Integer, GameEntity> gameResolver =
@@ -320,8 +325,9 @@ public class GameServerService {
                         .findById(uuid)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
+                                        new ApiException(
                                                 HttpStatus.NOT_FOUND,
+                                                ErrorCode.GAME_SERVER_NOT_FOUND,
                                                 "Game server with uuid " + uuid + " not found"));
         try {
             engineManager.stopAndRemove(gameServer);
@@ -336,14 +342,18 @@ public class GameServerService {
             UserEntity user, String uuid, GameServerUpdateDto updateDto) {
         GameServerEntity gameServer = getOrThrow(uuid);
         if (!gameServer.getStatus().isStopped()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Cannot update server while it is running");
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.SERVER_RUNNING,
+                    "Cannot update server while it is running");
         }
 
         boolean isAdmin = user != null && user.getRole().isAdmin();
         if (!isAdmin && hostMountsChanged(gameServer, updateDto)) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Only administrators may configure host volume mounts");
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.HOST_MOUNT_ADMIN_ONLY,
+                    "Only administrators may configure host volume mounts");
         }
 
         Set<String> oldVolumeUuids =
@@ -383,13 +393,18 @@ public class GameServerService {
 
     public void startServer(String gameServerUuid) {
         if (!startingServers.add(gameServerUuid)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Server is already starting");
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    ErrorCode.SERVER_ALREADY_STARTING,
+                    "Server is already starting");
         }
         GameServerEntity serverConfig = getOrThrow(gameServerUuid);
         if (!serverConfig.getStatus().isStopped()) {
             startingServers.remove(gameServerUuid);
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Server is not in a stopped state");
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    ErrorCode.SERVER_NOT_STOPPED,
+                    "Server is not in a stopped state");
         }
         UserEntity gameServerOwner = serverConfig.getOwner();
         try {
@@ -409,8 +424,10 @@ public class GameServerService {
                     GameServerLogMessageEntity.LogLevel.COSY_DEBUG,
                     "Hardware quota limit reached: " + e.getMessage(),
                     false);
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Hardware quota limit reached: " + e.getMessage());
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    e.getErrorCode(),
+                    "Hardware quota limit reached: " + e.getMessage());
         } catch (Exception e) {
             startingServers.remove(gameServerUuid);
             throw e;
@@ -569,8 +586,9 @@ public class GameServerService {
                         .findById(serviceName)
                         .orElseThrow(
                                 () ->
-                                        new ResponseStatusException(
+                                        new ApiException(
                                                 HttpStatus.NOT_FOUND,
+                                                ErrorCode.GAME_SERVER_NOT_FOUND,
                                                 "Server '" + serviceName + "' not found"));
 
         return server.getStatus();
@@ -670,8 +688,10 @@ public class GameServerService {
         UserEntity oldOwner = gameServer.getOwner();
 
         if (gameServer.getStatus() != GameServerDto.GameServerStatus.STOPPED) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Can't change the owner while the server is running");
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    ErrorCode.SERVER_RUNNING,
+                    "Can't change the owner while the server is running");
         }
         UserEntity newOwner =
                 userEntityService.getUserByUsername(transferOwnershipDto.getNewOwnerName());

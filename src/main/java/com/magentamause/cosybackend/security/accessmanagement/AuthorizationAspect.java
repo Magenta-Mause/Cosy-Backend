@@ -1,6 +1,8 @@
 package com.magentamause.cosybackend.security.accessmanagement;
 
 import com.magentamause.cosybackend.entities.UserEntity;
+import com.magentamause.cosybackend.exceptions.ApiException;
+import com.magentamause.cosybackend.exceptions.ErrorCode;
 import com.magentamause.cosybackend.services.auth.SecurityContextService;
 import java.lang.annotation.Annotation;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +39,10 @@ public class AuthorizationAspect {
 
         boolean allowed = validator.invoke(resourceResolver, resourceId, user);
         if (!allowed) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient permissions");
+            throw new ApiException(
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.INSUFFICIENT_PERMISSIONS,
+                    "Insufficient permissions");
         }
     }
 
