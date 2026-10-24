@@ -9,6 +9,7 @@ import com.magentamause.cosybackend.exceptions.docker.DockerPullImageException;
 import com.magentamause.cosybackend.exceptions.docker.InternalServiceStartException;
 import com.magentamause.cosybackend.services.core.gameserver.GameServerStatusUpdateEventType;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -66,6 +67,16 @@ public interface EngineManager {
                 gameServerStatusSupplier);
         attachLogListener(serviceConfig, logListener);
     }
+
+    /**
+     * The host ports currently bound by the engine, across all of its containers — including
+     * containers this Cosy instance does not manage.
+     *
+     * <p>Best effort: implementations return an empty list instead of failing when the engine
+     * cannot be queried, and the result is stale the moment it is returned. The engine stays the
+     * final arbiter of whether a binding succeeds.
+     */
+    List<PublishedPort> getPublishedHostPorts();
 
     Optional<Metric> collectMetric(GameServerEntity serviceConfig) throws InterruptedException;
 
