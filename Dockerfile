@@ -3,7 +3,7 @@
 ############################
 # Stage 0: build cosyfs (.so)
 ############################
-FROM rust:1.98-alpine AS cosyfs-builder
+FROM rust:1.99-alpine AS cosyfs-builder
 WORKDIR /work/cosyfs
 
 # Buildx populates these automatically; still OK if you build without buildx.
@@ -47,7 +47,7 @@ RUN set -eux; \
 ############################
 # Stage 1: build the jar
 ############################
-FROM maven:3.9.15-eclipse-temurin-26-alpine AS builder
+FROM maven:3.9-eclipse-temurin-26-alpine AS builder
 WORKDIR /app
 
 ARG TARGETARCH
