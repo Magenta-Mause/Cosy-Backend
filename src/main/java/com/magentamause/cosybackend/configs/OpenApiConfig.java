@@ -13,14 +13,20 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
+    /**
+     * Component keys must match {@code ^[a-zA-Z0-9.\-_]+$} (OpenAPI 3.x components object). The old
+     * key "Bearer Authentication" had a space, which the frontend's client generator (orval 8)
+     * rejects outright.
+     */
+    static final String SECURITY_SCHEME_NAME = "bearerAuth";
+
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
-                .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
+                .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
                 .components(
                         new Components()
-                                .addSecuritySchemes(
-                                        "Bearer Authentication", createSecurityScheme()))
+                                .addSecuritySchemes(SECURITY_SCHEME_NAME, createSecurityScheme()))
                 .info(
                         new Info()
                                 .title("Cosy API")
